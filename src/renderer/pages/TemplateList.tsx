@@ -228,12 +228,6 @@ const TemplateList: React.FC = () => {
           >
             Epic Templates
           </motion.span>
-          <MemoryIcon sx={{ 
-            fontSize: 20, 
-            ml: 1, 
-            opacity: 0.7, 
-            color: theme.palette.secondary.main
-          }} />
         </Typography>
         
         <Stack direction="row" spacing={1}>

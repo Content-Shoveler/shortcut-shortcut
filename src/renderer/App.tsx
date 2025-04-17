@@ -119,7 +119,7 @@ const App: React.FC = () => {
           '&::before': {
             content: '""',
             position: 'absolute',
-            top: -10,
+            top: -2,
             left: '50%',
             transform: 'translateX(-50%)',
             width: '70%',

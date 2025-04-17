@@ -48,7 +48,7 @@ const Header: React.FC = () => {
           left: '25%',
           width: '50%',
           height: '2px',
-          background: `linear-gradient(90deg, transparent, ${alpha(muiTheme.palette.secondary.main, 0.7)}, transparent)`,
+          background: `linear-gradient(90deg, transparent, ${alpha("#5F9EA0", 0.7)}, transparent)`,
         }
       }}>
         <Box sx={{ 
@@ -62,8 +62,8 @@ const Header: React.FC = () => {
             left: -10,
             width: 20,
             height: 20,
-            borderTop: `2px solid ${muiTheme.palette.secondary.main}`,
-            borderLeft: `2px solid ${muiTheme.palette.secondary.main}`,
+            borderTop: `2px solid #5F9EA0`,
+            borderLeft: `2px solid #5F9EA0`,
           }
         }}>
           <Typography
@@ -83,22 +83,13 @@ const Header: React.FC = () => {
               variants={glitchTextVariants}
               style={{ display: 'inline-block' }}
             >
-              SHORTCUT EPIC{' '}
-              <Box
-                component="span"
-                sx={{
-                  color: muiTheme.palette.secondary.main,
-                  textShadow: themeAppearance === 'dark' ? '0 0 8px rgba(0, 255, 255, 0.5)' : 'none'
-                }}
-              >
-                TEMPLATES
-              </Box>
+              SHORTCUT EPIC TEMPLATES
             </motion.span>
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Tooltip title="Home">
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 4 }}>
+          <Tooltip title="My Templates">
             <MotionButton 
               color="inherit" 
               startIcon={<HomeIcon />}
@@ -111,23 +102,15 @@ const Header: React.FC = () => {
               sx={{ 
                 position: 'relative',
                 opacity: isHomePage ? 0.7 : 1,
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: 3,
-                  left: '10%',
-                  width: '80%',
-                  height: '1px',
-                  background: `linear-gradient(90deg, transparent, ${alpha(muiTheme.palette.common.white, 0.5)}, transparent)`,
-                  opacity: 0,
-                  transition: 'opacity 0.3s ease',
-                },
-                '&:hover::after': {
-                  opacity: isHomePage ? 0 : 1,
+                border: `1px solid ${muiTheme.palette.primary.main}`,
+                borderRadius: '4px',
+                '&:hover': {
+                  borderColor: '#FF4500',
+                  boxShadow: themeAppearance === 'dark' ? '0 0 8px rgba(255, 69, 0, 0.5)' : 'none'
                 }
               }}
             >
-              Home
+              My Templates
             </MotionButton>
           </Tooltip>
           
@@ -142,11 +125,11 @@ const Header: React.FC = () => {
               whileTap="tap"
               sx={{ 
                 position: 'relative',
-                clipPath: 'polygon(0 0, 100% 0, 100% 70%, 95% 100%, 0 100%)',
-                pr: 2,
-                backgroundColor: alpha(muiTheme.palette.secondary.main, 0.1),
+                borderRadius: '4px',
+                border: `1px solid ${muiTheme.palette.primary.main}`,
                 '&:hover': {
-                  backgroundColor: alpha(muiTheme.palette.secondary.main, 0.2),
+                  borderColor: '#FF4500',
+                  boxShadow: themeAppearance === 'dark' ? '0 0 8px rgba(255, 69, 0, 0.5)' : 'none'
                 }
               }}
             >
@@ -177,8 +160,12 @@ const Header: React.FC = () => {
                   right: -3,
                   width: 10,
                   height: 10,
-                  borderTop: `2px solid ${muiTheme.palette.secondary.main}`,
-                  borderRight: `2px solid ${muiTheme.palette.secondary.main}`,
+                  borderTop: `2px solid #FF4500`,
+                  borderRight: `2px solid #FF4500`,
+                },
+                '&:hover': {
+                  color: themeAppearance === 'dark' ? '#FFFFFF' : '#5F9EA0',
+                  boxShadow: themeAppearance === 'dark' ? '0 0 8px rgba(255, 69, 0, 0.5)' : 'none'
                 }
               }}
             >
