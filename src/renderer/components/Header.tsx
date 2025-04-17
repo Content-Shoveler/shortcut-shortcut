@@ -98,54 +98,38 @@ const Header: React.FC = () => {
         </Box>
         
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Tooltip title="Settings">
-            <MotionIconButton 
+          <Tooltip title="Home">
+            <MotionButton 
               color="inherit" 
-              onClick={() => navigate('/settings')} 
-              size="large"
-              whileHover={{ 
-                rotate: 90,
-                scale: 1.1, 
-                transition: { duration: 0.3 } 
+              startIcon={<HomeIcon />}
+              onClick={() => navigate('/')}
+              variants={buttonVariants}
+              initial="rest"
+              whileHover="hover"
+              whileTap="tap"
+              disabled={isHomePage}
+              sx={{ 
+                position: 'relative',
+                opacity: isHomePage ? 0.7 : 1,
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 3,
+                  left: '10%',
+                  width: '80%',
+                  height: '1px',
+                  background: `linear-gradient(90deg, transparent, ${alpha(muiTheme.palette.common.white, 0.5)}, transparent)`,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                },
+                '&:hover::after': {
+                  opacity: isHomePage ? 0 : 1,
+                }
               }}
-              whileTap={{ scale: 0.95 }}
             >
-              <SettingsIcon />
-            </MotionIconButton>
+              Home
+            </MotionButton>
           </Tooltip>
-          
-          {!isHomePage && (
-            <Tooltip title="Back to Templates">
-              <MotionButton 
-                color="inherit" 
-                startIcon={<HomeIcon />}
-                onClick={() => navigate('/')}
-                variants={buttonVariants}
-                initial="rest"
-                whileHover="hover"
-                whileTap="tap"
-                sx={{ 
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 3,
-                    left: '10%',
-                    width: '80%',
-                    height: '1px',
-                    background: `linear-gradient(90deg, transparent, ${alpha(muiTheme.palette.common.white, 0.5)}, transparent)`,
-                    opacity: 0,
-                    transition: 'opacity 0.3s ease',
-                  },
-                  '&:hover::after': {
-                    opacity: 1,
-                  }
-                }}
-              >
-                Templates
-              </MotionButton>
-            </Tooltip>
-          )}
           
           <Tooltip title="Create New Template">
             <MotionButton 
@@ -168,6 +152,38 @@ const Header: React.FC = () => {
             >
               New Template
             </MotionButton>
+          </Tooltip>
+        </Box>
+        
+        {/* Settings button isolated on the right */}
+        <Box sx={{ ml: 'auto' }}>
+          <Tooltip title="Settings">
+            <MotionIconButton 
+              color="inherit" 
+              onClick={() => navigate('/settings')} 
+              size="large"
+              whileHover={{ 
+                rotate: 90,
+                scale: 1.1, 
+                transition: { duration: 0.3 } 
+              }}
+              whileTap={{ scale: 0.95 }}
+              sx={{
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -3,
+                  right: -3,
+                  width: 10,
+                  height: 10,
+                  borderTop: `2px solid ${muiTheme.palette.secondary.main}`,
+                  borderRight: `2px solid ${muiTheme.palette.secondary.main}`,
+                }
+              }}
+            >
+              <SettingsIcon />
+            </MotionIconButton>
           </Tooltip>
         </Box>
       </Toolbar>

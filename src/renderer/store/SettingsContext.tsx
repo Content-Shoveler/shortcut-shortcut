@@ -12,6 +12,7 @@ interface AppSettings {
   appearance: {
     density: 'comfortable' | 'compact';
     fontSize: 'small' | 'medium' | 'large';
+    viewMode: 'card' | 'list';
   };
 }
 
@@ -34,6 +35,7 @@ const defaultSettings: AppSettings = {
   appearance: {
     density: 'comfortable',
     fontSize: 'medium',
+    viewMode: 'card', // Setting card view as default
   },
 };
 

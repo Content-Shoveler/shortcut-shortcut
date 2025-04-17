@@ -1,126 +1,93 @@
-import { useRive, UseRiveParameters, RiveState } from '@rive-app/react-canvas';
+import { useTheme } from '@mui/material';
+import React from 'react';
 
-// Default Rive animation options with optimized settings
-export const defaultRiveOptions = {
-  autoplay: true,
-  fitCanvasToArtboardHeight: true,
+/**
+ * Simple mock for Rive animations to support our theming
+ * This is a placeholder until actual Rive animations are added
+ */
+
+// Simple type definitions
+type StateMachineInput = {
+  value: any;
+  setValue: (val: any) => void;
 };
 
-// Simple hook for Rive animations
-export const useCyberpunkRive = (params: UseRiveParameters) => {
-  return useRive({
-    ...defaultRiveOptions,
-    ...params,
+// Simple mock for RiveComponent
+const createRiveComponent = (theme: any) => {
+  return function RiveComponent(props: { className?: string; style?: React.CSSProperties }) {
+    return React.createElement('div', {
+      className: props.className,
+      style: {
+        ...props.style,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: `1px dashed ${theme.palette.primary.main}`,
+        padding: '8px',
+        color: theme.palette.secondary.main,
+        fontFamily: '"Share Tech Mono", monospace',
+      }
+    }, '[RIVE ANIMATION]');
+  };
+};
+
+// Main hook
+export function useCyberpunkRive(options: { 
+  src: string;
+  stateMachines?: string;
+  artboards?: string;
+}) {
+  const theme = useTheme();
+  
+  // Create inputs
+  const inputs = {
+    scanIntensity: {
+      value: 0.5,
+      setValue: (_val: any) => {}
+    },
+    speed: {
+      value: 1.0,
+      setValue: (_val: any) => {}
+    }
+  };
+  
+  // Create component
+  const RiveComponent = createRiveComponent(theme);
+  
+  // Mock rive object
+  const rive = { contents: {} };
+  
+  return { rive, inputs, RiveComponent };
+}
+
+// Helper functions
+export function loadRiveAnimation(fileName: string, options = {}) {
+  return useCyberpunkRive({
+    src: `/src/renderer/assets/rive/${fileName}.riv`,
+    ...options
   });
+}
+
+// Animation presets
+export const cyberpunkAnimations = {
+  loadingSpinner: (options = {}) => 
+    loadRiveAnimation('loading_spinner', options),
+  
+  radarScan: (options = {}) => 
+    loadRiveAnimation('radar_scan', options),
+  
+  terminalTyping: (options = {}) => 
+    loadRiveAnimation('terminal_typing', options),
+  
+  spaceBackground: (options = {}) => 
+    loadRiveAnimation('space_bg', options),
+  
+  dataTransfer: (options = {}) => 
+    loadRiveAnimation('data_transfer', options),
 };
 
-// Cyberpunk animation assets paths
-export const cyberpunkRiveAssets = {
-  // Loaders
-  dataLoader: '/assets/rive/data_loader.riv',
-  scanningLoader: '/assets/rive/scanning_loader.riv',
-  
-  // Icons
-  addIcon: '/assets/rive/add_icon.riv',
-  settingsIcon: '/assets/rive/settings_icon.riv',
-  homeIcon: '/assets/rive/home_icon.riv',
-  
-  // Buttons
-  cyberpunkButton: '/assets/rive/cyberpunk_button.riv',
-  
-  // Decorative
-  backgroundGrid: '/assets/rive/background_grid.riv',
-  dataScan: '/assets/rive/data_scan.riv',
-  
-  // Placeholder URLs - these will need to be created or sourced
-  placeholder: '/assets/rive/placeholder.riv',
-};
-
-// Set a boolean input on a state machine
-export const setRiveBooleanInput = (
-  riveState: RiveState | null,
-  stateMachineName: string, 
-  inputName: string, 
-  value: boolean
-): boolean => {
-  if (!riveState?.rive) return false;
-  
-  try {
-    const inputs = riveState.rive.stateMachineInputs(stateMachineName);
-    if (!inputs) return false;
-    
-    const input = inputs.find(input => input.name === inputName);
-    if (!input) return false;
-    
-    // Try to set the value - wrap in try/catch to handle any type mismatches
-    try {
-      input.value = value;
-      return true;
-    } catch (e) {
-      console.error('Failed to set boolean input:', e);
-      return false;
-    }
-  } catch (e) {
-    console.error('Error accessing state machine inputs:', e);
-    return false;
-  }
-};
-
-// Set a number input on a state machine
-export const setRiveNumberInput = (
-  riveState: RiveState | null,
-  stateMachineName: string, 
-  inputName: string, 
-  value: number
-): boolean => {
-  if (!riveState?.rive) return false;
-  
-  try {
-    const inputs = riveState.rive.stateMachineInputs(stateMachineName);
-    if (!inputs) return false;
-    
-    const input = inputs.find(input => input.name === inputName);
-    if (!input) return false;
-    
-    // Try to set the value - wrap in try/catch to handle any type mismatches
-    try {
-      input.value = value;
-      return true;
-    } catch (e) {
-      console.error('Failed to set number input:', e);
-      return false;
-    }
-  } catch (e) {
-    console.error('Error accessing state machine inputs:', e);
-    return false;
-  }
-};
-
-// Fire a trigger input on a state machine
-export const fireRiveTrigger = (
-  riveState: RiveState | null,
-  stateMachineName: string, 
-  inputName: string
-): boolean => {
-  if (!riveState?.rive) return false;
-  
-  try {
-    const inputs = riveState.rive.stateMachineInputs(stateMachineName);
-    if (!inputs) return false;
-    
-    const input = inputs.find(input => input.name === inputName);
-    if (!input) return false;
-    
-    // Try to fire the trigger - wrap in try/catch to handle any type mismatches
-    try {
-      input.fire();
-      return true;
-    } catch (e) {
-      console.error('Failed to fire trigger:', e);
-      return false;
-    }
-  } catch (e) {
-    console.error('Error accessing state machine inputs:', e);
-    return false;
-  }
-};
+// Information function
+export function setupRiveFolders(): void {
+  console.info('Rive animations should be placed in:');
+  console.info('- /src/renderer/assets/rive/');
+}

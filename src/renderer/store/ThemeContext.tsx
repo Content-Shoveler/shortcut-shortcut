@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { ThemeProvider as MuiThemeProvider, createTheme, Theme } from '@mui/material/styles';
+import { ThemeProvider as MuiThemeProvider, createTheme, Theme, alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useSettings } from './SettingsContext';
 
@@ -23,37 +23,55 @@ const ThemeContext = createContext<ThemeContextType>({
 // Custom hook for using the theme context
 export const useTheme = () => useContext(ThemeContext);
 
-// Define cyberpunk theme colors
+// Define cyberpunk theme colors - space/NASA inspired
 const cyberpunkColors = {
-  // Based on cadetBlue as requested
+  // Extended cadetBlue palette as requested
   cadetBlue: {
-    main: '#5F9EA0',
-    light: '#8BCED0',
-    dark: '#3A7173',
+    main: '#5F9EA0',    // Primary cadetBlue
+    light: '#8BCED0',   // Lighter variation
+    dark: '#3A7173',    // Darker variation
+    accent: '#7FDBDC',  // Accent variation
+    muted: '#4D7F81',   // Muted variation
+    bright: '#00CED1',  // Bright variation (dark cyan)
     contrastText: '#FFFFFF',
   },
+  // Space/NASA inspired colors
+  space: {
+    deepSpace: '#0A0E17',       // Deep space black/blue
+    cosmos: '#171D2E',          // Cosmic background
+    stars: '#E0E8FF',           // Distant stars
+    nebula: '#4D6BC6',          // Nebula blue
+    orbit: '#3A4CA8',           // Orbital path blue
+    nasa: '#0B3D91',            // NASA blue
+    warning: '#FF7E11',         // Warning orange (NASA)
+    terminal: '#00FF41',        // Terminal green (retro NASA screens)
+  },
   neon: {
-    cyan: '#00FFFF',
-    magenta: '#FF00FF',
-    yellow: '#FFFF00',
-    green: '#39FF14',
+    cyan: '#00FFFF',            // Neon cyan
+    teal: '#0AFACA',            // Teal variation
+    green: '#39FF14',           // Neon green
+    yellow: '#FFFF00',          // Neon yellow
+    orange: '#FF9500',          // Neon orange
   },
   dark: {
-    main: '#0A0E17',
-    light: '#1A1E27',
-    medium: '#141824',
+    main: '#0A0E17',            // Main dark background
+    light: '#1A1E27',           // Lighter dark
+    medium: '#141824',          // Medium dark
     paper: 'rgba(20, 24, 36, 0.8)', // Semi-transparent
+    terminal: '#0C0C14',        // Terminal background
   },
   light: {
-    main: '#E0FFFF', // Light cyan
-    medium: '#D0E7E7',
-    dark: '#BACECF',
+    main: '#E0FFFF',            // Light cyan background
+    medium: '#D0E7E7',          // Medium light
+    dark: '#BACECF',            // Dark light
     paper: 'rgba(224, 255, 255, 0.9)', // Semi-transparent
   },
   accents: {
-    red: '#FF3E3E',
-    purple: '#9D71EA',
-    blue: '#4BB2F9',
+    red: '#FF3E3E',             // Error red
+    caution: '#FFCE00',         // Caution yellow
+    success: '#00E64D',         // Success green
+    alert: '#FF9500',           // Alert orange
+    blue: '#4BB2F9',            // Info blue (adding this since it was missing)
   }
 };
 
@@ -95,8 +113,8 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
       },
       secondary: {
         main: cyberpunkColors.neon.cyan, 
-        light: cyberpunkColors.cadetBlue.light,
-        dark: cyberpunkColors.cadetBlue.dark,
+        light: cyberpunkColors.cadetBlue.accent,
+        dark: cyberpunkColors.cadetBlue.muted,
         contrastText: '#000000',
       },
       background: {
@@ -177,10 +195,13 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
         styleOverrides: {
           body: {
             backgroundImage: mode === 'dark' 
-              ? 'linear-gradient(rgba(10, 14, 23, 0.97), rgba(10, 14, 23, 0.97)), url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%235f9ea0\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")'
-              : 'linear-gradient(rgba(224, 255, 255, 0.97), rgba(224, 255, 255, 0.97)), url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%235f9ea0\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
+              ? `linear-gradient(rgba(10, 14, 23, 0.97), rgba(10, 14, 23, 0.97)), 
+                 url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%235f9ea0' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E"),
+                 url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%235f9ea0' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+              : `linear-gradient(rgba(224, 255, 255, 0.97), rgba(224, 255, 255, 0.97)), 
+                 url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%235f9ea0' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E")`,
             backgroundAttachment: 'fixed',
-            backgroundSize: '100% 100%, 20px 20px',
+            backgroundSize: '100% 100%, 20px 20px, 60px 60px',
           },
           ':root': {
             '--cyberpunk-header-gradient': gradients.header,
@@ -189,6 +210,9 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
             '--cyberpunk-glow': mode === 'dark' ? '0 0 10px rgba(0, 255, 255, 0.5)' : 'none',
             '--cyberpunk-border-light': `1px solid ${mode === 'dark' ? 'rgba(139, 206, 208, 0.5)' : 'rgba(95, 158, 160, 0.5)'}`,
             '--cyberpunk-border-accent': `2px solid ${cyberpunkColors.neon.cyan}`,
+            '--cyberpunk-scan-line-bg': `repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, ${alpha(cyberpunkColors.cadetBlue.dark, 0.05)} 1px, ${alpha(cyberpunkColors.cadetBlue.dark, 0.05)} 2px)`,
+            '--cyberpunk-grid-bg': `linear-gradient(${alpha(cyberpunkColors.cadetBlue.dark, 0.1)} 1px, transparent 1px), linear-gradient(90deg, ${alpha(cyberpunkColors.cadetBlue.dark, 0.1)} 1px, transparent 1px)`,
+            '--cyberpunk-space-bg': mode === 'dark' ? `radial-gradient(circle at top right, ${alpha(cyberpunkColors.space.nebula, 0.3)} 0%, transparent 60%)` : 'none',
           }
         },
       },
@@ -215,9 +239,11 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
       MuiButton: {
         styleOverrides: {
           root: {
+            fontFamily: '"Rajdhani", sans-serif',
             textTransform: 'none',
-            fontWeight: 500,
+            fontWeight: 600,
             position: 'relative',
+            letterSpacing: '0.05em',
             transition: 'all 0.3s ease',
             '&::before': {
               content: '""',
@@ -225,7 +251,7 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
               inset: 0,
               borderRadius: 'inherit',
               padding: '1px',
-              background: 'linear-gradient(45deg, transparent 25%, rgba(0, 255, 255, 0.5) 50%, transparent 75%)',
+              background: `linear-gradient(45deg, transparent 25%, ${alpha(cyberpunkColors.cadetBlue.bright, 0.5)} 50%, transparent 75%)`,
               WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
               WebkitMaskComposite: 'xor',
               maskComposite: 'exclude',
@@ -238,6 +264,18 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
           },
           contained: {
             background: 'var(--cyberpunk-button-gradient)',
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'var(--cyberpunk-scan-line-bg)',
+              opacity: 0.2,
+              pointerEvents: 'none',
+            },
             '&:hover': {
               background: 'var(--cyberpunk-button-gradient)',
               boxShadow: 'var(--cyberpunk-glow)',
@@ -258,7 +296,8 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
           root: {
             backgroundImage: 'var(--cyberpunk-card-gradient)',
             backdropFilter: 'blur(10px)',
-            borderRadius: '8px',
+            borderRadius: '2px',
+            clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))',
             '&::before': {
               content: '""',
               position: 'absolute',
@@ -268,12 +307,25 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
               left: 0,
               borderRadius: 'inherit',
               padding: '1px',
-              background: 'linear-gradient(135deg, transparent, rgba(95, 158, 160, 0.5), transparent)',
+              background: `linear-gradient(135deg, transparent, ${alpha(cyberpunkColors.cadetBlue.main, 0.5)}, transparent)`,
               WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
               WebkitMaskComposite: 'xor',
               maskComposite: 'exclude',
               pointerEvents: 'none',
             },
+            // Add retro terminal scanlines
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'var(--cyberpunk-scan-line-bg)',
+              opacity: 0.05,
+              pointerEvents: 'none',
+              zIndex: 0
+            }
           },
           elevation1: {
             boxShadow: mode === 'dark' ? '0 4px 20px rgba(0, 0, 0, 0.5)' : '0 4px 20px rgba(0, 0, 0, 0.1)',
@@ -297,7 +349,7 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
               borderLeft: 'var(--cyberpunk-border-accent)',
               top: 0,
               left: 0,
-              borderTopLeftRadius: '8px',
+              borderTopLeftRadius: '2px',
             },
           },
         },

@@ -86,10 +86,10 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
     palette: {
       mode,
       primary: {
-        main: mode === 'light' ? '#2196f3' : '#90caf9',
+        main: mode === 'light' ? '#5F9EA0' : '#FFFFFF',
       },
       secondary: {
-        main: mode === 'light' ? '#f50057' : '#f48fb1',
+        main: mode === 'light' ? '#FF4500' : '#5F9EA0',
       },
       background: {
         default: mode === 'light' ? '#f5f5f5' : '#121212',

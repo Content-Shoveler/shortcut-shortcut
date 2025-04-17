@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 // Components
 import Header from './components/Header';
+import { CyberSpinner } from './components/cyberpunk';
 
 // Pages
 import TemplateList from './pages/TemplateList';
@@ -19,14 +20,28 @@ import TemplateApply from './pages/TemplateApply';
 import Settings from './pages/Settings';
 
 // Animations
-import { pageVariants } from './utils/animations';
+import { pageVariants, starFieldVariants, radarScanVariants } from './utils/animations';
 
-// Create a motion component version of Paper
+// Create motion component versions
 const MotionPaper = motion(Paper);
+const MotionBox = motion(Box);
 
 const App: React.FC = () => {
   const location = useLocation();
   const theme = useTheme();
+  
+  // Display a loading spinner while transitioning between routes
+  const [isLoading, setIsLoading] = React.useState(false);
+  
+  // Handle route changes to show loading state
+  React.useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
   
   return (
     <Box 
@@ -35,32 +50,63 @@ const App: React.FC = () => {
         flexDirection: 'column', 
         minHeight: '100vh',
         position: 'relative',
+        overflow: 'hidden',
+        // Space-themed background gradients
         '&::after': {
           content: '""',
           position: 'absolute',
           top: 0,
           right: 0,
-          width: '100px',
-          height: '100px',
-          borderTop: `2px solid ${theme.palette.secondary.main}`,
-          borderRight: `2px solid ${theme.palette.secondary.main}`,
+          width: '200px',
+          height: '200px',
+          borderTop: `3px solid ${theme.palette.secondary.main}`,
+          borderRight: `3px solid ${theme.palette.secondary.main}`,
           pointerEvents: 'none',
-          zIndex: 1
+          zIndex: 1,
+          opacity: 0.7,
+          background: theme.palette.mode === 'dark' 
+            ? `radial-gradient(circle at top right, ${alpha(theme.palette.secondary.main, 0.15)}, transparent 70%)`
+            : 'none',
         },
         '&::before': {
           content: '""',
           position: 'absolute',
           bottom: 0,
           left: 0,
-          width: '100px',
-          height: '100px',
-          borderBottom: `2px solid ${theme.palette.secondary.main}`,
-          borderLeft: `2px solid ${theme.palette.secondary.main}`,
+          width: '200px',
+          height: '200px',
+          borderBottom: `3px solid ${theme.palette.secondary.main}`,
+          borderLeft: `3px solid ${theme.palette.secondary.main}`,
           pointerEvents: 'none',
-          zIndex: 1
+          zIndex: 1,
+          opacity: 0.7,
+          background: theme.palette.mode === 'dark'
+            ? `radial-gradient(circle at bottom left, ${alpha(theme.palette.secondary.main, 0.1)}, transparent 70%)`
+            : 'none',
         }
       }}
     >
+      {/* Star field background for dark mode */}
+      {theme.palette.mode === 'dark' && (
+        <MotionBox
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `radial-gradient(1px 1px at ${Math.random() * 100}% ${Math.random() * 100}%, ${alpha('#FFFFFF', 0.2)} 50%, transparent 50%), 
+                               radial-gradient(2px 2px at ${Math.random() * 100}% ${Math.random() * 100}%, ${alpha('#00FFFF', 0.2)} 50%, transparent 50%)`,
+            backgroundSize: '100px 100px, 200px 200px',
+            zIndex: -1,
+            opacity: 0.4,
+            pointerEvents: 'none',
+          }}
+          variants={starFieldVariants}
+          initial="initial"
+          animate="animate"
+        />
+      )}
       <Header />
       <Container 
         component="main" 
@@ -78,11 +124,60 @@ const App: React.FC = () => {
             transform: 'translateX(-50%)',
             width: '70%',
             height: '2px',
-            background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.primary.main, 0.5)}, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.secondary.main, 0.6)}, transparent)`,
             pointerEvents: 'none'
           }
         }}
       >
+        {/* NASA-inspired radar scan effect */}
+        <MotionBox
+          sx={{
+            position: 'absolute',
+            top: -60,
+            right: -60,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+            opacity: 0.4,
+            zIndex: 0,
+            pointerEvents: 'none',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '50%',
+              height: '1px',
+              background: theme.palette.secondary.main,
+              transformOrigin: '0 0',
+            }
+          }}
+          variants={radarScanVariants}
+          initial="initial"
+          animate="animate"
+        />
+        {/* Loading spinner */}
+        <AnimatePresence>
+          {isLoading && (
+            <MotionBox
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 10,
+              }}
+            >
+              <CyberSpinner size={60} />
+            </MotionBox>
+          )}
+        </AnimatePresence>
+        
+        {/* Main content with page transitions */}
         <AnimatePresence mode="wait">
           <MotionPaper 
             key={location.pathname}
@@ -91,6 +186,8 @@ const App: React.FC = () => {
               p: 3,
               position: 'relative',
               overflow: 'hidden',
+              backdropFilter: 'blur(5px)',
+              // Terminal/screen styling
               '&::before': {
                 content: '""',
                 position: 'absolute',
@@ -98,14 +195,33 @@ const App: React.FC = () => {
                 left: 0,
                 width: '100%',
                 height: '100%',
-                background: `radial-gradient(circle at 30% 30%, ${alpha(theme.palette.primary.main, 0.05)} 0%, transparent 70%)`,
-                pointerEvents: 'none'
+                background: `radial-gradient(circle at 30% 30%, ${alpha(theme.palette.secondary.main, 0.05)} 0%, transparent 70%)`,
+                backgroundSize: '400% 400%',
+                pointerEvents: 'none',
+                opacity: 0.8
+              },
+              // Scan lines
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: theme.palette.mode === 'dark' ?
+                  'repeating-linear-gradient(0deg, rgba(95, 158, 160, 0.03) 0px, rgba(95, 158, 160, 0.03) 1px, transparent 1px, transparent 2px)' :
+                  'none',
+                backgroundSize: '100% 2px',
+                pointerEvents: 'none',
+                opacity: 0.5,
+                zIndex: 0
               }
             }}
             initial="initial"
             animate="animate"
             exit="exit"
             variants={pageVariants}
+            transition={{ type: 'spring', stiffness: 60, damping: 12 }}
           >
             <Routes location={location}>
               <Route path="/" element={<TemplateList />} />
