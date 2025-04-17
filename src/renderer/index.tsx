@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from './store/AppProviders';
 import App from './App';
+import './assets/cyberpunkStyles.css';
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

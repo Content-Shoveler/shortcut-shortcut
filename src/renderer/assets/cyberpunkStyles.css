@@ -1,0 +1,203 @@
+/* 
+  Cyberpunk Global Styles
+  These styles provide global cyberpunk-themed classes and animations
+  that can be applied throughout the application
+*/
+
+/* Cyberpunk font imports - using Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+/* Cyberpunk text highlights and effects */
+.cyber-highlight {
+  position: relative;
+  display: inline-block;
+  color: #00FFFF;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+.cyber-glitch {
+  position: relative;
+  animation: glitch 3s infinite;
+}
+
+@keyframes glitch {
+  0% {
+    text-shadow: none;
+  }
+  10% {
+    text-shadow: -2px 0 rgba(255, 0, 255, 0.5), 2px 2px rgba(0, 255, 255, 0.5);
+  }
+  15% {
+    text-shadow: 2px -2px rgba(0, 255, 255, 0.5), -2px -2px rgba(255, 0, 255, 0.5);
+  }
+  20% {
+    text-shadow: none;
+  }
+  100% {
+    text-shadow: none;
+  }
+}
+
+/* Cyberpunk corner border */
+.cyber-box {
+  position: relative;
+  border: 1px solid rgba(95, 158, 160, 0.3);
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.cyber-box::before,
+.cyber-box::after {
+  content: "";
+  position: absolute;
+  width: 25px;
+  height: 25px;
+}
+
+.cyber-box::before {
+  top: 0;
+  right: 0;
+  border-top: 2px solid #00FFFF;
+  border-right: 2px solid #00FFFF;
+}
+
+.cyber-box::after {
+  bottom: 0;
+  left: 0;
+  border-bottom: 2px solid #00FFFF;
+  border-left: 2px solid #00FFFF;
+}
+
+/* Scanline effect */
+.cyber-scanlines {
+  position: relative;
+}
+
+.cyber-scanlines::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+
+/* Grid background */
+.cyber-grid-bg {
+  position: relative;
+  background-color: rgba(0, 0, 0, 0.1);
+  background-image: 
+    linear-gradient(rgba(95, 158, 160, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95, 158, 160, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Data flow animation */
+.cyber-data-flow {
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-data-flow::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 255, 255, 0.1) 50%, 
+    transparent 100%
+  );
+  animation: data-flow 3s infinite linear;
+}
+
+@keyframes data-flow {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Cyber headings */
+.cyber-heading {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  position: relative;
+  display: inline-block;
+  padding-left: 12px;
+  margin-bottom: 1rem;
+}
+
+.cyber-heading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 4px;
+  background: #00FFFF;
+}
+
+/* Neon text effect */
+.cyber-neon {
+  color: #5F9EA0;
+  text-shadow: 0 0 5px rgba(95, 158, 160, 0.5),
+               0 0 10px rgba(95, 158, 160, 0.3),
+               0 0 15px rgba(95, 158, 160, 0.1);
+}
+
+/* Cyber badge */
+.cyber-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  background-color: rgba(95, 158, 160, 0.1);
+  border: 1px solid rgba(95, 158, 160, 0.3);
+  padding: 2px 6px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* Cyberpunk Code block */
+.cyber-code {
+  font-family: 'Share Tech Mono', monospace;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid #00FFFF;
+  padding: 1rem;
+  color: #00FFFF;
+  overflow-x: auto;
+}
+
+/* Cyberpunk horizontal divider */
+.cyber-divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(95, 158, 160, 0.5) 50%, 
+    transparent 100%
+  );
+  border: none;
+  margin: 1.5rem 0;
+}
+
+/* Utility classes */
+.font-cyber-mono {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.font-cyber {
+  font-family: 'Rajdhani', sans-serif;
+}
