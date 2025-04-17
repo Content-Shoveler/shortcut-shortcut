@@ -159,6 +159,64 @@ export const glitchTextVariants: Variants = {
   },
 };
 
+// Animation for neon sign flashing effect
+export const neonSignVariants: Variants = {
+  initial: (i: number) => ({
+    color: '#00FFFF',
+    textShadow: '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)',
+    opacity: 1,
+  }),
+  animate: (i: number) => ({
+    // Always on and bright - the default state
+    color: '#00FFFF',
+    textShadow: '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)',
+    opacity: 1,
+    transition: {
+      duration: 0.1,
+      repeat: Infinity,
+      repeatType: "loop",
+      // Give each letter a very long delay to ensure it stays "on" most of the time
+      repeatDelay: getRandomFlickerDelay(i),
+    },
+  }),
+  flicker: (i: number) => {
+    // Determine if this letter should be prone to flickering based on its position
+    // Letters at certain positions are more likely to flicker (like real faulty neon signs)
+    const isFlickerProne = i === 1 || i === 8 || i === 15 || i === 17 || i === 21;
+    const flickerFrequency = isFlickerProne ? 3 : 10; // Lower number = more frequent flickers
+    
+    return {
+      // Momentary off state that happens infrequently
+      color: '#5F9EA0',
+      textShadow: 'none',
+      opacity: [1, 0.3, 1], // Quick flicker off and on
+      transition: {
+        duration: 0.15,
+        repeat: Infinity,
+        repeatType: 'loop',
+        repeatDelay: flickerFrequency + (i % 5),
+        times: [0, 0.5, 1],
+        ease: "easeInOut",
+      }
+    };
+  }
+};
+
+// Helper function to get random delays between flickering for each letter
+// This creates more natural "faulty neon" behavior
+function getRandomFlickerDelay(index: number): number {
+  // Create a seed based on letter position that gives consistent but varied results
+  const seed = (index * 7) % 23;
+  
+  // Very long base delay - we want the letters to be "on" most of the time
+  const baseDelay = 20;
+  
+  // Add variable component based on letter position
+  const variableDelay = seed + ((index % 5) * 3);
+  
+  return baseDelay + variableDelay;
+}
+
 // Enhanced cyberpunk card hover effect with space accents
 export const cardHoverVariants: Variants = {
   initial: {
