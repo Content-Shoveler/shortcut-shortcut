@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  TextField,
-  Button,
   Typography,
-  Paper,
   Divider,
   IconButton,
   List,
@@ -17,7 +14,6 @@ import {
   DialogTitle,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Chip,
   Alert,
@@ -25,6 +21,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  useTheme,
+  alpha,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -32,6 +30,13 @@ import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  CyberCard, 
+  CyberTextField, 
+  CyberButton, 
+  CyberSelect, 
+  CyberIcon 
+} from '../components/cyberpunk';
 
 import { Template, StoryTemplate, EpicDetails } from '../types';
 
@@ -61,6 +66,8 @@ const storyTypeOptions = [
 const TemplateEditor: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
+  
   const [template, setTemplate] = useState<Template>({
     id: id || uuidv4(),
     name: '',
@@ -281,29 +288,31 @@ const TemplateEditor: React.FC = () => {
         </Typography>
         
         <Stack direction="row" spacing={1}>
-          <Button 
+          <CyberButton 
             variant="outlined" 
-            startIcon={<ArrowBackIcon />}
+            startIcon={<CyberIcon icon={ArrowBackIcon} size={20} />}
             onClick={() => navigate('/')}
+            scanlineEffect
           >
             Cancel
-          </Button>
-          <Button 
+          </CyberButton>
+          <CyberButton 
             variant="contained"
-            startIcon={<SaveIcon />}
+            startIcon={<CyberIcon icon={SaveIcon} size={20} />}
             onClick={handleSaveTemplate}
             disabled={!template.name || !template.epicDetails.name}
+            glowIntensity={0.7}
           >
             Save Template
-          </Button>
+          </CyberButton>
         </Stack>
       </Box>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <CyberCard sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" component="h2" gutterBottom>
           Template Details
         </Typography>
-        <TextField
+        <CyberTextField
           fullWidth
           margin="normal"
           label="Template Name"
@@ -311,8 +320,9 @@ const TemplateEditor: React.FC = () => {
           value={template.name}
           onChange={handleTemplateChange}
           required
+          cornerClip
         />
-        <TextField
+        <CyberTextField
           fullWidth
           margin="normal"
           label="Template Description"
@@ -321,14 +331,15 @@ const TemplateEditor: React.FC = () => {
           onChange={handleTemplateChange}
           multiline
           rows={2}
+          cornerClip
         />
-      </Paper>
+      </CyberCard>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <CyberCard sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" component="h2" gutterBottom>
           Epic Details
         </Typography>
-        <TextField
+        <CyberTextField
           fullWidth
           margin="normal"
           label="Epic Name Template"
@@ -337,8 +348,9 @@ const TemplateEditor: React.FC = () => {
           onChange={handleEpicChange}
           required
           helperText="You can use {{Variable}} syntax to define variables (e.g., '{{Feature}} Implementation')"
+          cornerClip
         />
-        <TextField
+        <CyberTextField
           fullWidth
           margin="normal"
           label="Epic Description Template"
@@ -348,11 +360,11 @@ const TemplateEditor: React.FC = () => {
           multiline
           rows={3}
           helperText="You can use {{Variable}} syntax here too"
+          cornerClip
         />
         <FormControl fullWidth margin="normal">
-          <InputLabel id="epic-state-label">Default Epic State</InputLabel>
-          <Select
-            labelId="epic-state-label"
+          <CyberSelect
+            label="Default Epic State"
             name="state"
             value={template.epicDetails.state}
             onChange={(e) => {
@@ -361,30 +373,32 @@ const TemplateEditor: React.FC = () => {
                 ...prev,
                 epicDetails: {
                   ...prev.epicDetails,
-                  [name]: value,
+                  [name]: value as string,
                 },
               }));
             }}
+            cornerClip
           >
             <MenuItem value="to do">To Do</MenuItem>
             <MenuItem value="in progress">In Progress</MenuItem>
             <MenuItem value="done">Done</MenuItem>
-          </Select>
+          </CyberSelect>
         </FormControl>
-      </Paper>
+      </CyberCard>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <CyberCard sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" component="h2">
             Story Templates ({template.storyTemplates.length})
           </Typography>
-          <Button 
+          <CyberButton 
             variant="outlined" 
-            startIcon={<AddIcon />}
+            startIcon={<CyberIcon icon={AddIcon} size={20} />}
             onClick={openNewStoryDialog}
+            scanlineEffect
           >
             Add Story
-          </Button>
+          </CyberButton>
         </Box>
 
         {template.storyTemplates.length === 0 ? (
@@ -399,10 +413,17 @@ const TemplateEditor: React.FC = () => {
                 <ListItem
                   secondaryAction={
                     <IconButton edge="end" onClick={() => handleDeleteStory(index)}>
-                      <DeleteIcon />
+                      <CyberIcon icon={DeleteIcon} size={20} />
                     </IconButton>
                   }
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ 
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                    borderRadius: '2px',
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                    }
+                  }}
                   onClick={() => openEditStoryDialog(index)}
                 >
                   <ListItemText
@@ -431,7 +452,13 @@ const TemplateEditor: React.FC = () => {
                                 key={label}
                                 label={label}
                                 size="small"
-                                sx={{ mr: 0.5, mb: 0.5 }}
+                                sx={{ 
+                                  mr: 0.5, 
+                                  mb: 0.5,
+                                  borderRadius: '4px',
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                                }}
                               />
                             ))}
                           </Box>
@@ -444,20 +471,21 @@ const TemplateEditor: React.FC = () => {
             ))}
           </List>
         )}
-      </Paper>
+      </CyberCard>
 
-      <Paper sx={{ p: 3 }}>
+      <CyberCard sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" component="h2">
             Variables ({template.variables.length})
           </Typography>
-          <Button 
+          <CyberButton 
             variant="outlined" 
-            startIcon={<AddIcon />}
+            startIcon={<CyberIcon icon={AddIcon} size={20} />}
             onClick={() => setVariableDialogOpen(true)}
+            scanlineEffect
           >
             Add Variable
-          </Button>
+          </CyberButton>
         </Box>
 
         {template.variables.length === 0 ? (
@@ -473,17 +501,49 @@ const TemplateEditor: React.FC = () => {
                 onDelete={() => handleRemoveVariable(variable)}
                 color="primary"
                 variant="outlined"
+                sx={{ 
+                  borderRadius: '4px',
+                  fontFamily: "'Share Tech Mono', monospace",
+                }}
               />
             ))}
           </Box>
         )}
-      </Paper>
+      </CyberCard>
 
       {/* Story Dialog */}
-      <Dialog open={storyDialogOpen} onClose={() => setStoryDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{editingStoryIndex !== null ? 'Edit Story' : 'Add Story'}</DialogTitle>
+      <Dialog
+        open={storyDialogOpen}
+        onClose={() => setStoryDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundImage: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            boxShadow: theme.palette.mode === 'dark' ? `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}` : '0 4px 20px rgba(0, 0, 0, 0.15)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '4px',
+            height: '60%',
+            background: theme.palette.secondary.main,
+            opacity: 0.8,
+          }
+        }}>
+          {editingStoryIndex !== null ? 'Edit Story' : 'Add Story'}
+        </DialogTitle>
         <DialogContent>
-          <TextField
+          <CyberTextField
             fullWidth
             margin="normal"
             label="Story Name"
@@ -492,8 +552,9 @@ const TemplateEditor: React.FC = () => {
             onChange={handleStoryChange}
             required
             helperText="You can use {{Variable}} syntax (e.g., 'Implement {{Feature}} UI')"
+            cornerClip
           />
-          <TextField
+          <CyberTextField
             fullWidth
             margin="normal"
             label="Story Description"
@@ -503,38 +564,39 @@ const TemplateEditor: React.FC = () => {
             multiline
             rows={3}
             helperText="You can use {{Variable}} syntax here too"
+            cornerClip
           />
           
           <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
             <FormControl fullWidth margin="normal">
-              <InputLabel id="story-type-label">Story Type</InputLabel>
-              <Select
-                labelId="story-type-label"
+              <CyberSelect
+                label="Story Type"
                 name="type"
                 value={currentStory?.type || 'feature'}
                 onChange={handleStoryChange}
+                cornerClip
               >
                 {storyTypeOptions.map(option => (
                   <MenuItem key={option} value={option}>{option}</MenuItem>
                 ))}
-              </Select>
+              </CyberSelect>
             </FormControl>
             
             <FormControl fullWidth margin="normal">
-              <InputLabel id="story-state-label">Default State</InputLabel>
-              <Select
-                labelId="story-state-label"
+              <CyberSelect
+                label="Default State"
                 name="state"
                 value={currentStory?.state || 'Ready for Development'}
                 onChange={handleStoryChange}
+                cornerClip
               >
                 {storyStateOptions.map(option => (
                   <MenuItem key={option} value={option}>{option}</MenuItem>
                 ))}
-              </Select>
+              </CyberSelect>
             </FormControl>
             
-            <TextField
+            <CyberTextField
               fullWidth
               margin="normal"
               label="Estimate (Points)"
@@ -542,15 +604,30 @@ const TemplateEditor: React.FC = () => {
               value={currentStory?.estimate || 0}
               onChange={handleStoryEstimateChange}
               inputProps={{ min: 0, max: 100 }}
+              cornerClip
             />
           </Box>
           
-          <Accordion sx={{ mt: 2 }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion sx={{ 
+            mt: 2,
+            backgroundImage: 'none',
+            backgroundColor: alpha(theme.palette.background.paper, 0.5),
+            '&::before': {
+              display: 'none',
+            }
+          }}>
+            <AccordionSummary 
+              expandIcon={<CyberIcon icon={ExpandMoreIcon} size={20} />}
+              sx={{
+                '&.Mui-expanded': {
+                  borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                }
+              }}
+            >
               <Typography>Labels (Optional)</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <TextField
+              <CyberTextField
                 fullWidth
                 label="Add Labels (comma separated)"
                 placeholder="e.g., frontend, backend, design, urgent"
@@ -569,6 +646,7 @@ const TemplateEditor: React.FC = () => {
                     });
                   }
                 }}
+                cornerClip
               />
               {currentStory?.labels && currentStory.labels.length > 0 && (
                 <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -584,6 +662,11 @@ const TemplateEditor: React.FC = () => {
                           });
                         }
                       }}
+                      sx={{ 
+                        borderRadius: '4px',
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                      }}
                     />
                   ))}
                 </Box>
@@ -592,39 +675,72 @@ const TemplateEditor: React.FC = () => {
           </Accordion>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStoryDialogOpen(false)}>Cancel</Button>
-          <Button 
+          <CyberButton onClick={() => setStoryDialogOpen(false)}>
+            Cancel
+          </CyberButton>
+          <CyberButton 
             onClick={handleSaveStory}
             variant="contained"
             disabled={!currentStory?.name}
+            glowIntensity={0.7}
           >
             Save
-          </Button>
+          </CyberButton>
         </DialogActions>
       </Dialog>
 
       {/* Variable Dialog */}
-      <Dialog open={variableDialogOpen} onClose={() => setVariableDialogOpen(false)}>
-        <DialogTitle>Add Variable</DialogTitle>
+      <Dialog 
+        open={variableDialogOpen} 
+        onClose={() => setVariableDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            backgroundImage: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            boxShadow: theme.palette.mode === 'dark' ? `0 0 15px ${alpha(theme.palette.secondary.main, 0.3)}` : '0 4px 20px rgba(0, 0, 0, 0.15)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '4px',
+            height: '60%',
+            background: theme.palette.secondary.main,
+            opacity: 0.8,
+          }
+        }}>
+          Add Variable
+        </DialogTitle>
         <DialogContent>
-          <TextField
+          <CyberTextField
             fullWidth
             margin="normal"
             label="Variable Name"
             value={newVariable}
             onChange={(e) => setNewVariable(e.target.value)}
             helperText="This variable will be available for replacement when applying the template"
+            cornerClip
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setVariableDialogOpen(false)}>Cancel</Button>
-          <Button 
+          <CyberButton onClick={() => setVariableDialogOpen(false)}>
+            Cancel
+          </CyberButton>
+          <CyberButton 
             onClick={handleAddVariable}
             variant="contained"
             disabled={!newVariable.trim() || template.variables.includes(newVariable.trim())}
+            glowIntensity={0.7}
           >
             Add
-          </Button>
+          </CyberButton>
         </DialogActions>
       </Dialog>
     </Box>

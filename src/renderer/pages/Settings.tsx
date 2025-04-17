@@ -2,20 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  TextField,
-  Button,
   InputAdornment,
-  IconButton,
-  FormControl,
-  FormLabel,
-  RadioGroup,
   FormControlLabel,
-  Radio,
-  Switch,
   Divider,
-  Tabs,
-  Tab,
   Alert,
   CircularProgress,
   Accordion,
@@ -24,6 +13,15 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff, ExpandMore } from '@mui/icons-material';
 import { useTheme, useSettings } from '../store/AppProviders';
+import { 
+  CyberCard, 
+  CyberTextField, 
+  CyberButton, 
+  CyberSwitch, 
+  CyberTabs, 
+  CyberRadio,
+  CyberIcon
+} from '../components/cyberpunk';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -31,9 +29,7 @@ interface TabPanelProps {
   value: number;
 }
 
-const TabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
-
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other }) => {
   return (
     <div
       role="tabpanel"
@@ -54,8 +50,9 @@ const a11yProps = (index: number) => {
   };
 };
 
-const Settings = () => {
-  const { mode, themeAppearance, setTheme } = useTheme();
+const Settings: React.FC = () => {
+  const theme = useTheme();
+  const { mode, themeAppearance, setTheme } = theme;
   const { settings, updateSettings, updateApiToken, validateApiToken } = useSettings();
   
   const [tabValue, setTabValue] = useState(0);
@@ -68,7 +65,7 @@ const Settings = () => {
   });
 
   // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -166,19 +163,20 @@ const Settings = () => {
         Settings
       </Typography>
 
-      <Paper elevation={3} sx={{ mt: 3 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
+      <CyberCard sx={{ mt: 3 }}>
+        <Box>
+          <CyberTabs
             value={tabValue}
             onChange={handleTabChange}
             aria-label="settings tabs"
             centered
+            scanlineEffect
           >
-            <Tab label="General" {...a11yProps(0)} />
-            <Tab label="Appearance" {...a11yProps(1)} />
-            <Tab label="Behavior" {...a11yProps(2)} />
-            <Tab label="Help" {...a11yProps(3)} />
-          </Tabs>
+            <CyberTabs.Tab label="General" {...a11yProps(0)} />
+            <CyberTabs.Tab label="Appearance" {...a11yProps(1)} />
+            <CyberTabs.Tab label="Behavior" {...a11yProps(2)} />
+            <CyberTabs.Tab label="Help" {...a11yProps(3)} />
+          </CyberTabs>
         </Box>
 
         {/* General Tab */}
@@ -187,7 +185,7 @@ const Settings = () => {
             API Token
           </Typography>
           <Box sx={{ maxWidth: 500, mb: 3 }}>
-            <TextField
+            <CyberTextField
               fullWidth
               label="Shortcut API Token"
               variant="outlined"
@@ -196,29 +194,34 @@ const Settings = () => {
               margin="normal"
               type={showApiToken ? 'text' : 'password'}
               helperText="Enter your Shortcut API token for authentication"
+              cornerClip
+              scanlineEffect
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
+                    <CyberIcon.Button
+                      icon={showApiToken ? VisibilityOff : Visibility}
                       aria-label="toggle token visibility"
                       onClick={() => setShowApiToken(!showApiToken)}
                       edge="end"
-                    >
-                      {showApiToken ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
+                      iconSize={22}
+                      pulse={!showApiToken}
+                    />
                   </InputAdornment>
                 ),
               }}
             />
 
-            <Button
+            <CyberButton
               variant="contained"
               onClick={handleValidateToken}
               disabled={!apiToken || validatingToken}
               sx={{ mt: 1 }}
+              scanlineEffect
+              glowIntensity={0.7}
             >
               {validatingToken ? <CircularProgress size={24} /> : 'Validate & Save Token'}
-            </Button>
+            </CyberButton>
 
             {tokenStatus.valid !== null && (
               <Alert
@@ -229,7 +232,6 @@ const Settings = () => {
               </Alert>
             )}
           </Box>
-
         </TabPanel>
 
         {/* Appearance Tab */}
@@ -237,93 +239,80 @@ const Settings = () => {
           <Typography variant="h6" gutterBottom>
             Theme
           </Typography>
-          <FormControl component="fieldset" sx={{ mb: 3 }}>
-            <FormLabel component="legend">Theme Mode</FormLabel>
-            <RadioGroup
-              value={mode}
-              onChange={handleThemeModeChange}
-              name="theme-mode-group"
-            >
-              <FormControlLabel value="system" control={<Radio />} label="System Default" />
-              <FormControlLabel value="light" control={<Radio />} label="Light" />
-              <FormControlLabel value="dark" control={<Radio />} label="Dark" />
-            </RadioGroup>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Current appearance: {themeAppearance === 'light' ? 'Light' : 'Dark'} 
-              {mode === 'system' ? ' (based on system settings)' : ''}
-            </Typography>
-          </FormControl>
+          <CyberRadio.Group
+            label="Theme Mode"
+            value={mode}
+            onChange={handleThemeModeChange}
+            name="theme-mode-group"
+          >
+            <CyberRadio.FormControlLabel value="system" label="System Default" />
+            <CyberRadio.FormControlLabel value="light" label="Light" />
+            <CyberRadio.FormControlLabel value="dark" label="Dark" />
+          </CyberRadio.Group>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Current appearance: {themeAppearance === 'light' ? 'Light' : 'Dark'} 
+            {mode === 'system' ? ' (based on system settings)' : ''}
+          </Typography>
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="h6" gutterBottom>
             Density
           </Typography>
-          <FormControl component="fieldset" sx={{ mb: 3 }}>
-            <FormLabel component="legend">UI Density</FormLabel>
-            <RadioGroup
-              value={settings.appearance.density}
-              onChange={handleDensityChange}
-              name="density-group"
-            >
-              <FormControlLabel
-                value="comfortable"
-                control={<Radio />}
-                label="Comfortable (More spacing)"
-              />
-              <FormControlLabel
-                value="compact"
-                control={<Radio />}
-                label="Compact (Less spacing)"
-              />
-            </RadioGroup>
-          </FormControl>
+          <CyberRadio.Group
+            label="UI Density"
+            value={settings.appearance.density}
+            onChange={handleDensityChange}
+            name="density-group"
+          >
+            <CyberRadio.FormControlLabel 
+              value="comfortable" 
+              label="Comfortable (More spacing)" 
+            />
+            <CyberRadio.FormControlLabel 
+              value="compact" 
+              label="Compact (Less spacing)" 
+            />
+          </CyberRadio.Group>
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="h6" gutterBottom>
             Font Size
           </Typography>
-          <FormControl component="fieldset" sx={{ mb: 3 }}>
-            <FormLabel component="legend">Text Size</FormLabel>
-            <RadioGroup
-              value={settings.appearance.fontSize}
-              onChange={handleFontSizeChange}
-              name="font-size-group"
-            >
-              <FormControlLabel value="small" control={<Radio />} label="Small" />
-              <FormControlLabel value="medium" control={<Radio />} label="Medium" />
-              <FormControlLabel value="large" control={<Radio />} label="Large" />
-            </RadioGroup>
-          </FormControl>
+          <CyberRadio.Group
+            label="Text Size"
+            value={settings.appearance.fontSize}
+            onChange={handleFontSizeChange}
+            name="font-size-group"
+          >
+            <CyberRadio.FormControlLabel value="small" label="Small" />
+            <CyberRadio.FormControlLabel value="medium" label="Medium" />
+            <CyberRadio.FormControlLabel value="large" label="Large" />
+          </CyberRadio.Group>
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="h6" gutterBottom>
             Template View
           </Typography>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Template List Layout</FormLabel>
-            <RadioGroup
-              value={settings.appearance.viewMode}
-              onChange={handleViewModeChange}
-              name="view-mode-group"
-            >
-              <FormControlLabel
-                value="card"
-                control={<Radio />}
-                label="Card View (Grid layout with template cards)"
-              />
-              <FormControlLabel
-                value="list"
-                control={<Radio />}
-                label="List View (Compact table-style layout)"
-              />
-            </RadioGroup>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Changes how templates are displayed on the home page
-            </Typography>
-          </FormControl>
+          <CyberRadio.Group
+            label="Template List Layout"
+            value={settings.appearance.viewMode}
+            onChange={handleViewModeChange}
+            name="view-mode-group"
+            helperText="Changes how templates are displayed on the home page"
+          >
+            <CyberRadio.FormControlLabel
+              value="card"
+              label="Card View (Grid layout with template cards)"
+            />
+            <CyberRadio.FormControlLabel
+              value="list"
+              label="List View (Compact table-style layout)"
+            />
+          </CyberRadio.Group>
         </TabPanel>
 
         {/* Behavior Tab */}
@@ -331,53 +320,52 @@ const Settings = () => {
           <Typography variant="h6" gutterBottom>
             Startup Behavior
           </Typography>
-          <FormControl component="fieldset" sx={{ mb: 4 }}>
-            <FormLabel component="legend">Start Application With</FormLabel>
-            <RadioGroup
-              value={settings.startupPage}
-              onChange={handleStartupPageChange}
-              name="startup-page-group"
-            >
-              <FormControlLabel
-                value="home"
-                control={<Radio />}
-                label="Home page (Template List)"
-              />
-              <FormControlLabel
-                value="last-viewed"
-                control={<Radio />}
-                label="Last viewed page"
-              />
-            </RadioGroup>
-          </FormControl>
+          <CyberRadio.Group
+            label="Start Application With"
+            value={settings.startupPage}
+            onChange={handleStartupPageChange}
+            name="startup-page-group"
+            sx={{ mb: 4 }}
+          >
+            <CyberRadio.FormControlLabel
+              value="home"
+              label="Home page (Template List)"
+            />
+            <CyberRadio.FormControlLabel
+              value="last-viewed"
+              label="Last viewed page"
+            />
+          </CyberRadio.Group>
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="h6" gutterBottom>
             Confirmations
           </Typography>
-          <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <Box sx={{ mb: 2 }}>
             <FormControlLabel
               control={
-                <Switch
+                <CyberSwitch
                   checked={settings.confirmDialogs.deleteTemplate}
                   onChange={handleConfirmDialogChange('deleteTemplate')}
+                  scanlineEffect
                 />
               }
               label="Ask for confirmation when deleting templates"
             />
-          </FormControl>
-          <FormControl component="fieldset">
+          </Box>
+          <Box>
             <FormControlLabel
               control={
-                <Switch
+                <CyberSwitch
                   checked={settings.confirmDialogs.applyTemplate}
                   onChange={handleConfirmDialogChange('applyTemplate')}
+                  scanlineEffect
                 />
               }
               label="Ask for confirmation when applying templates"
             />
-          </FormControl>
+          </Box>
         </TabPanel>
 
         {/* Help Tab */}
@@ -388,7 +376,7 @@ const Settings = () => {
 
           {/* Getting Started Section */}
           <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
               <Typography variant="h6">Getting Started</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -420,7 +408,7 @@ const Settings = () => {
 
           {/* Templates Section */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
               <Typography variant="h6">Creating Templates</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -458,7 +446,7 @@ const Settings = () => {
 
           {/* Applying Templates Section */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
               <Typography variant="h6">Applying Templates</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -498,7 +486,7 @@ const Settings = () => {
 
           {/* Import & Export Section */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
               <Typography variant="h6">Import & Export Templates</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -521,7 +509,7 @@ const Settings = () => {
 
           {/* API Token Section */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
               <Typography variant="h6">API Token Management</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -561,7 +549,7 @@ const Settings = () => {
 
           {/* Troubleshooting Section */}
           <Accordion>
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
               <Typography variant="h6">Troubleshooting</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -596,7 +584,7 @@ const Settings = () => {
             </AccordionDetails>
           </Accordion>
         </TabPanel>
-      </Paper>
+      </CyberCard>
     </Box>
   );
 };
