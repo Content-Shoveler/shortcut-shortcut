@@ -36,15 +36,15 @@ const CyberSwitch: React.FC<CyberSwitchProps> = ({
       <Switch
         {...switchProps}
         sx={{
-          width: 58,
-          height: 34,
+          width: 42, // Reduced from 58px
+          height: 22, // Reduced from 34px
           padding: 0,
           '& .MuiSwitch-switchBase': {
             padding: 0,
-            margin: '2px',
+            margin: '1px',
             transitionDuration: '300ms',
             '&.Mui-checked': {
-              transform: 'translateX(24px)',
+              transform: 'translateX(20px)', // Adjusted for new width
               color: '#fff',
               '& + .MuiSwitch-track': {
                 backgroundColor: theme.palette.mode === 'dark' ? switchAccentColor : alpha(switchAccentColor, 0.8),
@@ -70,8 +70,8 @@ const CyberSwitch: React.FC<CyberSwitchProps> = ({
           },
           '& .MuiSwitch-thumb': {
             boxSizing: 'border-box',
-            width: 30,
-            height: 30,
+            width: 20, // Reduced from 30px
+            height: 20, // Reduced from 30px
             transition: theme.transitions.create(['transform'], {
               duration: '0.3s',
               easing: theme.transitions.easing.sharp,

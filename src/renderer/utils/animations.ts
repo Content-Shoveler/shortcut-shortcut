@@ -161,25 +161,36 @@ export const glitchTextVariants: Variants = {
 
 // Animation for neon sign flashing effect
 export const neonSignVariants: Variants = {
-  initial: (i: number) => ({
-    color: '#00FFFF',
-    textShadow: '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)',
-    opacity: 1,
-  }),
-  animate: (i: number) => ({
-    // Always on and bright - the default state
-    color: '#00FFFF',
-    textShadow: '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)',
-    opacity: 1,
-    transition: {
-      duration: 0.1,
-      repeat: Infinity,
-      repeatType: "loop",
-      // Give each letter a very long delay to ensure it stays "on" most of the time
-      repeatDelay: getRandomFlickerDelay(i),
-    },
-  }),
-  flicker: (i: number) => {
+  initial: (customData: { i: number; isDarkMode: boolean }) => {
+    const { i, isDarkMode } = customData || { i: 0, isDarkMode: true };
+    return {
+      color: isDarkMode ? '#00FFFF' : '#0B3D91', // Cyan for dark, NASA blue for light
+      textShadow: isDarkMode 
+        ? '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)'
+        : '0 0 1px rgba(11, 61, 145, 0.7), 0 0 2px rgba(11, 61, 145, 0.5)', // Subtle shadow for light mode
+      opacity: 1,
+    };
+  },
+  animate: (customData: { i: number; isDarkMode: boolean }) => {
+    const { i, isDarkMode } = customData || { i: 0, isDarkMode: true };
+    return {
+      // Always on and bright - the default state
+      color: isDarkMode ? '#00FFFF' : '#0B3D91', // Cyan for dark, NASA blue for light
+      textShadow: isDarkMode 
+        ? '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)'
+        : '0 0 1px rgba(11, 61, 145, 0.7), 0 0 2px rgba(11, 61, 145, 0.5)', // Subtle shadow for light mode
+      opacity: 1,
+      transition: {
+        duration: 0.1,
+        repeat: Infinity,
+        repeatType: "loop",
+        // Give each letter a very long delay to ensure it stays "on" most of the time
+        repeatDelay: getRandomFlickerDelay(i),
+      },
+    };
+  },
+  flicker: (customData: { i: number; isDarkMode: boolean }) => {
+    const { i, isDarkMode } = customData || { i: 0, isDarkMode: true };
     // Determine if this letter should be prone to flickering based on its position
     // Letters at certain positions are more likely to flicker (like real faulty neon signs)
     const isFlickerProne = i === 1 || i === 8 || i === 15 || i === 17 || i === 21;
@@ -187,9 +198,9 @@ export const neonSignVariants: Variants = {
     
     return {
       // Momentary off state that happens infrequently
-      color: '#5F9EA0',
+      color: isDarkMode ? '#5F9EA0' : '#5F9EA0', // Use cadet blue for both themes when flickering
       textShadow: 'none',
-      opacity: [1, 0.3, 1], // Quick flicker off and on
+      opacity: [1, isDarkMode ? 0.3 : 0.6, 1], // Adjust opacity ranges for light mode
       transition: {
         duration: 0.15,
         repeat: Infinity,

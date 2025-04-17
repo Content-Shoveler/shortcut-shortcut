@@ -302,6 +302,27 @@ const TemplateEditor: React.FC = () => {
             onClick={handleSaveTemplate}
             disabled={!template.name || !template.epicDetails.name}
             glowIntensity={0.7}
+            sx={{ 
+              backgroundColor: theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.primary.main, 0.8)
+                : theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.secondary.main, 0.8)
+                  : theme.palette.primary.dark,
+                transform: 'translateY(-2px)',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? `0 0 12px ${alpha(theme.palette.secondary.main, 0.7)}`
+                  : `0 4px 8px ${alpha(theme.palette.primary.main, 0.4)}`
+              },
+              '&.Mui-disabled': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.action.disabled, 0.4)
+                  : alpha(theme.palette.action.disabled, 0.7),
+                color: theme.palette.text.disabled
+              }
+            }}
           >
             Save Template
           </CyberButton>
@@ -683,6 +704,27 @@ const TemplateEditor: React.FC = () => {
             variant="contained"
             disabled={!currentStory?.name}
             glowIntensity={0.7}
+            sx={{ 
+              backgroundColor: theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.primary.main, 0.8)
+                : theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.secondary.main, 0.8)
+                  : theme.palette.primary.dark,
+                transform: 'translateY(-2px)',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? `0 0 12px ${alpha(theme.palette.secondary.main, 0.7)}`
+                  : `0 4px 8px ${alpha(theme.palette.primary.main, 0.4)}`
+              },
+              '&.Mui-disabled': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.action.disabled, 0.4)
+                  : alpha(theme.palette.action.disabled, 0.7),
+                color: theme.palette.text.disabled
+              }
+            }}
           >
             Save
           </CyberButton>
@@ -738,6 +780,27 @@ const TemplateEditor: React.FC = () => {
             variant="contained"
             disabled={!newVariable.trim() || template.variables.includes(newVariable.trim())}
             glowIntensity={0.7}
+            sx={{ 
+              backgroundColor: theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.primary.main, 0.8)
+                : theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.secondary.main, 0.8)
+                  : theme.palette.primary.dark,
+                transform: 'translateY(-2px)',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? `0 0 12px ${alpha(theme.palette.secondary.main, 0.7)}`
+                  : `0 4px 8px ${alpha(theme.palette.primary.main, 0.4)}`
+              },
+              '&.Mui-disabled': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.action.disabled, 0.4)
+                  : alpha(theme.palette.action.disabled, 0.7),
+                color: theme.palette.text.disabled
+              }
+            }}
           >
             Add
           </CyberButton>

@@ -209,7 +209,7 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
             '--cyberpunk-card-gradient': gradients.card,
             '--cyberpunk-glow': mode === 'dark' ? '0 0 10px rgba(0, 255, 255, 0.5)' : 'none',
             '--cyberpunk-border-light': `1px solid ${mode === 'dark' ? 'rgba(139, 206, 208, 0.5)' : 'rgba(95, 158, 160, 0.5)'}`,
-            '--cyberpunk-border-accent': `2px solid ${cyberpunkColors.neon.cyan}`,
+            '--cyberpunk-border-accent': mode === 'dark' ? `2px solid ${cyberpunkColors.neon.cyan}` : `2px solid ${cyberpunkColors.cadetBlue.main}`,
             '--cyberpunk-scan-line-bg': `repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, ${alpha(cyberpunkColors.cadetBlue.dark, 0.05)} 1px, ${alpha(cyberpunkColors.cadetBlue.dark, 0.05)} 2px)`,
             '--cyberpunk-grid-bg': `linear-gradient(${alpha(cyberpunkColors.cadetBlue.dark, 0.1)} 1px, transparent 1px), linear-gradient(90deg, ${alpha(cyberpunkColors.cadetBlue.dark, 0.1)} 1px, transparent 1px)`,
             '--cyberpunk-space-bg': mode === 'dark' ? `radial-gradient(circle at top right, ${alpha(cyberpunkColors.space.nebula, 0.3)} 0%, transparent 60%)` : 'none',

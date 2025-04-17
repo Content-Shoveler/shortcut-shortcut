@@ -56,8 +56,8 @@ const CyberCard: React.FC<CyberCardProps> = ({
             right: 0,
             width: '15px',
             height: '15px',
-            borderTop: `2px solid ${accent}`,
-            borderRight: `2px solid ${accent}`,
+            borderTop: accentColor ? `2px solid ${accent}` : 'var(--cyberpunk-border-accent)',
+            borderRight: accentColor ? `2px solid ${accent}` : 'var(--cyberpunk-border-accent)',
             zIndex: 1,
           },
           '&::after': {
@@ -67,8 +67,8 @@ const CyberCard: React.FC<CyberCardProps> = ({
             left: 0,
             width: '15px',
             height: '15px',
-            borderBottom: `2px solid ${accent}`,
-            borderLeft: `2px solid ${accent}`,
+            borderBottom: accentColor ? `2px solid ${accent}` : 'var(--cyberpunk-border-accent)',
+            borderLeft: accentColor ? `2px solid ${accent}` : 'var(--cyberpunk-border-accent)',
             zIndex: 1,
           }
         }),

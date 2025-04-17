@@ -90,11 +90,12 @@ const Header: React.FC = () => {
                   initial="initial"
                   animate={["animate", "flicker"]}
                   variants={neonSignVariants}
-                  custom={index}
+                  custom={{ i: index, isDarkMode: themeAppearance === 'dark' }}
                   style={{ 
                     display: 'inline-block',
                     fontWeight: 'bold',
                     whiteSpace: 'pre',
+                    color: '#FFFFFF !important',
                   }}
                   className="cyber-neon"
                 >
@@ -119,10 +120,12 @@ const Header: React.FC = () => {
               sx={{ 
                 position: 'relative',
                 opacity: isHomePage ? 0.7 : 1,
-                border: `1px solid ${muiTheme.palette.primary.main}`,
+                border: themeAppearance === 'dark' ? 'none' : `1px solid ${muiTheme.palette.primary.main}`,
                 borderRadius: '4px',
+                backgroundColor: themeAppearance === 'dark' ? alpha(muiTheme.palette.primary.main, 0.1) : 'transparent',
                 '&:hover': {
-                  borderColor: muiTheme.palette.warning.main,
+                  borderColor: themeAppearance === 'dark' ? 'transparent' : muiTheme.palette.warning.main,
+                  backgroundColor: themeAppearance === 'dark' ? alpha(muiTheme.palette.primary.main, 0.2) : 'transparent',
                   boxShadow: themeAppearance === 'dark' ? `0 0 8px ${alpha(muiTheme.palette.warning.main, 0.5)}` : 'none'
                 }
               }}
@@ -143,9 +146,11 @@ const Header: React.FC = () => {
               sx={{ 
                 position: 'relative',
                 borderRadius: '4px',
-                border: `1px solid ${muiTheme.palette.primary.main}`,
+                border: themeAppearance === 'dark' ? 'none' : `1px solid ${muiTheme.palette.primary.main}`,
+                backgroundColor: themeAppearance === 'dark' ? alpha(muiTheme.palette.primary.main, 0.1) : 'transparent',
                 '&:hover': {
-                  borderColor: muiTheme.palette.warning.main,
+                  borderColor: themeAppearance === 'dark' ? 'transparent' : muiTheme.palette.warning.main,
+                  backgroundColor: themeAppearance === 'dark' ? alpha(muiTheme.palette.primary.main, 0.2) : 'transparent',
                   boxShadow: themeAppearance === 'dark' ? `0 0 8px ${alpha(muiTheme.palette.warning.main, 0.5)}` : 'none'
                 }
               }}
@@ -181,8 +186,11 @@ const Header: React.FC = () => {
                   borderRight: `2px solid ${muiTheme.palette.warning.main}`,
                 },
                 '&:hover': {
-                  color: themeAppearance === 'dark' ? '#FFFFFF' : muiTheme.palette.primary.main,
-                  boxShadow: themeAppearance === 'dark' ? `0 0 8px ${alpha(muiTheme.palette.warning.main, 0.5)}` : 'none'
+                  color: themeAppearance === 'dark' ? '#FFFFFF' : muiTheme.palette.secondary.main,
+                  boxShadow: themeAppearance === 'dark' 
+                    ? `0 0 8px ${alpha(muiTheme.palette.warning.main, 0.5)}` 
+                    : `0 0 5px ${alpha(muiTheme.palette.primary.main, 0.3)}`,
+                  transform: 'scale(1.05)'
                 }
               }}
             >
