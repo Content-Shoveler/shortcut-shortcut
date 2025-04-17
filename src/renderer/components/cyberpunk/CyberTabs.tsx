@@ -176,7 +176,7 @@ const CyberTabs: React.FC<CyberTabsProps> & { Tab: typeof CyberTab } = ({
             return child;
           }
           if (React.isValidElement(child) && child.type === Tab) {
-            return <CyberTab {...child.props} accentColor={tabsAccentColor} />;
+            return <CyberTab {...(child.props as TabProps)} accentColor={tabsAccentColor} />;
           }
           return child;
         })}

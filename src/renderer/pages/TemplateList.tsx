@@ -39,6 +39,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import CodeIcon from '@mui/icons-material/Code';
 import MemoryIcon from '@mui/icons-material/Memory';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CyberButton, CyberCard, CyberIcon } from '../components/cyberpunk';
 
 import { Template } from '../types';
 import { 
@@ -232,46 +233,26 @@ const TemplateList: React.FC = () => {
         
         <Stack direction="row" spacing={1}>
           <Tooltip title="Import Templates">
-            <MotionButton 
+            <CyberButton 
               variant="outlined" 
-              startIcon={<UploadIcon />}
+              startIcon={<CyberIcon icon={UploadIcon} size={20} />}
               onClick={handleImport}
-              variants={buttonVariants}
-              initial="rest"
-              whileHover="hover"
-              whileTap="tap"
-              sx={{
-                borderColor: theme.palette.primary.main,
-                '&:hover': {
-                  borderColor: theme.palette.secondary.main,
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.05),
-                }
-              }}
+              scanlineEffect
             >
               Import
-            </MotionButton>
+            </CyberButton>
           </Tooltip>
           
           <Tooltip title="Export Templates">
-            <MotionButton 
+            <CyberButton 
               variant="outlined" 
-              startIcon={<DownloadIcon />}
+              startIcon={<CyberIcon icon={DownloadIcon} size={20} />}
               onClick={handleExport}
               disabled={templates.length === 0}
-              variants={buttonVariants}
-              initial="rest"
-              whileHover="hover"
-              whileTap="tap"
-              sx={{
-                borderColor: theme.palette.primary.main,
-                '&:hover': {
-                  borderColor: theme.palette.secondary.main,
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.05),
-                }
-              }}
+              scanlineEffect
             >
               Export
-            </MotionButton>
+            </CyberButton>
           </Tooltip>
         </Stack>
       </Box>
@@ -315,21 +296,15 @@ const TemplateList: React.FC = () => {
             >
               No templates found. Create your first template to get started with your Shortcut workflow.
             </Typography>
-            <MotionButton 
-              variant="contained" 
-              startIcon={<EditIcon />}
+            <CyberButton 
+              variant="outlined" 
+              startIcon={<CyberIcon icon={EditIcon} size={20} />}
               onClick={() => navigate('/editor')}
               sx={{ mt: 2 }}
-              whileHover={{ 
-                scale: 1.05, 
-                boxShadow: theme.palette.mode === 'dark' 
-                  ? '0 0 15px rgba(0, 255, 255, 0.5)' 
-                  : '0 5px 15px rgba(95, 158, 160, 0.3)'
-              }}
-              whileTap={{ scale: 0.98 }}
+              scanlineEffect
             >
               Create Template
-            </MotionButton>
+            </CyberButton>
           </MotionBox>
         ) : viewMode === 'card' ? (
           /* Card View */
@@ -354,42 +329,17 @@ const TemplateList: React.FC = () => {
                   padding: 1
                 }}
               >
-                <Card
+                <CyberCard
+                  title={template.name}
+                  cornerAccent={true}
+                  glowOnHover={true}
                   sx={{ 
                     height: '100%', 
                     display: 'flex', 
                     flexDirection: 'column',
-                    position: 'relative',
-                    overflow: 'visible',
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                    backdropFilter: 'blur(10px)',
-                    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-5px)',
-                      boxShadow: `0 8px 25px ${alpha(theme.palette.secondary.main, 0.25)}`
-                    },
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '15px',
-                      height: '15px',
-                      borderTop: `2px solid ${theme.palette.secondary.main}`,
-                      borderRight: `2px solid ${theme.palette.secondary.main}`,
-                      zIndex: 1
-                    },
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      width: '15px',
-                      height: '15px',
-                      borderBottom: `2px solid ${theme.palette.primary.main}`,
-                      borderLeft: `2px solid ${theme.palette.primary.main}`,
-                      zIndex: 1
                     }
                   }}
                 >
@@ -508,7 +458,7 @@ const TemplateList: React.FC = () => {
                       </MotionIconButton>
                     </Tooltip>
                   </CardActions>
-                </Card>
+                </CyberCard>
               </Box>
             ))}
           </Box>
@@ -730,7 +680,7 @@ const TemplateList: React.FC = () => {
           >
             Cancel
           </MotionButton>
-          <MotionButton 
+          <MotionButton
             onClick={confirmDelete} 
             color="error" 
             variants={buttonVariants}

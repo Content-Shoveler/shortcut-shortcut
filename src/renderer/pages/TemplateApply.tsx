@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Button,
   Typography,
-  TextField,
-  Paper,
   Divider,
   List,
   ListItem,
@@ -15,21 +12,24 @@ import {
   Chip,
   Stack,
   FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Collapse,
-  IconButton,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import PreviewIcon from '@mui/icons-material/Preview';
 import KeyIcon from '@mui/icons-material/Key';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { 
+  CyberButton, 
+  CyberCard, 
+  CyberTextField, 
+  CyberSelect,
+  CyberIcon 
+} from '../components/cyberpunk';
 
 import { Template, VariableMapping, ShortcutCredentials } from '../types';
 
@@ -282,30 +282,33 @@ const TemplateApply: React.FC = () => {
         </Typography>
         
         <Stack direction="row" spacing={1}>
-          <Button 
+          <CyberButton 
             variant="outlined" 
-            startIcon={<ArrowBackIcon />}
+            startIcon={<CyberIcon icon={ArrowBackIcon} size={20} />}
             onClick={() => navigate('/')}
+            scanlineEffect
           >
             Back
-          </Button>
-          <Button
+          </CyberButton>
+          <CyberButton
             variant="outlined"
-            startIcon={<KeyIcon />}
+            startIcon={<CyberIcon icon={KeyIcon} size={20} />}
             onClick={() => setCredentialsDialogOpen(true)}
+            scanlineEffect
           >
             API Token
-          </Button>
-          <Button 
+          </CyberButton>
+          <CyberButton 
             variant="outlined"
-            startIcon={<PreviewIcon />}
+            startIcon={<CyberIcon icon={PreviewIcon} size={20} />}
             onClick={() => setPreviewOpen(!previewOpen)}
+            scanlineEffect
           >
             Preview
-          </Button>
-          <Button 
-            variant="contained"
-            startIcon={<SendIcon />}
+          </CyberButton>
+          <CyberButton 
+            variant="outlined"
+            startIcon={<CyberIcon icon={SendIcon} size={20} />}
             onClick={handleApplyTemplate}
             disabled={
               loading || 
@@ -314,9 +317,10 @@ const TemplateApply: React.FC = () => {
               !selectedWorkflow ||
               template.variables.some(v => !variableValues[v])
             }
+            scanlineEffect
           >
             {loading ? <CircularProgress size={24} /> : 'Apply Template'}
-          </Button>
+          </CyberButton>
         </Stack>
       </Box>
 
@@ -325,11 +329,7 @@ const TemplateApply: React.FC = () => {
       </Typography>
 
       {/* Variables Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          Fill in Variables
-        </Typography>
-        
+      <CyberCard sx={{ p: 3, mb: 3 }} title="Fill in Variables">
         {template.variables.length === 0 ? (
           <Typography color="text.secondary">
             This template has no variables to fill in.
@@ -337,24 +337,22 @@ const TemplateApply: React.FC = () => {
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {template.variables.map(variable => (
-              <TextField
+              <CyberTextField
                 key={variable}
                 label={variable}
                 value={variableValues[variable] || ''}
-                onChange={(e) => handleVariableChange(variable, e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariableChange(variable, e.target.value)}
                 fullWidth
                 required
+                cornerClip
               />
             ))}
           </Box>
         )}
-      </Paper>
+      </CyberCard>
 
       {/* Shortcut Settings */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          Shortcut Settings
-        </Typography>
+      <CyberCard sx={{ p: 3, mb: 3 }} title="Shortcut Settings">
         
         <Stack spacing={2}>
           {credentials.apiToken ? (
@@ -368,51 +366,48 @@ const TemplateApply: React.FC = () => {
           )}
           
           <FormControl fullWidth>
-            <InputLabel>Project</InputLabel>
-            <Select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
+            <CyberSelect
               label="Project"
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value as string)}
               disabled={!credentials.apiToken || projects.length === 0}
+              cornerClip
             >
               {projects.map(project => (
                 <MenuItem key={project.id} value={project.id}>
                   {project.name}
                 </MenuItem>
               ))}
-            </Select>
+            </CyberSelect>
           </FormControl>
           
-          <FormControl fullWidth>
-            <InputLabel>Workflow</InputLabel>
-            <Select
-              value={selectedWorkflow}
-              onChange={(e) => setSelectedWorkflow(e.target.value)}
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <CyberSelect
               label="Workflow"
+              value={selectedWorkflow}
+              onChange={(e) => setSelectedWorkflow(e.target.value as string)}
               disabled={!credentials.apiToken || workflows.length === 0}
+              cornerClip
             >
               {workflows.map(workflow => (
                 <MenuItem key={workflow.id} value={workflow.id}>
                   {workflow.name}
                 </MenuItem>
               ))}
-            </Select>
+            </CyberSelect>
           </FormControl>
         </Stack>
-      </Paper>
+      </CyberCard>
 
       {/* Preview Section */}
       <Collapse in={previewOpen}>
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" component="h2" gutterBottom>
-            Preview
-          </Typography>
+        <CyberCard sx={{ p: 3, mb: 3 }} title="Preview">
           
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
               Epic
             </Typography>
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+            <CyberCard sx={{ p: 2, mb: 2 }}>
               <Typography variant="h6" gutterBottom>
                 {previewEpicName || '(Epic Name)'}
               </Typography>
@@ -422,7 +417,7 @@ const TemplateApply: React.FC = () => {
               <Typography variant="body2" sx={{ mt: 1 }}>
                 State: {template.epicDetails.state}
               </Typography>
-            </Paper>
+            </CyberCard>
           </Box>
           
           <Typography variant="subtitle1" gutterBottom>
@@ -475,7 +470,7 @@ const TemplateApply: React.FC = () => {
               ))}
             </List>
           )}
-        </Paper>
+        </CyberCard>
       </Collapse>
 
       {/* API Token Dialog */}
@@ -486,7 +481,7 @@ const TemplateApply: React.FC = () => {
             Enter your Shortcut API token to connect to your workspace.
             You can find or create an API token in Shortcut under Settings &gt; API Tokens.
           </Typography>
-          <TextField
+          <CyberTextField
             fullWidth
             label="API Token"
             name="apiToken"
@@ -495,17 +490,25 @@ const TemplateApply: React.FC = () => {
             margin="normal"
             type="password"
             autoComplete="off"
+            cornerClip
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCredentialsDialogOpen(false)}>Cancel</Button>
-          <Button 
+          <CyberButton 
+            onClick={() => setCredentialsDialogOpen(false)} 
+            variant="outlined"
+            scanlineEffect
+          >
+            Cancel
+          </CyberButton>
+          <CyberButton 
             onClick={fetchProjects} 
-            variant="contained"
+            variant="outlined"
             disabled={!credentials.apiToken || loadingProjects}
+            scanlineEffect
           >
             {loadingProjects ? <CircularProgress size={24} /> : 'Connect'}
-          </Button>
+          </CyberButton>
         </DialogActions>
       </Dialog>
     </Box>
