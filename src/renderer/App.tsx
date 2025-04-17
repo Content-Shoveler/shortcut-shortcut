@@ -5,6 +5,7 @@ import {
   Container,
   Paper,
   alpha,
+  duration,
   useTheme
 } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -30,17 +31,9 @@ const App: React.FC = () => {
   const location = useLocation();
   const theme = useTheme();
   
-  // Display a loading spinner while transitioning between routes
-  const [isLoading, setIsLoading] = React.useState(false);
-  
-  // Handle route changes to show loading state
+  // Keep track of route changes for animations
   React.useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
-    
-    return () => clearTimeout(timer);
+    // Effect to handle route changes
   }, [location.pathname]);
   
   return (
@@ -140,7 +133,7 @@ const App: React.FC = () => {
             borderRadius: '50%',
             border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
             opacity: 0.4,
-            zIndex: 0,
+            zIndex: -1,
             pointerEvents: 'none',
             '&::before': {
               content: '""',
@@ -157,25 +150,20 @@ const App: React.FC = () => {
           initial="initial"
           animate="animate"
         />
-        {/* Loading spinner */}
-        <AnimatePresence>
-          {isLoading && (
-            <MotionBox
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 10,
-              }}
-            >
-              <CyberSpinner size={60} />
-            </MotionBox>
-          )}
-        </AnimatePresence>
+        {/* Always visible loading spinner */}
+        <MotionBox
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          sx={{
+            position: 'absolute',
+            top: '-15vmax',
+            right: '-15vmax',
+            zIndex: -1,
+            opacity: '0.2 !important',
+          }}
+        >
+          <CyberSpinner size={90} />
+        </MotionBox>
         
         {/* Main content with page transitions */}
         <AnimatePresence mode="wait">

@@ -173,11 +173,11 @@ const Header: React.FC = () => {
                 '&::before': {
                   content: '""',
                   position: 'absolute',
-                  bottom: -3,
-                  right: -3,
+                  bottom: 5,
+                  right: 5,
                   width: 10,
                   height: 10,
-                  borderTop: `2px solid ${muiTheme.palette.warning.main}`,
+                  borderBottom: `2px solid ${muiTheme.palette.warning.main}`,
                   borderRight: `2px solid ${muiTheme.palette.warning.main}`,
                 },
                 '&:hover': {

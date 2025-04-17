@@ -24,7 +24,7 @@ const CyberSpinner: React.FC<CyberSpinnerProps> = ({
   const spinnerColor = color || theme.palette.secondary.main;
   
   return (
-    <Box sx={{ position: 'relative', width: size, height: size }}>
+    <Box sx={{ position: 'relative', width: '90vmax', height: '90vmax' }}>
       {/* Outer rotating ring */}
       <motion.div
         style={{
@@ -40,7 +40,7 @@ const CyberSpinner: React.FC<CyberSpinnerProps> = ({
         }}
         animate={{ rotate: 360 }}
         transition={{ 
-          duration: 1.5, 
+          duration: 12, 
           repeat: Infinity, 
           ease: "linear" 
         }}
@@ -60,7 +60,7 @@ const CyberSpinner: React.FC<CyberSpinnerProps> = ({
         }}
         animate={{ rotate: -180 }}
         transition={{ 
-          duration: 2, 
+          duration: 12, 
           repeat: Infinity, 
           ease: "easeInOut",
           repeatType: 'reverse'
@@ -84,7 +84,7 @@ const CyberSpinner: React.FC<CyberSpinnerProps> = ({
           scale: [1, 1.2, 1]
         }}
         transition={{ 
-          duration: 1.2, 
+          duration: 12, 
           repeat: Infinity,
           ease: "easeInOut"
         }}
@@ -107,7 +107,7 @@ const CyberSpinner: React.FC<CyberSpinnerProps> = ({
           height: [thickness/2, thickness, thickness/2]
         }}
         transition={{ 
-          duration: 2, 
+          duration: 12, 
           repeat: Infinity,
           ease: "easeInOut"
         }}
@@ -129,7 +129,7 @@ const CyberSpinner: React.FC<CyberSpinnerProps> = ({
           width: [thickness/2, thickness, thickness/2]
         }}
         transition={{ 
-          duration: 2, 
+          duration: 12, 
           repeat: Infinity,
           ease: "easeInOut",
           delay: 0.5
