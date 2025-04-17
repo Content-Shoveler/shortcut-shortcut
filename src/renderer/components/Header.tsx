@@ -11,14 +11,13 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { useTheme } from '../store/ThemeContext';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useTheme } from '../store/AppProviders';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { mode, toggleTheme } = useTheme();
+  const { themeAppearance } = useTheme();
   
   const isHomePage = location.pathname === '/';
   
@@ -30,9 +29,9 @@ const Header: React.FC = () => {
         </Typography>
         
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
-            <IconButton color="inherit" onClick={toggleTheme} size="large">
-              {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+          <Tooltip title="Settings">
+            <IconButton color="inherit" onClick={() => navigate('/settings')} size="large">
+              <SettingsIcon />
             </IconButton>
           </Tooltip>
           {!isHomePage && (

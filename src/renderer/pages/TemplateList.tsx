@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '../store/AppProviders';
 import {
   Box,
   Typography,
@@ -18,6 +19,14 @@ import {
   Tooltip,
   Alert,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -29,6 +38,8 @@ import { Template } from '../types';
 
 const TemplateList: React.FC = () => {
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const viewMode = settings.appearance.viewMode;
   const [templates, setTemplates] = useState<Template[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
@@ -173,7 +184,8 @@ const TemplateList: React.FC = () => {
             Create Template
           </Button>
         </Box>
-      ) : (
+      ) : viewMode === 'card' ? (
+        /* Card View */
         <Box sx={{ display: 'flex', flexWrap: 'wrap', margin: -1 }}>
           {templates.map((template) => (
             <Box 
@@ -233,6 +245,72 @@ const TemplateList: React.FC = () => {
             </Box>
           ))}
         </Box>
+      ) : (
+        /* List View */
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell>Stories</TableCell>
+                <TableCell>Variables</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {templates.map((template) => (
+                <TableRow key={template.id} hover>
+                  <TableCell component="th" scope="row">
+                    <Typography variant="subtitle1">{template.name}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 300 }}>
+                      {template.description}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{template.storyTemplates.length}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {template.variables.map((variable) => (
+                        <Chip key={variable} label={variable} size="small" variant="outlined" />
+                      ))}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="Apply Template">
+                      <IconButton 
+                        color="primary"
+                        onClick={() => navigate(`/apply/${template.id}`)}
+                        size="small"
+                      >
+                        <PlayArrowIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit Template">
+                      <IconButton
+                        color="primary"
+                        onClick={() => navigate(`/editor/${template.id}`)}
+                        size="small"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Template">
+                      <IconButton 
+                        color="error"
+                        onClick={() => handleDeleteClick(template.id)}
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {/* Delete confirmation dialog */}

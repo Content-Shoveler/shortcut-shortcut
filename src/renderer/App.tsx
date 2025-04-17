@@ -13,6 +13,7 @@ import Header from './components/Header';
 import TemplateList from './pages/TemplateList';
 import TemplateEditor from './pages/TemplateEditor';
 import TemplateApply from './pages/TemplateApply';
+import Settings from './pages/Settings';
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
             <Route path="/editor" element={<TemplateEditor />} />
             <Route path="/editor/:id" element={<TemplateEditor />} />
             <Route path="/apply/:id" element={<TemplateApply />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </Paper>
       </Container>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from './store/ThemeContext';
+import { AppProviders } from './store/AppProviders';
 import App from './App';
 
 const container = document.getElementById('root');
@@ -10,10 +10,10 @@ const root = createRoot(container!);
 // Render the application
 root.render(
   <React.StrictMode>
-    <ThemeProvider>
+    <AppProviders>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </ThemeProvider>
+    </AppProviders>
   </React.StrictMode>
 );

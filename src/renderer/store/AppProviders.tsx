@@ -1,27 +1,72 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { ThemeProvider as MuiThemeProvider, createTheme, Theme } from '@mui/material/styles';
+import React, { ReactNode, createContext, useContext, useState, useEffect } from 'react';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { useSettings } from './SettingsContext';
 
 // Define theme mode type
 type ThemeMode = 'system' | 'light' | 'dark';
 
-// Define context type
+// Define the settings structure
+interface AppSettings {
+  apiToken: string;
+  startupPage: 'home' | 'last-viewed';
+  confirmDialogs: {
+    deleteTemplate: boolean;
+    applyTemplate: boolean;
+  };
+  appearance: {
+    density: 'comfortable' | 'compact';
+    fontSize: 'small' | 'medium' | 'large';
+    viewMode: 'card' | 'list';
+  };
+}
+
+// Theme Context Type
 interface ThemeContextType {
   mode: ThemeMode;
   themeAppearance: 'light' | 'dark';
   setTheme: (mode: ThemeMode) => void;
 }
 
-// Create context with default values
+// Settings Context Type
+interface SettingsContextType {
+  settings: AppSettings;
+  updateSettings: (newSettings: Partial<AppSettings>) => void;
+  updateApiToken: (token: string) => void;
+  validateApiToken: (token: string) => Promise<boolean>;
+}
+
+// Default settings
+const defaultSettings: AppSettings = {
+  apiToken: '',
+  startupPage: 'home',
+  confirmDialogs: {
+    deleteTemplate: true,
+    applyTemplate: true,
+  },
+  appearance: {
+    density: 'comfortable',
+    fontSize: 'medium',
+    viewMode: 'list',
+  },
+};
+
+// Create contexts with default values
 const ThemeContext = createContext<ThemeContextType>({
   mode: 'light',
   themeAppearance: 'light',
   setTheme: () => {},
 });
 
-// Custom hook for using the theme context
+const SettingsContext = createContext<SettingsContextType>({
+  settings: defaultSettings,
+  updateSettings: () => {},
+  updateApiToken: () => {},
+  validateApiToken: async () => false,
+});
+
+// Export hooks for using the contexts
 export const useTheme = () => useContext(ThemeContext);
+export const useSettings = () => useContext(SettingsContext);
 
 // Create theme based on settings
 const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compact', fontSize: 'small' | 'medium' | 'large') => {
@@ -90,11 +135,59 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
   });
 };
 
-// A ThemeProvider that must be wrapped inside a SettingsProvider
-export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Notice: This component must be used inside a SettingsProvider
-  const settingsContext = useSettings();
+// Import validation function
+import { validateApiToken as validateToken } from '../utils/shortcutApi';
 
+// Combined provider component
+interface AppProvidersProps {
+  children: ReactNode;
+}
+
+export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
+  // === SETTINGS PROVIDER LOGIC ===
+  
+  // Initialize settings from localStorage or use defaults
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const savedSettings = localStorage.getItem('appSettings');
+    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+  });
+
+  // Update settings
+  const updateSettings = (newSettings: Partial<AppSettings>) => {
+    setSettings((prevSettings) => {
+      const updatedSettings = {
+        ...prevSettings,
+        ...newSettings,
+      };
+      return updatedSettings;
+    });
+  };
+
+  // Update API token
+  const updateApiToken = (token: string) => {
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      apiToken: token,
+    }));
+  };
+
+  // Validate API token
+  const validateApiToken = async (token: string): Promise<boolean> => {
+    try {
+      return await validateToken(token);
+    } catch (error) {
+      console.error('Error validating API token:', error);
+      return false;
+    }
+  };
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('appSettings', JSON.stringify(settings));
+  }, [settings]);
+
+  // === THEME PROVIDER LOGIC ===
+  
   // Check for system preference
   const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const defaultAppearance = prefersDarkMode ? 'dark' : 'light';
@@ -146,18 +239,28 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     localStorage.setItem('themeMode', mode);
   }, [mode]);
 
-  // Get density and font size from settings
-  const { density, fontSize } = settingsContext.settings.appearance;
+  // Get current density and font size from settings
+  const { density, fontSize } = settings.appearance;
 
   // Create the theme based on appearance and settings
   const theme = createAppTheme(themeAppearance, density, fontSize);
 
+  // Combine both providers
   return (
-    <ThemeContext.Provider value={{ mode, themeAppearance, setTheme }}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </MuiThemeProvider>
-    </ThemeContext.Provider>
+    <SettingsContext.Provider
+      value={{
+        settings,
+        updateSettings,
+        updateApiToken,
+        validateApiToken,
+      }}
+    >
+      <ThemeContext.Provider value={{ mode, themeAppearance, setTheme }}>
+        <MuiThemeProvider theme={theme}>
+          <CssBaseline />
+          {children}
+        </MuiThemeProvider>
+      </ThemeContext.Provider>
+    </SettingsContext.Provider>
   );
 };
