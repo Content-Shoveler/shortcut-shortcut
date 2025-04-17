@@ -1,0 +1,70 @@
+{
+  "name": "shortcut-epic-templates",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "description": "Desktop application for creating and managing epic templates for Shortcut",
+  "author": "Rowan Findlay <rowan@squarekicker.com>",
+  "license": "MIT",
+  "build": {
+    "appId": "com.squarekicker.shortcut-epic-templates",
+    "productName": "Shortcut Epic Templates",
+    "files": [
+      "dist/**/*"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "public",
+      "app": "."
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": ["zip", "dmg"]
+    }
+  },
+  "scripts": {
+    "start": "electron dist/main.js",
+    "dev": "concurrently \"webpack serve --env WEBPACK_SERVE=true\" \"webpack --watch --env WEBPACK_TARGET=main\" \"wait-on http://localhost:9000 && electron dist/main.js\"",
+    "dev:renderer": "webpack serve --env WEBPACK_SERVE=true",
+    "dev:main": "webpack --watch --env WEBPACK_TARGET=main",
+    "dev:electron": "wait-on http://localhost:9000 && electron dist/main.js",
+    "build": "webpack --env NODE_ENV=production && electron-builder",
+    "build:win": "webpack --env NODE_ENV=production && electron-builder --win",
+    "build:mac": "webpack --env NODE_ENV=production && electron-builder --mac",
+    "build:linux": "webpack --env NODE_ENV=production && electron-builder --linux"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.0.2",
+    "@mui/material": "^7.0.2",
+    "@types/node": "^22.14.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/uuid": "^10.0.0",
+    "clubhouse-lib": "^0.13.0",
+    "electron-store": "^10.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.5.0",
+    "typescript": "^5.8.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.27.0",
+    "@types/electron": "^1.6.12",
+    "electron": "^35.1.5",
+    "concurrently": "^9.1.2",
+    "css-loader": "^7.1.2",
+    "electron-builder": "^26.0.12",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.2",
+    "wait-on": "^8.0.3",
+    "webpack": "^5.99.5",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.1"
+  }
+}
