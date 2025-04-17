@@ -33,6 +33,7 @@
     "build": "webpack --env NODE_ENV=production && electron-builder",
     "build:win": "webpack --env NODE_ENV=production && electron-builder --win",
     "build:mac": "webpack --env NODE_ENV=production && electron-builder --mac",
+    "build:mac-old": "webpack --env NODE_ENV=production && electron-builder --mac --x64",
     "build:linux": "webpack --env NODE_ENV=production && electron-builder --linux"
   },
   "dependencies": {
