@@ -62,8 +62,15 @@ const Header: React.FC = () => {
             left: -10,
             width: 20,
             height: 20,
-            borderTop: `2px solid ${muiTheme.palette.primary.main}`,
-            borderLeft: `2px solid ${muiTheme.palette.primary.main}`,
+            borderTop: themeAppearance === 'dark' 
+              ? `2px solid ${muiTheme.palette.primary.main}`
+              : `3px solid ${muiTheme.palette.secondary.main}`,
+            borderLeft: themeAppearance === 'dark' 
+              ? `2px solid ${muiTheme.palette.primary.main}`
+              : `3px solid ${muiTheme.palette.secondary.main}`,
+            boxShadow: themeAppearance === 'dark' 
+              ? 'none' 
+              : `0 0 5px ${alpha(muiTheme.palette.secondary.main, 0.5)}`,
           }
         }}>
           <Typography
@@ -95,7 +102,6 @@ const Header: React.FC = () => {
                     display: 'inline-block',
                     fontWeight: 'bold',
                     whiteSpace: 'pre',
-                    color: '#FFFFFF !important',
                   }}
                   className="cyber-neon"
                 >

@@ -154,10 +154,20 @@
 
 /* Neon text effect */
 .cyber-neon {
-  color: #5F9EA0;
+  color: var(--primary-color, var(--text-color, #FFFFFF)) !important;
   text-shadow: 0 0 5px rgba(95, 158, 160, 0.5),
                0 0 10px rgba(95, 158, 160, 0.3),
                0 0 15px rgba(95, 158, 160, 0.1);
+}
+
+/* Light mode version of cyber-neon */
+@media (prefers-color-scheme: light) {
+  .cyber-neon {
+    color: var(--primary-color, var(--text-color, #FFFFFF)) !important;
+    text-shadow: 0 0 5px rgba(95, 158, 160, 0.7),
+                 0 0 10px rgba(95, 158, 160, 0.5),
+                 0 0 15px rgba(95, 158, 160, 0.3);
+  }
 }
 
 /* Cyber badge */

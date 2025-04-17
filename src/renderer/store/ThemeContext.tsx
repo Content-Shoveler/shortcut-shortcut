@@ -213,6 +213,8 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
             '--cyberpunk-scan-line-bg': `repeating-linear-gradient(to bottom, transparent 0px, transparent 1px, ${alpha(cyberpunkColors.cadetBlue.dark, 0.05)} 1px, ${alpha(cyberpunkColors.cadetBlue.dark, 0.05)} 2px)`,
             '--cyberpunk-grid-bg': `linear-gradient(${alpha(cyberpunkColors.cadetBlue.dark, 0.1)} 1px, transparent 1px), linear-gradient(90deg, ${alpha(cyberpunkColors.cadetBlue.dark, 0.1)} 1px, transparent 1px)`,
             '--cyberpunk-space-bg': mode === 'dark' ? `radial-gradient(circle at top right, ${alpha(cyberpunkColors.space.nebula, 0.3)} 0%, transparent 60%)` : 'none',
+            '--text-color': mode === 'dark' ? '#FFFFFF' : '#FFFFFF', // White text for both modes for the cyber-neon effect
+            '--primary-color': mode === 'dark' ? cyberpunkColors.cadetBlue.main : '#FFFFFF',
           }
         },
       },
