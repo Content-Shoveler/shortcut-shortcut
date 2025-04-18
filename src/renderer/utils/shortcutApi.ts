@@ -97,8 +97,14 @@ export async function fetchWorkflowStates(
       throw new Error(response.message || 'Failed to fetch workflow states');
     }
     
+    // Ensure we're getting the 'states' array from the workflow response
     const states = response.data || [];
-    console.log(`Retrieved ${states.length} workflow states`);
+    console.log(`Retrieved ${states.length} workflow states:`, states);
+    
+    if (states.length === 0) {
+      console.warn(`No states found for workflow ID: ${workflowId}`);
+    }
+    
     return states;
   } catch (error) {
     console.error('Error in fetchWorkflowStates:', error);

@@ -128,27 +128,14 @@ const TemplateEditor: React.FC = () => {
     }
   }, [shortcutApi]);
   
-  // Use a ref to track loading status and the last fetched workflow ID to avoid loops
-  const isLoadingWorkflowStatesRef = useRef(false);
-  const lastFetchedWorkflowIdRef = useRef<string | null>(null);
-  
-  // Directly fetch workflow states (not as a useCallback to avoid dependency issues)
-  const fetchWorkflowStates = async (workflowId: string) => {
-    // Skip if no token, no ID, already loading, or already fetched this ID
+  // Fetch workflow states when a workflow is selected
+  const fetchWorkflowStates = useCallback(async (workflowId: string) => {
     if (!shortcutApi.hasApiToken || !workflowId) {
       console.log('Cannot fetch workflow states: No API token or workflow ID');
       return;
     }
     
-    if (isLoadingWorkflowStatesRef.current) {
-      console.log('Already loading workflow states, skipping duplicate request');
-      return;
-    }
-    
-    // Update ref tracking and loading state
-    isLoadingWorkflowStatesRef.current = true;
     setLoadingWorkflowStates(true);
-    
     console.log(`Fetching states for workflow ID: ${workflowId}`);
     
     try {
@@ -156,27 +143,25 @@ const TemplateEditor: React.FC = () => {
       
       console.log('API response for workflow states:', fetchedStates);
       
-      // Only update state if the selected workflow hasn't changed while fetching
-      if (selectedWorkflow === workflowId) {
-        setWorkflowStates(fetchedStates);
-        lastFetchedWorkflowIdRef.current = workflowId;
+      // Update component state with fetched workflow states
+      setWorkflowStates(fetchedStates);
+      
+      if (fetchedStates.length === 0) {
+        console.warn(`Workflow ${workflowId} returned zero states`);
+      } else {
         console.log(`Loaded ${fetchedStates.length} workflow states successfully`);
-        
-        if (fetchedStates.length === 0) {
-          console.warn('Workflow returned zero states');
-        }
       }
     } catch (error) {
       console.error('Failed to fetch workflow states:', error);
+      setWorkflowStates([]);
       setAlert({
         type: 'error',
         message: 'Failed to fetch workflow states - please try a different workflow'
       });
     } finally {
-      isLoadingWorkflowStatesRef.current = false;
       setLoadingWorkflowStates(false);
     }
-  };
+  }, [shortcutApi]);
   
   // Load template if ID is provided
   useEffect(() => {
@@ -301,7 +286,6 @@ const TemplateEditor: React.FC = () => {
     // Reset workflow states when workflow changes
     if (!workflowId) {
       setWorkflowStates([]);
-      lastFetchedWorkflowIdRef.current = null;
     } else {
       // Directly fetch states instead of relying on useEffect
       fetchWorkflowStates(workflowId);
@@ -751,21 +735,6 @@ const TemplateEditor: React.FC = () => {
               </CyberSelect>
             </FormControl>
             
-            <FormControl fullWidth margin="normal">
-              <CyberSelect
-                label="Display State Name"
-                name="state"
-                value={currentStory?.state || 'Ready for Development'}
-                onChange={handleStoryChange}
-                cornerClip
-                helperText="This is used for display purposes in the template"
-              >
-                {storyStateOptions.map(option => (
-                  <MenuItem key={option} value={option}>{option}</MenuItem>
-                ))}
-              </CyberSelect>
-            </FormControl>
-            
             <CyberTextField
               fullWidth
               margin="normal"
@@ -778,80 +747,60 @@ const TemplateEditor: React.FC = () => {
             />
           </Box>
           
-          {/* Shortcut Workflow and State Selectors */}
-          <CyberCard sx={{ p: 2, mt: 2, mb: 1 }} title="Shortcut API Integration" cornerAccent glowOnHover>
-            {apiTokenAlert ? (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                Please set up your Shortcut API token in Settings to use this feature.
-              </Alert>
-            ) : (
-              <>
-                <Typography variant="subtitle2" gutterBottom color="primary">
-                  Select Workflow and State for Shortcut
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  This will determine where stories are created in Shortcut when applying the template.
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <FormControl fullWidth>
-                    <CyberSelect
-                      label="Shortcut Workflow"
-                      value={selectedWorkflow}
-                      onChange={handleWorkflowChange}
-                      cornerClip
-                      disabled={loadingWorkflows}
-                    >
-                      {loadingWorkflows ? (
-                        <MenuItem value="">Loading workflows...</MenuItem>
-                      ) : workflows.length > 0 ? (
-                        workflows.map(workflow => (
-                          <MenuItem key={workflow.id} value={workflow.id.toString()}>
-                            {workflow.name}
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem value="">No workflows found</MenuItem>
-                      )}
-                    </CyberSelect>
-                  </FormControl>
-                  
-                  <FormControl fullWidth>
-                    <CyberSelect
-                      label="Workflow State"
-                      value={currentStory?.workflow_state_id || ''}
-                      onChange={handleWorkflowStateChange}
-                      cornerClip
-                      disabled={!selectedWorkflow || loadingWorkflowStates}
-                    >
-                      {loadingWorkflowStates ? (
-                        <MenuItem value="">Loading states...</MenuItem>
-                      ) : workflowStates.length > 0 ? (
-                        workflowStates.map(state => (
-                          <MenuItem key={state.id} value={state.id.toString()}>
-                            {state.name}
-                          </MenuItem>
-                        ))
-                      ) : selectedWorkflow ? (
-                        <MenuItem value="">No states found for this workflow</MenuItem>
-                      ) : (
-                        <MenuItem value="">Select a workflow first</MenuItem>
-                      )}
-                    </CyberSelect>
-                  </FormControl>
-                  
-                  {/* Debug info */}
-                  <Box sx={{ mt: 2, p: 1, border: '1px solid #666', borderRadius: 1, fontSize: '0.75rem' }}>
-                    <Typography variant="caption" component="div">Debug Info:</Typography>
-                    <Typography variant="caption" component="div">Selected Workflow: {selectedWorkflow || 'none'}</Typography>
-                    <Typography variant="caption" component="div">Loading States: {loadingWorkflowStates ? 'yes' : 'no'}</Typography>
-                    <Typography variant="caption" component="div">States Count: {workflowStates.length}</Typography>
-                    <Typography variant="caption" component="div">Last Fetched ID: {lastFetchedWorkflowIdRef.current || 'none'}</Typography>
-                  </Box>
-                </Box>
-              </>
-            )}
-          </CyberCard>
+          {/* Workflow and State Selectors */}
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+            <FormControl fullWidth margin="normal">
+              <CyberSelect
+                label="Workflow"
+                value={selectedWorkflow}
+                onChange={handleWorkflowChange}
+                cornerClip
+                disabled={loadingWorkflows}
+              >
+                {loadingWorkflows ? (
+                  <MenuItem value="">Loading workflows...</MenuItem>
+                ) : workflows.length > 0 ? (
+                  workflows.map(workflow => (
+                    <MenuItem key={workflow.id} value={workflow.id.toString()}>
+                      {workflow.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="">No workflows found</MenuItem>
+                )}
+              </CyberSelect>
+            </FormControl>
+            
+            <FormControl fullWidth margin="normal">
+              <CyberSelect
+                label="State"
+                value={currentStory?.workflow_state_id || ''}
+                onChange={handleWorkflowStateChange}
+                cornerClip
+                disabled={!selectedWorkflow || loadingWorkflowStates}
+              >
+                {loadingWorkflowStates ? (
+                  <MenuItem value="">Loading states...</MenuItem>
+                ) : workflowStates.length > 0 ? (
+                  workflowStates.map(state => (
+                    <MenuItem key={state.id} value={state.id.toString()}>
+                      {state.name}
+                    </MenuItem>
+                  ))
+                ) : selectedWorkflow ? (
+                  <MenuItem value="">No states found for this workflow</MenuItem>
+                ) : (
+                  <MenuItem value="">Select a workflow first</MenuItem>
+                )}
+              </CyberSelect>
+            </FormControl>
+          </Box>
+          
+          {apiTokenAlert && (
+            <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
+              Please set up your Shortcut API token in Settings to use the workflow features.
+            </Alert>
+          )}
           
           <Accordion sx={{ 
             mt: 2,
