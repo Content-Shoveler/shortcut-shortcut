@@ -264,10 +264,29 @@ ipcMain.handle('shortcut-createEpic', async (_, apiToken: string, epicData: any)
   }
   
   try {
+    // Log what we're sending to the API for debugging
+    console.log('Creating epic with payload:', JSON.stringify(epicData));
+    
+    // Ensure we're sending a pure JSON object with string properties
+    const simplifiedPayload = {
+      name: String(epicData.name || 'New Epic')
+    };
+    
+    console.log('Simplified payload:', JSON.stringify(simplifiedPayload));
+    
     const client = createShortcutClient(apiToken);
-    const response = await client.post('/epics', epicData);
+    const response = await client.post('/epics', simplifiedPayload);
+    
+    console.log('Epic created successfully:', response.data);
     return { success: true, data: response.data };
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error creating epic:', error);
+    
+    // Enhanced error handling with more details
+    if (error.response && error.response.data) {
+      console.error('API error details:', error.response.data);
+    }
+    
     return handleApiError(error);
   }
 });
@@ -278,10 +297,22 @@ ipcMain.handle('shortcut-createStory', async (_, apiToken: string, storyData: an
   }
   
   try {
+    // Log what we're sending to the API for debugging
+    console.log('Creating story with payload:', JSON.stringify(storyData));
+    
     const client = createShortcutClient(apiToken);
     const response = await client.post('/stories', storyData);
+    
+    console.log('Story created successfully:', response.data);
     return { success: true, data: response.data };
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error creating story:', error);
+    
+    // Enhanced error handling with more details
+    if (error.response && error.response.data) {
+      console.error('API error details:', error.response.data);
+    }
+    
     return handleApiError(error);
   }
 });

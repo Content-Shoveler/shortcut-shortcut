@@ -112,17 +112,9 @@ export interface ShortcutApiError {
 
 // Request payloads
 
-// Epic creation payload
+// Epic creation payload - simplified to match absolute minimum API requirements
 export interface CreateEpicPayload {
-  name: string;
-  description?: string;
-  owner_ids?: Array<number | string>;
-  state?: string;
-  milestone_id?: number | string;
-  deadline?: string;
-  labels?: Array<{ name: string; color?: string }>;
-  planned_start_date?: string;
-  project_ids?: Array<number | string>;
+  name: string; // Only name is truly required per API documentation
 }
 
 // Story creation payload

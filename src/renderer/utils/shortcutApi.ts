@@ -124,19 +124,23 @@ export async function createEpicWithStories(
   try {
     const api = window.electronAPI as APIWithShortcut;
     
-    // 1. Create the epic
+    // 1. Create the epic with only the required name parameter
     const epicPayload = {
-      name: epicData.name,
-      description: epicData.description,
-      // Convert project ID to an array of project IDs
-      project_ids: [epicData.projectId],
-      // Add labels if needed
-      labels: []
+      name: epicData.name
+      // Description and all other fields removed to ensure minimal payload
     };
 
+    console.log('Sending epic payload:', JSON.stringify(epicPayload));
     const epicResponse = await api.shortcutApi.createEpic(apiToken, epicPayload);
+    
     if (!epicResponse.success) {
-      throw new Error(epicResponse.message || 'Failed to create epic');
+      // Log detailed error information for debugging
+      console.error('Epic creation failed:', epicResponse);
+      throw new Error(
+        `Failed to create epic: ${epicResponse.message || 'Unknown error'}\n` +
+        `Status: ${epicResponse.status || 'N/A'}\n` +
+        `Response data: ${JSON.stringify(epicResponse.data || {})}`
+      );
     }
     
     const epic = epicResponse.data;
@@ -156,20 +160,43 @@ export async function createEpicWithStories(
       
       const workflowStateId = state?.id || workflowStates[0].id;
       
-      const storyPayload = {
+      // Create story with only the required parameters
+      const storyPayload: Record<string, any> = {
         name: storyData.name,
-        description: storyData.description,
         story_type: storyData.type as 'feature' | 'bug' | 'chore',
         workflow_state_id: workflowStateId,
-        epic_id: epic.id,
-        project_id: epicData.projectId,
-        estimate: storyData.estimate,
-        labels: storyData.labels?.map(label => ({ name: label }))
+        epic_id: epic.id
       };
       
+      // Only add optional fields if they have values
+      if (storyData.description) {
+        storyPayload.description = storyData.description;
+      }
+      
+      if (epicData.projectId) {
+        storyPayload.project_id = epicData.projectId;
+      }
+      
+      if (storyData.estimate) {
+        storyPayload.estimate = storyData.estimate;
+      }
+      
+      if (storyData.labels && storyData.labels.length > 0) {
+        storyPayload.labels = storyData.labels.map(label => ({ name: label }));
+      }
+      
+      console.log('Sending story payload:', JSON.stringify(storyPayload));
+      
       const storyResponse = await api.shortcutApi.createStory(apiToken, storyPayload);
+      
       if (!storyResponse.success) {
-        throw new Error(storyResponse.message || 'Failed to create story');
+        // Log detailed error information for debugging
+        console.error('Story creation failed:', storyResponse);
+        throw new Error(
+          `Failed to create story: ${storyResponse.message || 'Unknown error'}\n` +
+          `Status: ${storyResponse.status || 'N/A'}\n` +
+          `Response data: ${JSON.stringify(storyResponse.data || {})}`
+        );
       }
       
       storyIds.push(storyResponse.data.id.toString());
