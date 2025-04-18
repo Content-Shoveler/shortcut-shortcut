@@ -28,6 +28,11 @@ interface ElectronAPI {
   deleteTemplate: (templateId: string) => Promise<string>;
   exportTemplates: () => Promise<boolean>;
   importTemplates: () => Promise<Template[] | null>;
+  
+  // API token management
+  getApiToken: () => Promise<string>;
+  setApiToken: (token: string) => Promise<boolean>;
+  validateApiToken: (token: string) => Promise<boolean>;
 }
 
 // Expose protected methods that allow the renderer process to use
@@ -41,4 +46,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Import/Export
   exportTemplates: () => ipcRenderer.invoke('exportTemplates'),
   importTemplates: () => ipcRenderer.invoke('importTemplates'),
+  
+  // API token management
+  getApiToken: () => ipcRenderer.invoke('getApiToken'),
+  setApiToken: (token: string) => ipcRenderer.invoke('setApiToken', token),
+  validateApiToken: (token: string) => ipcRenderer.invoke('validateApiToken', token),
 } as ElectronAPI);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { ApolloProvider } from './apollo/ApolloProvider';
 import { 
   Box,
   Container,
@@ -37,7 +38,8 @@ const App: React.FC = () => {
   }, [location.pathname]);
   
   return (
-    <Box 
+    <ApolloProvider>
+      <Box 
       sx={{ 
         display: 'flex', 
         flexDirection: 'column', 
@@ -221,7 +223,8 @@ const App: React.FC = () => {
           </MotionPaper>
         </AnimatePresence>
       </Container>
-    </Box>
+      </Box>
+    </ApolloProvider>
   );
 };
 

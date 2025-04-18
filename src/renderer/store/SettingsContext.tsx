@@ -1,9 +1,9 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { validateApiToken as validateToken } from '../utils/shortcutApi';
+import { getApiToken, setApiToken } from '../utils/electronApi';
 
 // Define the settings structure
 interface AppSettings {
-  apiToken: string;
+  apiToken: string; // This will be synced with electron-store
   startupPage: 'home' | 'last-viewed';
   confirmDialogs: {
     deleteTemplate: boolean;
@@ -21,7 +21,6 @@ interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   updateApiToken: (token: string) => void;
-  validateApiToken: (token: string) => Promise<boolean>;
 }
 
 // Default settings
@@ -44,7 +43,6 @@ const SettingsContext = createContext<SettingsContextType>({
   settings: defaultSettings,
   updateSettings: () => {},
   updateApiToken: () => {},
-  validateApiToken: async () => false,
 });
 
 // Custom hook for using the settings context
@@ -62,6 +60,25 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
   });
 
+  // Load API token from electron-store on initial load
+  useEffect(() => {
+    const loadApiToken = async () => {
+      try {
+        const token = await getApiToken();
+        if (token) {
+          setSettings(prev => ({
+            ...prev,
+            apiToken: token
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load API token:', error);
+      }
+    };
+
+    loadApiToken();
+  }, []);
+
   // Update settings
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings((prevSettings) => {
@@ -73,22 +90,19 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     });
   };
 
-  // Update API token
-  const updateApiToken = (token: string) => {
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      apiToken: token,
-    }));
-  };
-
-  // Validate API token
-  const validateApiToken = async (token: string): Promise<boolean> => {
+  // Update API token - also save to electron-store
+  const updateApiToken = async (token: string) => {
     try {
-      // Using the existing utility function from shortcutApi.ts
-      return await validateToken(token);
+      // Save to electron-store
+      await setApiToken(token);
+      
+      // Update local state
+      setSettings((prevSettings) => ({
+        ...prevSettings,
+        apiToken: token,
+      }));
     } catch (error) {
-      console.error('Error validating API token:', error);
-      return false;
+      console.error('Failed to update API token:', error);
     }
   };
 
@@ -103,7 +117,6 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         settings,
         updateSettings,
         updateApiToken,
-        validateApiToken,
       }}
     >
       {children}

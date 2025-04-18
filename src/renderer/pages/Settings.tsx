@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff, ExpandMore } from '@mui/icons-material';
 import { useTheme, useSettings } from '../store/AppProviders';
+import { useValidateToken } from '../hooks/useShortcutApi';
 import { 
   CyberCard, 
   CyberTextField, 
@@ -53,12 +54,12 @@ const a11yProps = (index: number) => {
 const Settings: React.FC = () => {
   const theme = useTheme();
   const { mode, themeAppearance, setTheme } = theme;
-  const { settings, updateSettings, updateApiToken, validateApiToken } = useSettings();
+  const { settings, updateSettings, updateApiToken } = useSettings();
+  const { validateToken, loading: validatingToken } = useValidateToken();
   
   const [tabValue, setTabValue] = useState(0);
   const [apiToken, setApiToken] = useState(settings.apiToken);
   const [showApiToken, setShowApiToken] = useState(false);
-  const [validatingToken, setValidatingToken] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<{ valid: boolean | null; message: string }>({
     valid: null,
     message: '',
@@ -80,9 +81,8 @@ const Settings: React.FC = () => {
 
   // Validate API token
   const handleValidateToken = async () => {
-    setValidatingToken(true);
     try {
-      const isValid = await validateApiToken(apiToken);
+      const isValid = await validateToken(apiToken);
       setTokenStatus({
         valid: isValid,
         message: isValid
@@ -98,8 +98,6 @@ const Settings: React.FC = () => {
         valid: false,
         message: 'An error occurred while validating the token.',
       });
-    } finally {
-      setValidatingToken(false);
     }
   };
 

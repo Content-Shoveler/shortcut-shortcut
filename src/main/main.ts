@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import Store from 'electron-store';
+import crypto from 'crypto';
 
 // Define the interface for our templates
 interface Template {
@@ -24,10 +25,24 @@ interface Template {
   variables: string[];
 }
 
-// Initialize the electron-store
+// Generate a secure encryption key
+const generateEncryptionKey = () => {
+  // In a production app, you should store this key securely
+  // This is a simple implementation for demonstration
+  const machineId = app.getPath('userData'); // Use a machine-specific path
+  return crypto.createHash('sha256').update(machineId).digest('hex').substring(0, 32);
+};
+
+// Initialize the electron stores
 // We have to use 'any' because the type definitions for electron-store
 // have issues with TypeScript strict mode
 const store = new Store() as any;
+
+// Secure store for API tokens with encryption
+const secureStore = new Store({
+  name: 'secure-settings',
+  encryptionKey: generateEncryptionKey()
+}) as any;
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -78,6 +93,26 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// API Token handlers
+ipcMain.handle('getApiToken', async () => {
+  return secureStore.get('apiToken', '');
+});
+
+ipcMain.handle('setApiToken', async (_, token: string) => {
+  secureStore.set('apiToken', token);
+  return true;
+});
+
+ipcMain.handle('validateApiToken', async (_, token: string) => {
+  // In the main process, we'll just store the token
+  // The actual validation will happen in the renderer
+  // This is a design choice to separate concerns
+  if (token) {
+    secureStore.set('apiToken', token);
+  }
+  return !!token; // Return true if token exists
 });
 
 // IPC handlers
