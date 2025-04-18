@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { validateApiToken as validateToken } from '../utils/shortcutApi';
+import { ElectronAPI, ShortcutApiResponse } from '../types/electron';
 
 // Define the settings structure
 interface AppSettings {
@@ -81,11 +81,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     }));
   };
 
-  // Validate API token
+  // Validate API token using the main process IPC method
   const validateApiToken = async (token: string): Promise<boolean> => {
     try {
-      // Using the existing utility function from shortcutApi.ts
-      return await validateToken(token);
+      // Using the IPC method which handles API calls in the main process (bypassing CORS)
+      // Use type assertion to tell TypeScript about the shortcutApi property
+      type APIWithShortcut = typeof window.electronAPI & {
+        shortcutApi: {
+          validateToken: (token: string) => Promise<ShortcutApiResponse>;
+        }
+      };
+      
+      const api = window.electronAPI as APIWithShortcut;
+      const response = await api.shortcutApi.validateToken(token);
+      return response.success;
     } catch (error) {
       console.error('Error validating API token:', error);
       return false;

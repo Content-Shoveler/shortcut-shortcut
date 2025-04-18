@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import Store from 'electron-store';
+import axios from 'axios';
 
 // Define the interface for our templates
 interface Template {
@@ -60,6 +61,48 @@ function createWindow() {
   });
 }
 
+// Shortcut API Client functions
+const SHORTCUT_API_URL = 'https://api.app.shortcut.com/api/v3';
+
+// Create axios instance for the Shortcut API
+const createShortcutClient = (apiToken: string) => {
+  return axios.create({
+    baseURL: SHORTCUT_API_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      'Shortcut-Token': apiToken
+    }
+  });
+};
+
+// Helper function to handle API errors
+const handleApiError = (error: any) => {
+  console.error('Shortcut API error:', error);
+  
+  if (error.response) {
+    // The request was made and the server responded with a status code
+    // that falls out of the range of 2xx
+    return {
+      success: false,
+      status: error.response.status,
+      message: error.response.data?.message || `API Error: ${error.response.status}`,
+      data: error.response.data
+    };
+  } else if (error.request) {
+    // The request was made but no response was received
+    return {
+      success: false,
+      message: 'No response received from Shortcut API',
+    };
+  } else {
+    // Something happened in setting up the request
+    return {
+      success: false,
+      message: error.message || 'Unknown error occurred',
+    };
+  }
+};
+
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   createWindow();
@@ -80,7 +123,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-// IPC handlers
+// IPC handlers for templates
 ipcMain.handle('getTemplates', () => {
   return store.get('templates', []);
 });
@@ -159,4 +202,89 @@ ipcMain.handle('importTemplates', async () => {
   }
   
   return null;
+});
+
+// Shortcut API handlers
+ipcMain.handle('shortcut-validateToken', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/member');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+ipcMain.handle('shortcut-fetchProjects', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/projects');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+ipcMain.handle('shortcut-fetchWorkflows', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/workflows');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+ipcMain.handle('shortcut-fetchWorkflowStates', async (_, apiToken: string, workflowId: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get(`/workflows/${workflowId}/states`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+ipcMain.handle('shortcut-createEpic', async (_, apiToken: string, epicData: any) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.post('/epics', epicData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+ipcMain.handle('shortcut-createStory', async (_, apiToken: string, storyData: any) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.post('/stories', storyData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return handleApiError(error);
+  }
 });

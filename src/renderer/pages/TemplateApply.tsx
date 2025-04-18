@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -31,7 +31,10 @@ import {
   CyberIcon 
 } from '../components/cyberpunk';
 
-import { Template, VariableMapping, ShortcutCredentials } from '../types';
+import { Template, VariableMapping } from '../types';
+import { useShortcutApi } from '../hooks/useShortcutApi';
+import { ShortcutProject, ShortcutWorkflow } from '../types/shortcutApi';
+import { useSettings } from '../store/SettingsContext';
 
 // Function to replace variables in text with actual values
 const replaceVariables = (text: string, variables: VariableMapping): string => {
@@ -46,14 +49,19 @@ const replaceVariables = (text: string, variables: VariableMapping): string => {
 const TemplateApply: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { updateApiToken } = useSettings();
 
   const [template, setTemplate] = useState<Template | null>(null);
   const [variableValues, setVariableValues] = useState<VariableMapping>({});
-  const [credentials, setCredentials] = useState<ShortcutCredentials>({
-    apiToken: '',
-  });
-  const [projects, setProjects] = useState<any[]>([]);
-  const [workflows, setWorkflows] = useState<any[]>([]);
+  
+  // Initialize Shortcut API hook
+  const shortcutApi = useShortcutApi();
+  
+  // For the API token dialog
+  const [apiTokenInput, setApiTokenInput] = useState<string>('');
+  
+  const [projects, setProjects] = useState<ShortcutProject[]>([]);
+  const [workflows, setWorkflows] = useState<ShortcutWorkflow[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -99,25 +107,54 @@ const TemplateApply: React.FC = () => {
     loadTemplate();
   }, [id, navigate]);
 
+  // Load projects and workflows if API token is available
+  useEffect(() => {
+    const loadProjectsAndWorkflows = async () => {
+      if (shortcutApi.hasApiToken && projects.length === 0) {
+        try {
+          setLoadingProjects(true);
+          const fetchedProjects = await shortcutApi.fetchProjects();
+          const fetchedWorkflows = await shortcutApi.fetchWorkflows();
+          
+          setProjects(fetchedProjects);
+          setWorkflows(fetchedWorkflows);
+          
+          setAlert({
+            type: 'info',
+            message: 'Connected to Shortcut API successfully',
+          });
+        } catch (error) {
+          console.error('Error fetching Shortcut data:', error);
+          setAlert({
+            type: 'error',
+            message: typeof error === 'object' && error !== null && 'message' in error 
+              ? String(error.message) 
+              : 'Failed to fetch data from Shortcut API',
+          });
+        } finally {
+          setLoadingProjects(false);
+        }
+      }
+    };
+    
+    loadProjectsAndWorkflows();
+  }, [shortcutApi, projects.length]);
+
   // Input change handlers
   const handleVariableChange = (variable: string, value: string) => {
-    setVariableValues(prev => ({
+    setVariableValues((prev: VariableMapping) => ({
       ...prev,
       [variable]: value,
     }));
   };
 
   const handleCredentialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCredentials(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setApiTokenInput(e.target.value);
   };
 
   // Shortcut API handlers
-  const fetchProjects = async () => {
-    if (!credentials.apiToken) {
+  const connectWithToken = async () => {
+    if (!apiTokenInput.trim()) {
       setAlert({
         type: 'error',
         message: 'API token is required',
@@ -128,41 +165,19 @@ const TemplateApply: React.FC = () => {
     setLoadingProjects(true);
     
     try {
-      // Here we would typically fetch projects from the Shortcut API
-      // This is a placeholder - in a real app, we'd use the clubhouse-lib library
-      // to make API calls
+      // Update the API token in settings
+      updateApiToken(apiTokenInput.trim());
       
-      // Simulate API call with fake data
-      // await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockProjects = [
-        { id: '1', name: 'Project A' },
-        { id: '2', name: 'Project B' },
-        { id: '3', name: 'Project C' },
-      ];
-      
-      const mockWorkflows = [
-        { id: '1', name: 'Default' },
-        { id: '2', name: 'Development' },
-        { id: '3', name: 'QA' },
-      ];
-      
-      setProjects(mockProjects);
-      setWorkflows(mockWorkflows);
-      
-      // Close credentials dialog after successful fetch
+      // Close the dialog
       setCredentialsDialogOpen(false);
-      setAlert({
-        type: 'info',
-        message: 'Connected to Shortcut API successfully',
-      });
+      
+      // Projects and workflows will be loaded automatically via the useEffect
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('Error saving API token:', error);
       setAlert({
         type: 'error',
-        message: 'Failed to connect to Shortcut API',
+        message: 'Failed to save API token',
       });
-    } finally {
       setLoadingProjects(false);
     }
   };
@@ -201,9 +216,6 @@ const TemplateApply: React.FC = () => {
     setAlert(null);
     
     try {
-      // Here we would send the data to Shortcut API
-      // This is a placeholder - in a real app, we'd use the clubhouse-lib library
-      
       // Build the epic with replaced variables
       const epicName = replaceVariables(template.epicDetails.name, variableValues);
       const epicDescription = replaceVariables(template.epicDetails.description, variableValues);
@@ -218,12 +230,21 @@ const TemplateApply: React.FC = () => {
         labels: story.labels,
       }));
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create the epic with stories in Shortcut
+      const result = await shortcutApi.createEpicWithStories(
+        {
+          name: epicName,
+          description: epicDescription,
+          state: template.epicDetails.state,
+          projectId: selectedProject,
+          workflowId: selectedWorkflow
+        },
+        stories
+      );
       
       setAlert({
         type: 'success',
-        message: 'Template applied successfully! Epic and stories created in Shortcut.',
+        message: `Template applied successfully! Epic #${result.epicId} and ${result.storyIds.length} stories created in Shortcut.`,
       });
       
       // Navigate back to templates list after success
@@ -234,7 +255,9 @@ const TemplateApply: React.FC = () => {
       console.error('Error applying template:', error);
       setAlert({
         type: 'error',
-        message: 'Failed to apply template to Shortcut',
+        message: typeof error === 'object' && error !== null && 'message' in error 
+          ? String(error.message) 
+          : 'Failed to apply template to Shortcut',
       });
     } finally {
       setLoading(false);
@@ -312,7 +335,7 @@ const TemplateApply: React.FC = () => {
             onClick={handleApplyTemplate}
             disabled={
               loading || 
-              !credentials.apiToken || 
+              !shortcutApi.hasApiToken || 
               !selectedProject || 
               !selectedWorkflow ||
               template.variables.some(v => !variableValues[v])
@@ -355,7 +378,7 @@ const TemplateApply: React.FC = () => {
       <CyberCard sx={{ p: 3, mb: 3 }} title="Shortcut Settings">
         
         <Stack spacing={2}>
-          {credentials.apiToken ? (
+          {shortcutApi.hasApiToken ? (
             <Alert severity="success" sx={{ mb: 2 }}>
               API Token is set
             </Alert>
@@ -370,11 +393,11 @@ const TemplateApply: React.FC = () => {
               label="Project"
               value={selectedProject}
               onChange={(e) => setSelectedProject(e.target.value as string)}
-              disabled={!credentials.apiToken || projects.length === 0}
+              disabled={!shortcutApi.hasApiToken || projects.length === 0}
               cornerClip
             >
               {projects.map(project => (
-                <MenuItem key={project.id} value={project.id}>
+                <MenuItem key={project.id} value={project.id.toString()}>
                   {project.name}
                 </MenuItem>
               ))}
@@ -386,11 +409,11 @@ const TemplateApply: React.FC = () => {
               label="Workflow"
               value={selectedWorkflow}
               onChange={(e) => setSelectedWorkflow(e.target.value as string)}
-              disabled={!credentials.apiToken || workflows.length === 0}
+              disabled={!shortcutApi.hasApiToken || workflows.length === 0}
               cornerClip
             >
               {workflows.map(workflow => (
-                <MenuItem key={workflow.id} value={workflow.id}>
+                <MenuItem key={workflow.id} value={workflow.id.toString()}>
                   {workflow.name}
                 </MenuItem>
               ))}
@@ -485,7 +508,7 @@ const TemplateApply: React.FC = () => {
             fullWidth
             label="API Token"
             name="apiToken"
-            value={credentials.apiToken}
+            value={apiTokenInput}
             onChange={handleCredentialsChange}
             margin="normal"
             type="password"
@@ -502,9 +525,9 @@ const TemplateApply: React.FC = () => {
             Cancel
           </CyberButton>
           <CyberButton 
-            onClick={fetchProjects} 
+            onClick={connectWithToken} 
             variant="outlined"
-            disabled={!credentials.apiToken || loadingProjects}
+            disabled={!apiTokenInput.trim() || loadingProjects}
             scanlineEffect
           >
             {loadingProjects ? <CircularProgress size={24} /> : 'Connect'}

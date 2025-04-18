@@ -46,6 +46,7 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@types/uuid": "^10.0.0",
+    "axios": "^1.8.4",
     "clubhouse-lib": "^0.13.0",
     "electron-store": "^10.0.1",
     "framer-motion": "^12.7.4",
