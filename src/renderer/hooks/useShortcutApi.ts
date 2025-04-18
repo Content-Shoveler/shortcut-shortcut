@@ -1,7 +1,7 @@
 /**
  * React hook for accessing Shortcut API functions
  */
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import { useSettings } from '../store/SettingsContext';
 import {
   ShortcutProject,
@@ -33,18 +33,160 @@ type ShortcutElectronAPI = {
  * with automatic API token handling
  */
 export function useShortcutApi() {
+  console.log('🔑 useShortcutApi hook initialized');
   const { settings } = useSettings();
-  const apiToken = settings.apiToken;
+  
+  // Get the API token from context or fallback to localStorage if context failed to load it
+  const getTokenWithFallback = () => {
+    // First try to get from context
+    if (settings.apiToken) {
+      console.log('🔑 Found API token in context');
+      return settings.apiToken;
+    }
+    
+    // Fallback to localStorage if context doesn't have it
+    try {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.apiToken) {
+          console.log('🔑 Context missing token, but found in localStorage', 
+                     parsed.apiToken.substring(0, 4) + '...');
+          return parsed.apiToken;
+        }
+      }
+    } catch (error) {
+      console.error('🔑 Error reading from localStorage:', error);
+    }
+    
+    console.log('🔑 No API token found in context or localStorage');
+    return '';
+  };
+  
+  const apiToken = getTokenWithFallback();
+  
+  console.log(`🔑 Final token exists: ${!!apiToken}, Token value: ${apiToken ? apiToken.substring(0, 4) + '...' : 'none'}`);
+  
+  // State to track if token has been validated - initialize based on token existence
+  const [tokenValidated, setTokenValidated] = useState<boolean | null>(() => {
+    // If there's no token, we know it's false right away
+    if (!apiToken) {
+      console.log(`🔑 Initial tokenValidated state: false (no token)`);
+      return false;
+    }
+    // Otherwise, we'll validate in useEffect
+    console.log(`🔑 Initial tokenValidated state: null (token exists, will validate)`);
+    return null;
+  });
+
+  // Prevent multiple validation calls for the same token
+  const lastValidatedToken = useRef<string>('');
+  
+  // Track if component is mounted to avoid state updates after unmount
+  const isMounted = useRef(true);
+  // Use this to debounce validation calls
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // On first mount, validate the token if it exists - but only once
+  useEffect(() => {
+    const validateOnMount = async () => {
+      // If we have a token but haven't validated it yet
+      if (apiToken && tokenValidated === null && lastValidatedToken.current !== apiToken) {
+        console.log(`🔑 Initial validation for token: ${apiToken.substring(0, 4)}...`);
+        lastValidatedToken.current = apiToken;
+        const valid = await validateApiToken();
+        if (isMounted.current) {
+          console.log(`🔑 Initial validation result: ${valid}`);
+          setTokenValidated(valid);
+        }
+      }
+    };
+    
+    validateOnMount();
+  }, []); // Run only on mount
+
+  // Check token validity when token changes - with debouncing
+  useEffect(() => {
+    console.log(`🔑 Token change effect triggered. Token: ${apiToken ? apiToken.substring(0, 4) + '...' : 'none'}`);
+    
+    // Skip validation if this token has already been validated
+    if (apiToken === lastValidatedToken.current) {
+      console.log('🔑 Token already validated, skipping');
+      return;
+    }
+    
+    const checkToken = async () => {
+      console.log('🔑 checkToken function called');
+      
+      // Clear any existing timeout to prevent stale validations
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+      
+      // Set a small delay to prevent rapid consecutive validations
+      validationTimeoutRef.current = setTimeout(async () => {
+        if (apiToken) {
+          // Update last validated token before validation to prevent loops
+          lastValidatedToken.current = apiToken;
+          
+          console.log('🔑 Token exists, validating...');
+          const isValid = await validateApiToken();
+          
+          if (isMounted.current) {
+            console.log(`🔑 Token validation result: ${isValid}`);
+            setTokenValidated(isValid);
+          }
+        } else {
+          console.log('🔑 No token, setting tokenValidated to false');
+          lastValidatedToken.current = '';
+          
+          if (isMounted.current) {
+            setTokenValidated(false);
+          }
+        }
+        
+        validationTimeoutRef.current = null;
+      }, 300); // 300ms debounce
+    };
+    
+    checkToken();
+    
+    // Clean up timeout on unmount or when apiToken changes
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, [apiToken]);
 
   /**
    * Validate if the current API token is valid
    */
   const validateApiToken = useCallback(async (): Promise<boolean> => {
-    if (!apiToken) return false;
+    console.log(`🔑 validateApiToken called, token: ${apiToken ? apiToken.substring(0, 4) + '...' : 'none'}`);
     
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.validateToken(apiToken);
-    return response.success;
+    if (!apiToken) {
+      console.log('🔑 validateApiToken - No token, returning false');
+      return false;
+    }
+    
+    try {
+      console.log('🔑 Making API call to validate token');
+      const api = window.electronAPI as ShortcutElectronAPI;
+      const response = await api.shortcutApi.validateToken(apiToken);
+      console.log(`🔑 Token validation API response:`, response);
+      setTokenValidated(response.success);
+      return response.success;
+    } catch (error) {
+      console.error('🔑 Error validating token:', error);
+      setTokenValidated(false);
+      return false;
+    }
   }, [apiToken]);
 
   /**
@@ -197,9 +339,23 @@ export function useShortcutApi() {
     [apiToken]
   );
 
+  // Explicitly calculate and log hasApiToken to debug
+  console.log(`🔑 hasApiToken raw calculation values:`, {
+    apiTokenExists: !!apiToken,
+    tokenValidated,
+    apiTokenValue: apiToken ? `${apiToken.substring(0, 4)}...` : 'none'
+  });
+  
+  // Simplify the hasApiToken calculation to ensure it works correctly
+  // We're removing the memoization temporarily to make sure it's not causing issues
+  const hasApiToken = !!apiToken && tokenValidated === true;
+  console.log(`🔑 hasApiToken calculated: ${hasApiToken}`);
+  
   return {
-    // Check if we have a token set
-    hasApiToken: !!apiToken,
+    // Check if we have a valid token set
+    hasApiToken,
+    // Token validation state
+    tokenValidated,
     // API functions
     validateApiToken,
     fetchProjects,

@@ -80,9 +80,15 @@ const Settings: React.FC = () => {
 
   // Validate API token
   const handleValidateToken = async () => {
+    console.log('🔐 Settings: handleValidateToken called');
+    console.log(`🔐 Settings: Validating token: ${apiToken ? apiToken.substring(0, 4) + '...' : 'none'}`);
+    
     setValidatingToken(true);
     try {
+      console.log('🔐 Settings: Calling validateApiToken');
       const isValid = await validateApiToken(apiToken);
+      console.log(`🔐 Settings: Token validation result: ${isValid}`);
+      
       setTokenStatus({
         valid: isValid,
         message: isValid
@@ -91,15 +97,39 @@ const Settings: React.FC = () => {
       });
       
       if (isValid) {
+        console.log('🔐 Settings: Token is valid, updating in context');
+        // Update token in context
         updateApiToken(apiToken);
+        console.log('🔐 Settings: Token updated in context');
+        
+        // Force API verification in the main process
+        try {
+          console.log('🔐 Settings: Forcing token verification in main process');
+          const api = window.electronAPI as any;
+          const verifyResult = await api.shortcutApi.validateToken(apiToken);
+          console.log('🔐 Settings: Main process verification result:', verifyResult);
+        } catch (e) {
+          console.error('🔐 Settings: Token validation verification error:', e);
+        }
+        
+        // Set a flag in sessionStorage that we're returning from Settings with a valid token
+        // This will help TemplateApply detect that it should refresh its token state
+        sessionStorage.setItem('returnToTemplateApply', 'true');
+        console.log('🔐 Settings: Set returnToTemplateApply flag in sessionStorage');
+        
+        // Log localStorage state
+        const storedSettings = localStorage.getItem('appSettings');
+        console.log('🔐 Settings: Current localStorage state:', storedSettings);
       }
     } catch (error) {
+      console.error('🔐 Settings: Error during token validation:', error);
       setTokenStatus({
         valid: false,
         message: 'An error occurred while validating the token.',
       });
     } finally {
       setValidatingToken(false);
+      console.log('🔐 Settings: Token validation process complete');
     }
   };
 

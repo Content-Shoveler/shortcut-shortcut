@@ -192,16 +192,29 @@ export async function createEpicWithStories(
  * Validates an API token by attempting to fetch current member info
  */
 export async function validateApiToken(apiToken: string): Promise<boolean> {
+  console.log('🔨 shortcutApi: validateApiToken called with token', apiToken ? apiToken.substring(0, 4) + '...' : 'none');
+  
   if (!apiToken) {
+    console.log('🔨 shortcutApi: Empty token, returning false');
     return false;
   }
   
   try {
+    console.log('🔨 shortcutApi: Calling main process to validate token');
     const api = window.electronAPI as APIWithShortcut;
     const response = await api.shortcutApi.validateToken(apiToken);
+    console.log('🔨 shortcutApi: Validation response:', response);
+    
+    // Log token validation result to help debugging
+    if (response.success) {
+      console.log('🔨 shortcutApi: Token successfully validated');
+    } else {
+      console.log('🔨 shortcutApi: Token validation failed:', response.message || 'No error message');
+    }
+    
     return response.success;
   } catch (error) {
-    console.error('Error validating API token:', error);
+    console.error('🔨 shortcutApi: Error validating API token:', error);
     return false;
   }
 }

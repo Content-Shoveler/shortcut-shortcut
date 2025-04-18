@@ -148,8 +148,27 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   
   // Initialize settings from localStorage or use defaults
   const [settings, setSettings] = useState<AppSettings>(() => {
+    console.log('💾 AppProviders: Initializing settings from localStorage');
     const savedSettings = localStorage.getItem('appSettings');
-    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+    console.log('💾 AppProviders: Raw localStorage data:', savedSettings);
+    
+    try {
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        console.log('💾 AppProviders: Parsed settings:', {
+          ...parsedSettings,
+          apiToken: parsedSettings.apiToken ? `${parsedSettings.apiToken.substring(0, 4)}...` : 'none'
+        });
+        
+        // Ensure we have all required fields by merging with defaults
+        return { ...defaultSettings, ...parsedSettings };
+      }
+    } catch (error) {
+      console.error('💾 AppProviders: Error parsing settings from localStorage:', error);
+    }
+    
+    console.log('💾 AppProviders: Using default settings');
+    return defaultSettings;
   });
 
   // Update settings
@@ -165,10 +184,30 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
 
   // Update API token
   const updateApiToken = (token: string) => {
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      apiToken: token,
-    }));
+    console.log('💾 AppProviders: updateApiToken called with token', token ? token.substring(0, 4) + '...' : 'none');
+    
+    // First update the context state
+    setSettings((prevSettings) => {
+      const newSettings = {
+        ...prevSettings,
+        apiToken: token,
+      };
+      console.log('💾 AppProviders: settings updated with new token');
+      return newSettings;
+    });
+    
+    // Also directly update localStorage to ensure synchronization
+    try {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        parsedSettings.apiToken = token;
+        localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
+        console.log('💾 AppProviders: localStorage directly updated with token');
+      }
+    } catch (error) {
+      console.error('💾 AppProviders: Error updating localStorage:', error);
+    }
   };
 
   // Validate API token
