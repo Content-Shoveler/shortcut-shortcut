@@ -249,11 +249,27 @@ ipcMain.handle('shortcut-fetchWorkflowStates', async (_, apiToken: string, workf
     return { success: false, message: 'API token is required' };
   }
   
+  console.log(`Fetching workflow states for workflow ID: ${workflowId}`);
+  
   try {
     const client = createShortcutClient(apiToken);
-    const response = await client.get(`/workflows/${workflowId}/states`);
-    return { success: true, data: response.data };
+    // Get the workflow data which includes states
+    const response = await client.get(`/workflows/${workflowId}`);
+    
+    // Log the entire response for debugging
+    console.log('Full workflow API response:', JSON.stringify(response.data, null, 2));
+    
+    // Extract states from the workflow response
+    if (response.data && Array.isArray(response.data.states)) {
+      console.log(`Found ${response.data.states.length} states in workflow ${workflowId}`);
+      console.log('States:', JSON.stringify(response.data.states, null, 2));
+      return { success: true, data: response.data.states };
+    } else {
+      console.log('No states array found in workflow response:', response.data);
+      return { success: true, data: [] }; // Return empty array if no states
+    }
   } catch (error) {
+    console.error('Error fetching workflow states:', error);
     return handleApiError(error);
   }
 });

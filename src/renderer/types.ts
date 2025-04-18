@@ -19,6 +19,8 @@ export interface StoryTemplate {
   description: string;
   type: string;
   state: string;
+  workflow_id?: string;
+  workflow_state_id?: string;
   estimate?: number;
   labels?: string[];
 }

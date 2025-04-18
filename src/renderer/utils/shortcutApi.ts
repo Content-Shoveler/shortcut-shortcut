@@ -79,7 +79,13 @@ export async function fetchWorkflowStates(
     throw new Error('API token is required');
   }
 
+  if (!workflowId) {
+    console.warn('No workflow ID provided for fetchWorkflowStates');
+    return [];
+  }
+
   try {
+    console.log(`Fetching workflow states for workflow ID: ${workflowId}`);
     const api = window.electronAPI as APIWithShortcut;
     const response = await api.shortcutApi.fetchWorkflowStates(
       apiToken, 
@@ -87,12 +93,17 @@ export async function fetchWorkflowStates(
     );
     
     if (!response.success) {
+      console.error('Failed to fetch workflow states:', response.message, response);
       throw new Error(response.message || 'Failed to fetch workflow states');
     }
     
-    return response.data || [];
+    const states = response.data || [];
+    console.log(`Retrieved ${states.length} workflow states`);
+    return states;
   } catch (error) {
-    throw error;
+    console.error('Error in fetchWorkflowStates:', error);
+    // Return empty array instead of throwing to prevent infinite retries
+    return [];
   }
 }
 
@@ -113,6 +124,8 @@ export async function createEpicWithStories(
     description: string;
     type: string;
     state: string;
+    workflow_id?: string;
+    workflow_state_id?: string;
     estimate?: number;
     labels?: string[];
   }>
@@ -145,28 +158,39 @@ export async function createEpicWithStories(
     
     const epic = epicResponse.data;
     
-    // 2. Get workflow states to map state names to IDs
-    const workflowStates = await fetchWorkflowStates(apiToken, epicData.workflowId);
-    
     // 3. Create each story linked to the epic
     const storyIds: string[] = [];
     
     for (const storyData of stories) {
-      // Find workflow state ID that matches the state name
-      const state = workflowStates.find(s => s.name === storyData.state);
-      if (!state) {
-        console.warn(`State "${storyData.state}" not found in workflow. Using first available state.`);
-      }
-      
-      const workflowStateId = state?.id || workflowStates[0].id;
-      
       // Create story with only the required parameters
       const storyPayload: Record<string, any> = {
         name: storyData.name,
         story_type: storyData.type as 'feature' | 'bug' | 'chore',
-        workflow_state_id: workflowStateId,
         epic_id: epic.id
       };
+      
+      // Use workflow_state_id from template if available
+      if (storyData.workflow_state_id) {
+        storyPayload.workflow_state_id = storyData.workflow_state_id;
+      } else {
+        // Fallback to finding a state by name for backward compatibility
+        try {
+          const workflowStates = await fetchWorkflowStates(apiToken, epicData.workflowId);
+          const state = workflowStates.find(s => s.name === storyData.state);
+          if (state) {
+            storyPayload.workflow_state_id = state.id;
+          } else if (workflowStates.length > 0) {
+            console.warn(`State "${storyData.state}" not found in workflow. Using first available state.`);
+            storyPayload.workflow_state_id = workflowStates[0].id;
+          } else {
+            // This will likely cause a 400 error but we don't have a better option
+            console.warn('No workflow states available and no workflow_state_id provided!');
+          }
+        } catch (error) {
+          console.error('Error finding workflow state:', error);
+          // Continue without workflow_state_id and let the API handle the error
+        }
+      }
       
       // Only add optional fields if they have values
       if (storyData.description) {
