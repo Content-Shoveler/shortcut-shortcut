@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,16 +13,12 @@ import {
   Stack,
   FormControl,
   MenuItem,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Collapse,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import PreviewIcon from '@mui/icons-material/Preview';
-import KeyIcon from '@mui/icons-material/Key';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { 
   CyberButton, 
   CyberCard, 
@@ -58,14 +54,11 @@ const TemplateApply: React.FC = () => {
   const shortcutApi = useShortcutApi();
   
   // For the API token dialog
-  const [apiTokenInput, setApiTokenInput] = useState<string>('');
-  
   const [projects, setProjects] = useState<ShortcutProject[]>([]);
   const [workflows, setWorkflows] = useState<ShortcutWorkflow[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState<boolean>(false);
   const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [previewOpen, setPreviewOpen] = useState<boolean>(false);
@@ -107,6 +100,11 @@ const TemplateApply: React.FC = () => {
     loadTemplate();
   }, [id, navigate]);
 
+  // Navigate to settings page
+  const navigateToSettings = () => {
+    navigate('/settings');
+  };
+
   // Load projects and workflows if API token is available
   useEffect(() => {
     const loadProjectsAndWorkflows = async () => {
@@ -138,7 +136,7 @@ const TemplateApply: React.FC = () => {
     };
     
     loadProjectsAndWorkflows();
-  }, [shortcutApi, projects.length]);
+  }, [shortcutApi, projects.length, navigate]);
 
   // Input change handlers
   const handleVariableChange = (variable: string, value: string) => {
@@ -148,39 +146,6 @@ const TemplateApply: React.FC = () => {
     }));
   };
 
-  const handleCredentialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setApiTokenInput(e.target.value);
-  };
-
-  // Shortcut API handlers
-  const connectWithToken = async () => {
-    if (!apiTokenInput.trim()) {
-      setAlert({
-        type: 'error',
-        message: 'API token is required',
-      });
-      return;
-    }
-
-    setLoadingProjects(true);
-    
-    try {
-      // Update the API token in settings
-      updateApiToken(apiTokenInput.trim());
-      
-      // Close the dialog
-      setCredentialsDialogOpen(false);
-      
-      // Projects and workflows will be loaded automatically via the useEffect
-    } catch (error) {
-      console.error('Error saving API token:', error);
-      setAlert({
-        type: 'error',
-        message: 'Failed to save API token',
-      });
-      setLoadingProjects(false);
-    }
-  };
 
   const handleApplyTemplate = async () => {
     if (!template) return;
@@ -299,6 +264,29 @@ const TemplateApply: React.FC = () => {
         </Alert>
       )}
 
+      {/* API Token Status Card - Only shown when token is missing */}
+      {!shortcutApi.hasApiToken && (
+        <CyberCard 
+          sx={{ p: 3, mb: 3 }} 
+          title="API Token Required"
+          cornerAccent
+          glowOnHover
+        >
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            You need to configure your Shortcut API Token in Settings before applying templates.
+          </Typography>
+          <CyberButton
+            variant="outlined"
+            startIcon={<CyberIcon icon={SettingsIcon} size={20} />}
+            onClick={navigateToSettings}
+            scanlineEffect
+            glowIntensity={0.8}
+          >
+            Go to Settings
+          </CyberButton>
+        </CyberCard>
+      )}
+      
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
           Apply Template: {template.name}
@@ -312,14 +300,6 @@ const TemplateApply: React.FC = () => {
             scanlineEffect
           >
             Back
-          </CyberButton>
-          <CyberButton
-            variant="outlined"
-            startIcon={<CyberIcon icon={KeyIcon} size={20} />}
-            onClick={() => setCredentialsDialogOpen(true)}
-            scanlineEffect
-          >
-            API Token
           </CyberButton>
           <CyberButton 
             variant="outlined"
@@ -352,7 +332,7 @@ const TemplateApply: React.FC = () => {
       </Typography>
 
       {/* Variables Section */}
-      <CyberCard sx={{ p: 3, mb: 3 }} title="Fill in Variables">
+      <CyberCard sx={{ p: 3, mb: 3 }} title="Fill in Variables" cornerAccent glowOnHover>
         {template.variables.length === 0 ? (
           <Typography color="text.secondary">
             This template has no variables to fill in.
@@ -374,63 +354,74 @@ const TemplateApply: React.FC = () => {
         )}
       </CyberCard>
 
-      {/* Shortcut Settings */}
-      <CyberCard sx={{ p: 3, mb: 3 }} title="Shortcut Settings">
-        
-        <Stack spacing={2}>
-          {shortcutApi.hasApiToken ? (
+      {/* Shortcut Settings - Only shown when API token is set */}
+      {shortcutApi.hasApiToken && (
+        <CyberCard sx={{ p: 3, mb: 3 }} title="Shortcut Settings" cornerAccent glowOnHover>
+          <Stack spacing={2}>
             <Alert severity="success" sx={{ mb: 2 }}>
-              API Token is set
+              API Token is set and valid
             </Alert>
-          ) : (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Please set your Shortcut API Token to continue
-            </Alert>
-          )}
-          
-          <FormControl fullWidth>
-            <CyberSelect
-              label="Project"
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value as string)}
-              disabled={!shortcutApi.hasApiToken || projects.length === 0}
-              cornerClip
-            >
-              {projects.map(project => (
-                <MenuItem key={project.id} value={project.id.toString()}>
-                  {project.name}
-                </MenuItem>
-              ))}
-            </CyberSelect>
-          </FormControl>
-          
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <CyberSelect
-              label="Workflow"
-              value={selectedWorkflow}
-              onChange={(e) => setSelectedWorkflow(e.target.value as string)}
-              disabled={!shortcutApi.hasApiToken || workflows.length === 0}
-              cornerClip
-            >
-              {workflows.map(workflow => (
-                <MenuItem key={workflow.id} value={workflow.id.toString()}>
-                  {workflow.name}
-                </MenuItem>
-              ))}
-            </CyberSelect>
-          </FormControl>
-        </Stack>
-      </CyberCard>
+            
+            <FormControl fullWidth>
+              <CyberSelect
+                label="Project"
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value as string)}
+                disabled={projects.length === 0 || loadingProjects}
+                cornerClip
+              >
+                {projects.map(project => (
+                  <MenuItem key={project.id} value={project.id.toString()}>
+                    {project.name}
+                  </MenuItem>
+                ))}
+                {projects.length === 0 && !loadingProjects && (
+                  <MenuItem disabled value="">
+                    No projects found
+                  </MenuItem>
+                )}
+              </CyberSelect>
+            </FormControl>
+            
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <CyberSelect
+                label="Workflow"
+                value={selectedWorkflow}
+                onChange={(e) => setSelectedWorkflow(e.target.value as string)}
+                disabled={workflows.length === 0 || loadingProjects}
+                cornerClip
+              >
+                {workflows.map(workflow => (
+                  <MenuItem key={workflow.id} value={workflow.id.toString()}>
+                    {workflow.name}
+                  </MenuItem>
+                ))}
+                {workflows.length === 0 && !loadingProjects && (
+                  <MenuItem disabled value="">
+                    No workflows found
+                  </MenuItem>
+                )}
+              </CyberSelect>
+            </FormControl>
+            
+            {loadingProjects && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+          </Stack>
+        </CyberCard>
+      )}
 
       {/* Preview Section */}
       <Collapse in={previewOpen}>
-        <CyberCard sx={{ p: 3, mb: 3 }} title="Preview">
+        <CyberCard sx={{ p: 3, mb: 3 }} title="Preview" cornerAccent glowOnHover>
           
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
               Epic
             </Typography>
-            <CyberCard sx={{ p: 2, mb: 2 }}>
+            <CyberCard sx={{ p: 2, mb: 2 }} cornerAccent>
               <Typography variant="h6" gutterBottom>
                 {previewEpicName || '(Epic Name)'}
               </Typography>
@@ -496,44 +487,6 @@ const TemplateApply: React.FC = () => {
         </CyberCard>
       </Collapse>
 
-      {/* API Token Dialog */}
-      <Dialog open={credentialsDialogOpen} onClose={() => setCredentialsDialogOpen(false)}>
-        <DialogTitle>Shortcut API Token</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Enter your Shortcut API token to connect to your workspace.
-            You can find or create an API token in Shortcut under Settings &gt; API Tokens.
-          </Typography>
-          <CyberTextField
-            fullWidth
-            label="API Token"
-            name="apiToken"
-            value={apiTokenInput}
-            onChange={handleCredentialsChange}
-            margin="normal"
-            type="password"
-            autoComplete="off"
-            cornerClip
-          />
-        </DialogContent>
-        <DialogActions>
-          <CyberButton 
-            onClick={() => setCredentialsDialogOpen(false)} 
-            variant="outlined"
-            scanlineEffect
-          >
-            Cancel
-          </CyberButton>
-          <CyberButton 
-            onClick={connectWithToken} 
-            variant="outlined"
-            disabled={!apiTokenInput.trim() || loadingProjects}
-            scanlineEffect
-          >
-            {loadingProjects ? <CircularProgress size={24} /> : 'Connect'}
-          </CyberButton>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
