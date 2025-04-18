@@ -88,6 +88,5 @@ export const cyberpunkAnimations = {
 
 // Information function
 export function setupRiveFolders(): void {
-  console.info('Rive animations should be placed in:');
-  console.info('- /src/renderer/assets/rive/');
+  // Rive animations should be placed in /src/renderer/assets/rive/
 }

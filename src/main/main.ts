@@ -77,8 +77,6 @@ const createShortcutClient = (apiToken: string) => {
 
 // Helper function to handle API errors
 const handleApiError = (error: any) => {
-  console.error('Shortcut API error:', error);
-  
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
@@ -196,7 +194,6 @@ ipcMain.handle('importTemplates', async () => {
       store.set('templates', mergedTemplates);
       return mergedTemplates;
     } catch (error) {
-      console.error('Failed to import templates:', error);
       throw new Error('Failed to import templates');
     }
   }

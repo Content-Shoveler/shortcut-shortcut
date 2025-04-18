@@ -106,7 +106,6 @@ const TemplateEditor: React.FC = () => {
             navigate('/');
           }
         } catch (error) {
-          console.error('Error loading template:', error);
           setAlert({
             type: 'error',
             message: 'Failed to load template',
@@ -262,7 +261,6 @@ const TemplateEditor: React.FC = () => {
         }, 1500);
       }
     } catch (error) {
-      console.error('Error saving template:', error);
       setAlert({
         type: 'error',
         message: 'Failed to save template',

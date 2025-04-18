@@ -22,6 +22,18 @@ export const createShortcutClient = (apiToken: string): AxiosInstance => {
     }
   });
 
+  // Add request interceptor for logging API requests
+  client.interceptors.request.use(
+    (config) => {
+      console.log(`🚀 Shortcut API Request: ${config.method?.toUpperCase()} ${config.url}`);
+      return config;
+    },
+    (error) => {
+      console.log('⚠️ Shortcut API Request Error:', error.message);
+      return Promise.reject(error);
+    }
+  );
+
   // Add response interceptor for error handling
   // Define the shape of the expected error response from Shortcut API
   interface ShortcutErrorResponse {
@@ -30,7 +42,11 @@ export const createShortcutClient = (apiToken: string): AxiosInstance => {
   }
 
   client.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      console.log(`✅ Shortcut API Response: ${response.status} ${response.statusText}`, 
+        response.config.url);
+      return response;
+    },
     (error: AxiosError<ShortcutErrorResponse>) => {
       const apiError: ShortcutApiError = {
         message: 'An unknown error occurred'
@@ -53,6 +69,7 @@ export const createShortcutClient = (apiToken: string): AxiosInstance => {
         apiError.message = error.message;
       }
 
+      console.log('❌ Shortcut API Error:', apiError.message);
       return Promise.reject(apiError);
     }
   );
@@ -85,6 +102,7 @@ export const getPaginatedResults = async <T>(
     };
     
     const response = await client.get<T[]>(url, requestConfig);
+    console.log(`📋 Shortcut API Pagination: Retrieved ${response.data.length} items from ${url}`);
     
     // Add this page of results to our collection
     allResults = [...allResults, ...response.data];

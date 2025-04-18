@@ -75,7 +75,6 @@ const TemplateList: React.FC = () => {
         const fetchedTemplates = await window.electronAPI.getTemplates();
         setTemplates(fetchedTemplates);
       } catch (error) {
-        console.error('Error fetching templates:', error);
         setAlert({
           type: 'error',
           message: 'Failed to load templates.',
@@ -102,7 +101,6 @@ const TemplateList: React.FC = () => {
           message: 'Template deleted successfully.',
         });
       } catch (error) {
-        console.error('Error deleting template:', error);
         setAlert({
           type: 'error',
           message: 'Failed to delete template.',
@@ -124,7 +122,6 @@ const TemplateList: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error exporting templates:', error);
       setAlert({
         type: 'error',
         message: 'Failed to export templates.',
@@ -144,7 +141,6 @@ const TemplateList: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error importing templates:', error);
       setAlert({
         type: 'error',
         message: 'Failed to import templates.',

@@ -11,7 +11,7 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import { Visibility, VisibilityOff, ExpandMore } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ExpandMore, CheckCircle, Error } from '@mui/icons-material';
 import { useTheme, useSettings } from '../store/AppProviders';
 import { 
   CyberCard, 
@@ -59,10 +59,24 @@ const Settings: React.FC = () => {
   const [apiToken, setApiToken] = useState(settings.apiToken);
   const [showApiToken, setShowApiToken] = useState(false);
   const [validatingToken, setValidatingToken] = useState(false);
-  const [tokenStatus, setTokenStatus] = useState<{ valid: boolean | null; message: string }>({
+  const [tokenStatus, setTokenStatus] = useState<{ valid: boolean | null }>({
     valid: null,
-    message: '',
   });
+
+  // Validate token on initial load if one exists
+  useEffect(() => {
+    if (settings.apiToken) {
+      const validateTokenOnLoad = async () => {
+        try {
+          const isValid = await validateApiToken(settings.apiToken);
+          setTokenStatus({ valid: isValid });
+        } catch (error) {
+          setTokenStatus({ valid: false });
+        }
+      };
+      validateTokenOnLoad();
+    }
+  }, [settings.apiToken, validateApiToken]);
 
   // Handle tab change
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -74,62 +88,38 @@ const Settings: React.FC = () => {
     setApiToken(event.target.value);
     // Reset validation when token changes
     if (tokenStatus.valid !== null) {
-      setTokenStatus({ valid: null, message: '' });
+      setTokenStatus({ valid: null });
     }
   };
 
   // Validate API token
   const handleValidateToken = async () => {
-    console.log('🔐 Settings: handleValidateToken called');
-    console.log(`🔐 Settings: Validating token: ${apiToken ? apiToken.substring(0, 4) + '...' : 'none'}`);
-    
     setValidatingToken(true);
     try {
-      console.log('🔐 Settings: Calling validateApiToken');
       const isValid = await validateApiToken(apiToken);
-      console.log(`🔐 Settings: Token validation result: ${isValid}`);
       
-      setTokenStatus({
-        valid: isValid,
-        message: isValid
-          ? 'Token is valid.'
-          : 'Token is invalid or could not be validated.',
-      });
+      setTokenStatus({ valid: isValid });
       
       if (isValid) {
-        console.log('🔐 Settings: Token is valid, updating in context');
         // Update token in context
         updateApiToken(apiToken);
-        console.log('🔐 Settings: Token updated in context');
         
         // Force API verification in the main process
         try {
-          console.log('🔐 Settings: Forcing token verification in main process');
           const api = window.electronAPI as any;
-          const verifyResult = await api.shortcutApi.validateToken(apiToken);
-          console.log('🔐 Settings: Main process verification result:', verifyResult);
+          await api.shortcutApi.validateToken(apiToken);
         } catch (e) {
-          console.error('🔐 Settings: Token validation verification error:', e);
+          // Error in token validation verification
         }
         
         // Set a flag in sessionStorage that we're returning from Settings with a valid token
         // This will help TemplateApply detect that it should refresh its token state
         sessionStorage.setItem('returnToTemplateApply', 'true');
-        console.log('🔐 Settings: Set returnToTemplateApply flag in sessionStorage');
-        
-        // Log localStorage state
-        const storedSettings = localStorage.getItem('appSettings');
-        console.log('🔐 Settings: Current localStorage state:', storedSettings);
       }
     } catch (error) {
-      console.error('🔐 Settings: Error during token validation:', error);
-      setTokenStatus({
-        valid: false,
-        message: 'An error occurred while validating the token.',
-      });
+      setTokenStatus({ valid: false });
     } finally {
       setValidatingToken(false);
-      console.log('🔐 Settings: Token validation process complete');
     }
   };
 
@@ -227,6 +217,16 @@ const Settings: React.FC = () => {
               cornerClip
               scanlineEffect
               InputProps={{
+                startAdornment: tokenStatus.valid !== null && (
+                  <InputAdornment position="start">
+                    <CyberIcon 
+                      icon={tokenStatus.valid ? CheckCircle : Error} 
+                      color={tokenStatus.valid ? '#00E64D' : '#FF3E3E'}
+                      pulse={tokenStatus.valid}
+                      glowIntensity={tokenStatus.valid ? 0.7 : 0}
+                    />
+                  </InputAdornment>
+                ),
                 endAdornment: (
                   <InputAdornment position="end">
                     <CyberIcon.Button
@@ -245,22 +245,13 @@ const Settings: React.FC = () => {
             <CyberButton
               variant="contained"
               onClick={handleValidateToken}
-              disabled={!apiToken || validatingToken}
+              disabled={!apiToken || validatingToken || tokenStatus.valid === true}
               sx={{ mt: 1 }}
               scanlineEffect
               glowIntensity={0.7}
             >
               {validatingToken ? <CircularProgress size={24} /> : 'Validate & Save Token'}
             </CyberButton>
-
-            {tokenStatus.valid !== null && (
-              <Alert
-                severity={tokenStatus.valid ? 'success' : 'error'}
-                sx={{ mt: 2 }}
-              >
-                {tokenStatus.message}
-              </Alert>
-            )}
           </Box>
         </TabPanel>
 
@@ -381,7 +372,8 @@ const Settings: React.FC = () => {
                   scanlineEffect
                 />
               }
-              label="Ask for confirmation when deleting templates"
+              label=
+              "Ask for confirmation when deleting templates"
             />
           </Box>
           <Box>

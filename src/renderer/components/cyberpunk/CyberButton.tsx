@@ -54,7 +54,8 @@ const CyberButton: React.FC<CyberButtonProps> = ({
         padding: theme.spacing(1, 2),
         color: theme.palette.mode === 'dark' ? '#E0FFFF' : '#103037',
         
-        // Custom border effect
+        // Background and border effects
+        backgroundColor: alpha(buttonAccentColor, 0.05),
         border: `1px solid ${alpha(buttonAccentColor, 0.5)}`,
         
         // Before pseudo-element for corner accents
