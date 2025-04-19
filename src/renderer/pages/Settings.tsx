@@ -403,7 +403,7 @@ const Settings: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Typography paragraph>
-                <strong>Welcome to Shortcut Epic Templates!</strong> This application helps you create and manage templates for epics and stories in Shortcut.
+                <strong>Welcome to Shortcut Shortcut!</strong> This application helps you create and manage templates for epics and stories in Shortcut.
               </Typography>
               <Typography paragraph>
                 <strong>To get started:</strong>

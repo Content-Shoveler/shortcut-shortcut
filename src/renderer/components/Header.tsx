@@ -91,7 +91,7 @@ const Header: React.FC = () => {
               fontWeight: 'bold',
             }}>
               {/* Split the text into individual letters for neon effect */}
-              {"SHORTCUT EPIC TEMPLATES".split('').map((letter, index) => (
+              {"SHORTCUT SHORTCUT".split('').map((letter, index) => (
                 <motion.span
                   key={index}
                   initial="initial"

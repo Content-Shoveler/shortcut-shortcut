@@ -223,7 +223,7 @@ const TemplateList: React.FC = () => {
               repeatType: 'reverse'
             }}
           >
-            Epic Templates
+            Epics
           </motion.span>
         </Typography>
         
@@ -299,7 +299,7 @@ const TemplateList: React.FC = () => {
               sx={{ mt: 2 }}
               scanlineEffect
             >
-              Create Template
+              Create Epic
             </CyberButton>
           </MotionBox>
         ) : viewMode === 'card' ? (
@@ -352,15 +352,7 @@ const TemplateList: React.FC = () => {
                         mb: 2
                       }}
                     >
-                      {template.name}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary" 
-                      gutterBottom
-                      sx={{ minHeight: '40px' }}
-                    >
-                      {template.description}
+                      {template.epicDetails.name}
                     </Typography>
                     <Divider sx={{ 
                       my: 2,
@@ -422,7 +414,7 @@ const TemplateList: React.FC = () => {
                     p: 1
                   }}>
                     <Box>
-                      <Tooltip title="Apply Template">
+                      <Tooltip title="Apply Epic">
                         <MotionIconButton 
                           color="primary"
                           onClick={() => navigate(`/apply/${template.id}`)}
@@ -432,7 +424,7 @@ const TemplateList: React.FC = () => {
                           <PlayArrowIcon />
                         </MotionIconButton>
                       </Tooltip>
-                      <Tooltip title="Edit Template">
+                      <Tooltip title="Edit Epic">
                         <MotionIconButton
                           color="primary"
                           onClick={() => navigate(`/editor/${template.id}`)}
@@ -443,7 +435,7 @@ const TemplateList: React.FC = () => {
                         </MotionIconButton>
                       </Tooltip>
                     </Box>
-                    <Tooltip title="Delete Template">
+                    <Tooltip title="Delete Epic">
                       <MotionIconButton 
                         color="error"
                         onClick={() => handleDeleteClick(template.id)}
@@ -494,8 +486,7 @@ const TemplateList: React.FC = () => {
                       borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`
                     }
                   }}>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Description</TableCell>
+                    <TableCell>Epic Name</TableCell>
                     <TableCell>Stories</TableCell>
                     <TableCell>Variables</TableCell>
                     <TableCell align="right">Actions</TableCell>
@@ -522,17 +513,7 @@ const TemplateList: React.FC = () => {
                           variant="subtitle1"
                           sx={{ fontWeight: 500 }}
                         >
-                          {template.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary" 
-                          noWrap 
-                          sx={{ maxWidth: 300 }}
-                        >
-                          {template.description}
+                          {template.epicDetails.name}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -565,7 +546,7 @@ const TemplateList: React.FC = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Apply Template">
+                        <Tooltip title="Apply Epic">
                           <MotionIconButton 
                             color="primary"
                             onClick={() => navigate(`/apply/${template.id}`)}
@@ -576,7 +557,7 @@ const TemplateList: React.FC = () => {
                             <PlayArrowIcon />
                           </MotionIconButton>
                         </Tooltip>
-                        <Tooltip title="Edit Template">
+                        <Tooltip title="Edit Epic">
                           <MotionIconButton
                             color="primary"
                             onClick={() => navigate(`/editor/${template.id}`)}
@@ -587,7 +568,7 @@ const TemplateList: React.FC = () => {
                             <EditIcon />
                           </MotionIconButton>
                         </Tooltip>
-                        <Tooltip title="Delete Template">
+                        <Tooltip title="Delete Epic">
                           <MotionIconButton 
                             color="error"
                             onClick={() => handleDeleteClick(template.id)}
@@ -655,11 +636,11 @@ const TemplateList: React.FC = () => {
             background: theme.palette.error.main,
           }
         }}>
-          Delete Template
+          Delete Epic
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <DialogContentText sx={{ opacity: 0.8 }}>
-            Are you sure you want to delete this template? This action cannot be undone.
+            Are you sure you want to delete this epic? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ 

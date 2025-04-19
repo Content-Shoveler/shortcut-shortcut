@@ -2,7 +2,7 @@
 
 # Build script for the cyberpunk-styled shortcut app
 
-echo "🧪 Building cyberpunk-styled Shortcut Epic Templates application..."
+echo "🧪 Building cyberpunk-styled Shortcut Shortcut application..."
 
 # Clean any previous builds
 echo "🧹 Cleaning previous builds..."

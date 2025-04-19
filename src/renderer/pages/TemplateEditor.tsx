@@ -214,7 +214,7 @@ const TemplateEditor: React.FC = () => {
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
-          {id ? 'Edit Template' : 'Create Template'}
+          {id ? 'Edit Epic' : 'Create Epic'}
         </Typography>
         
         <Stack direction="row" spacing={1}>
@@ -230,7 +230,7 @@ const TemplateEditor: React.FC = () => {
             variant="contained"
             startIcon={<CyberIcon icon={SaveIcon} size={20} />}
             onClick={handleSaveTemplate}
-            disabled={!template.name || !template.epicDetails.name}
+            disabled={!template.epicDetails.name}
             glowIntensity={0.7}
             sx={{ 
               backgroundColor: theme.palette.mode === 'dark' 
@@ -254,37 +254,10 @@ const TemplateEditor: React.FC = () => {
               }
             }}
           >
-            Save Template
+            Save Epic
           </CyberButton>
         </Stack>
       </Box>
-
-      <CyberCard sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          Template Details
-        </Typography>
-        <CyberTextField
-          fullWidth
-          margin="normal"
-          label="Template Name"
-          name="name"
-          value={template.name}
-          onChange={handleTemplateChange}
-          required
-          cornerClip
-        />
-        <CyberTextField
-          fullWidth
-          margin="normal"
-          label="Template Description"
-          name="description"
-          value={template.description}
-          onChange={handleTemplateChange}
-          multiline
-          rows={2}
-          cornerClip
-        />
-      </CyberCard>
 
       {/* Epic Details Component */}
       <EpicDetailsEditor 

@@ -150,10 +150,11 @@ export async function createEpicWithStories(
   try {
     const api = window.electronAPI as APIWithShortcut;
     
-    // 1. Create the epic with only the required name parameter
+    // 1. Create the epic with all fields from epicData
+    // This allows us to pass any field supported by the Shortcut API
+    // including description, owners, dates, objectives, etc.
     const epicPayload = {
-      name: epicData.name
-      // Description and all other fields removed to ensure minimal payload
+      ...epicData
     };
 
     console.log('Sending epic payload:', JSON.stringify(epicPayload));
@@ -175,65 +176,56 @@ export async function createEpicWithStories(
     const storyIds: string[] = [];
     
     for (const storyData of stories) {
-      // Create story with only the required parameters
+      // Create story with all fields from storyData
+      // and necessary transformations for the Shortcut API
       const storyPayload: Record<string, any> = {
-        name: storyData.name,
+        // Start with all fields from storyData
+        ...storyData,
+        // Add epic_id
+        epic_id: epic.id,
+        // Map type to story_type (required by Shortcut API)
         story_type: storyData.type as 'feature' | 'bug' | 'chore',
-        epic_id: epic.id
       };
       
-      // Use workflow_state_id from template if available (preferred approach)
-      if (storyData.workflow_state_id) {
-        storyPayload.workflow_state_id = storyData.workflow_state_id;
-      } else if (storyData.workflow_id) {
-        // If we have workflow_id but not workflow_state_id, try to find state by name
-        try {
-          const workflowStates = await fetchWorkflowStates(apiToken, storyData.workflow_id);
+      // Delete internal fields that don't map directly to API
+      delete storyPayload.type; // Replaced with story_type
+      delete storyPayload.state; // Will be handled by workflow_state_id
+      
+      // Transform labels if they exist
+      if (storyPayload.labels && Array.isArray(storyPayload.labels)) {
+        storyPayload.labels = storyPayload.labels.map(label => ({ name: label }));
+      }
+      
+      // Handle workflow state ID resolution if not explicitly provided
+      if (!storyPayload.workflow_state_id) {
+        let workflowStates: ShortcutWorkflowState[] = [];
+        
+        // Try to get workflow states from story's workflow_id first
+        if (storyPayload.workflow_id) {
+          workflowStates = await fetchWorkflowStates(apiToken, storyPayload.workflow_id);
+        } 
+        // Fall back to epicData.workflowId if needed
+        else if (epicData.workflowId) {
+          workflowStates = await fetchWorkflowStates(apiToken, epicData.workflowId);
+        }
+        
+        if (workflowStates.length > 0) {
+          // Try to find state by name
           const state = workflowStates.find(s => s.name === storyData.state);
           if (state) {
             storyPayload.workflow_state_id = state.id;
-          } else if (workflowStates.length > 0) {
-            console.warn(`State "${storyData.state}" not found in workflow. Using first available state.`);
-            storyPayload.workflow_state_id = workflowStates[0].id;
           } else {
-            console.warn('No workflow states found for provided workflow_id!');
-          }
-        } catch (error) {
-          console.error('Error finding workflow state:', error);
-        }
-      } else if (epicData.workflowId) {
-        // Final fallback: use workflowId from epic data (legacy behavior)
-        try {
-          const workflowStates = await fetchWorkflowStates(apiToken, epicData.workflowId);
-          const state = workflowStates.find(s => s.name === storyData.state);
-          if (state) {
-            storyPayload.workflow_state_id = state.id;
-          } else if (workflowStates.length > 0) {
             console.warn(`State "${storyData.state}" not found in workflow. Using first available state.`);
             storyPayload.workflow_state_id = workflowStates[0].id;
           }
-        } catch (error) {
-          console.error('Error finding workflow state from epic workflowId:', error);
+        } else {
+          console.error('No workflow states found - story creation may fail');
         }
-      } else {
-        console.error('No workflow_state_id or workflow_id provided - story creation will likely fail');
       }
       
-      // Only add optional fields if they have values
-      if (storyData.description) {
-        storyPayload.description = storyData.description;
-      }
-      
-      // IMPORTANT: Never include project_id as it conflicts with workflow_state_id
-      // Shortcut API will reject requests with both parameters
-      
-      if (storyData.estimate) {
-        storyPayload.estimate = storyData.estimate;
-      }
-      
-      if (storyData.labels && storyData.labels.length > 0) {
-        storyPayload.labels = storyData.labels.map(label => ({ name: label }));
-      }
+      // Remove workflow_id after we've used it to find the workflow_state_id
+      // as the API doesn't accept both
+      delete storyPayload.workflow_id;
       
       console.log('Sending story payload:', JSON.stringify(storyPayload));
       

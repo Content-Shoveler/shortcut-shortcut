@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Script to build and package the Shortcut Epic Templates app for Intel-based macOS
+# Script to build and package the Shortcut Shortcut app for Intel-based macOS
 # Using a direct approach instead of electron-builder
 
 # Set up error handling
 set -e
 
-echo "🚀 Building Shortcut Epic Templates for Intel macOS..."
+echo "🚀 Building Shortcut Shortcut for Intel macOS..."
 echo "================================================"
 
 # Clean up previous builds
@@ -21,7 +21,7 @@ yarn webpack --env NODE_ENV=production --env WEBPACK_TARGET=main
 
 # Download Electron binary if needed
 echo "📥 Preparing Electron for x64 architecture..."
-APP_NAME="Shortcut Epic Templates"
+APP_NAME="Shortcut Shortcut"
 APP_DIR="dist/release/${APP_NAME}.app"
 ELECTRON_DIR="node_modules/electron/dist/Electron.app"
 

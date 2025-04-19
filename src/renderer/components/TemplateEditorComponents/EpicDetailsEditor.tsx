@@ -28,13 +28,13 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
 
   return (
     <CyberCard sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" component="h2" gutterBottom>
-        Epic Details
+      <Typography variant="h6" component="h2" gutterBottom sx={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+        Epic
       </Typography>
       <CyberTextField
         fullWidth
         margin="normal"
-        label="Epic Name Template"
+        label="Epic Name"
         name="name"
         value={epicDetails.name}
         onChange={onChange}
@@ -45,7 +45,7 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
       <CyberTextField
         fullWidth
         margin="normal"
-        label="Epic Description Template"
+        label="Epic Description"
         name="description"
         value={epicDetails.description}
         onChange={onChange}

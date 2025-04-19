@@ -1,13 +1,13 @@
 {
-  "name": "shortcut-epic-templates",
+  "name": "shortcut-shortcut",
   "version": "1.0.0",
   "main": "dist/main.js",
   "description": "Desktop application for creating and managing epic templates for Shortcut",
   "author": "Rowan Findlay <rowan@squarekicker.com>",
   "license": "MIT",
   "build": {
-    "appId": "com.squarekicker.shortcut-epic-templates",
-    "productName": "Shortcut Epic Templates",
+    "appId": "com.squarekicker.shortcut-shortcut",
+    "productName": "Shortcut Shortcut",
     "files": [
       "dist/**/*"
     ],

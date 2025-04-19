@@ -233,7 +233,7 @@ const TemplateApply: React.FC = () => {
       
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
-          Apply Template: {template.name}
+          Apply Epic: {template.epicDetails.name}
         </Typography>
         
         <Stack direction="row" spacing={1}>
@@ -260,9 +260,6 @@ const TemplateApply: React.FC = () => {
         </Stack>
       </Box>
 
-      <Typography variant="body1" sx={{ mb: 3 }}>
-        {template.description}
-      </Typography>
 
       {/* Variables Section */}
       <CyberCard sx={{ p: 3, mb: 3 }} title="Fill in Variables" cornerAccent glowOnHover>

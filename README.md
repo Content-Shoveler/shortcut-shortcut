@@ -1,4 +1,4 @@
-# Shortcut Epic Templates
+# Shortcut Shortcut
 
 A desktop application for creating and managing templates for epics and stories in Shortcut (formerly Clubhouse).
 
