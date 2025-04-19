@@ -1,15 +1,9 @@
-/**
- * Type definitions for Shortcut API entities
- */
-
-// Base entity interface with common properties
 export interface ShortcutEntity {
   id: number | string;
   created_at: string;
   updated_at: string;
 }
 
-// Member (user) interface
 export interface ShortcutMember extends ShortcutEntity {
   profile: {
     email_address: string;
@@ -20,26 +14,24 @@ export interface ShortcutMember extends ShortcutEntity {
   disabled: boolean;
 }
 
-// Project interface
 export interface ShortcutProject extends ShortcutEntity {
   name: string;
   description: string;
   abbreviation: string;
   color: string;
   archived: boolean;
-  follower_ids: string[] | number[];
+  follower_ids: (number | string)[];
   team_id: number | string;
 }
 
-// Epic interface
 export interface ShortcutEpic extends ShortcutEntity {
   name: string;
   description: string;
   state: string;
-  owner_ids: string[] | number[];
-  follower_ids: string[] | number[];
-  project_ids: string[] | number[];
-  requested_by_id: string | number;
+  owner_ids: (number | string)[];
+  follower_ids: (number | string)[];
+  project_ids: (number | string)[];
+  requested_by_id: number | string;
   deadline?: string;
   planned_start_date?: string;
   started?: boolean;
@@ -48,7 +40,6 @@ export interface ShortcutEpic extends ShortcutEntity {
   completed_at?: string;
 }
 
-// Story interface
 export interface ShortcutStory extends ShortcutEntity {
   name: string;
   description: string;
@@ -58,8 +49,8 @@ export interface ShortcutStory extends ShortcutEntity {
   iteration_id?: number | string;
   project_id: number | string;
   requested_by_id: number | string;
-  owner_ids: Array<number | string>;
-  follower_ids: Array<number | string>;
+  owner_ids: (number | string)[];
+  follower_ids: (number | string)[];
   estimate?: number;
   deadline?: string;
   started?: boolean;
@@ -69,7 +60,6 @@ export interface ShortcutStory extends ShortcutEntity {
   labels?: ShortcutLabel[];
 }
 
-// Label interface
 export interface ShortcutLabel extends ShortcutEntity {
   name: string;
   color: string;
@@ -77,7 +67,6 @@ export interface ShortcutLabel extends ShortcutEntity {
   archived: boolean;
 }
 
-// Workflow interface
 export interface ShortcutWorkflow extends ShortcutEntity {
   name: string;
   description?: string;
@@ -87,7 +76,6 @@ export interface ShortcutWorkflow extends ShortcutEntity {
   team_id?: number | string;
 }
 
-// Workflow state interface
 export interface ShortcutWorkflowState extends ShortcutEntity {
   name: string;
   type: 'unstarted' | 'started' | 'done';
@@ -97,36 +85,29 @@ export interface ShortcutWorkflowState extends ShortcutEntity {
   num_stories: number;
 }
 
-// API response interfaces
 export interface ShortcutListResponse<T> {
   data: T[];
-  next?: string;  // For pagination
+  next?: string;
 }
 
-// API error interface
 export interface ShortcutApiError {
   message: string;
   code?: string;
   errors?: Record<string, string[]>;
 }
 
-// Request payloads
-
-// Epic creation payload - simplified to match absolute minimum API requirements
 export interface CreateEpicPayload {
-  name: string; // Only name is truly required per API documentation
+  name: string;
 }
 
-// Story creation payload
 export interface CreateStoryPayload {
   name: string;
   description?: string;
   story_type: 'feature' | 'bug' | 'chore';
   workflow_state_id: number | string;
   epic_id?: number | string;
-  project_id: number | string;
-  owner_ids?: Array<number | string>;
-  labels?: Array<{ name: string; color?: string }>;
+  owner_ids?: (number | string)[];
+  labels?: { name: string; color?: string }[];
   deadline?: string;
   estimate?: number;
 }

@@ -11,8 +11,6 @@ import {
   Alert,
   Stack,
   Chip,
-  FormControl,
-  MenuItem,
   Collapse,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -29,7 +27,6 @@ import {
 
 import { Template, VariableMapping } from '../types';
 import { useShortcutApi } from '../hooks/useShortcutApi';
-import { ShortcutProject, ShortcutWorkflow } from '../types/shortcutApi';
 import { useSettings } from '../store/SettingsContext';
 
 // Function to replace variables in text with actual values
@@ -53,103 +50,11 @@ const TemplateApply: React.FC = () => {
   // Initialize Shortcut API hook
   const shortcutApi = useShortcutApi();
   
-  // For the API token dialog
-  const [projects, setProjects] = useState<ShortcutProject[]>([]);
-  const [workflows, setWorkflows] = useState<ShortcutWorkflow[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>('');
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
-  
-  // Debug values to help diagnose button disabled state
-  const [debugHasApiToken, setDebugHasApiToken] = useState(false);
-  const [overrideDisabled, setOverrideDisabled] = useState(false);
-  
-  // Monitor hasApiToken changes
-  useEffect(() => {
-    setDebugHasApiToken(shortcutApi.hasApiToken);
-  }, [shortcutApi.hasApiToken]);
+  // State variables
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  // Preview is always visible
   const [previewOpen, setPreviewOpen] = useState<boolean>(true);
   const [tokenState, setTokenState] = useState<'valid' | 'invalid' | 'loading'>('loading');
-  
-  // For tracking component mount/remount and other non-render-triggering state
-  const mountCountRef = useRef(0);
-  const isLoadingDataRef = useRef(false);
-  const previousHasApiTokenRef = useRef(shortcutApi.hasApiToken);
-  const dataLoadAttemptedRef = useRef(false);
-  
-  useEffect(() => {
-    mountCountRef.current += 1;
-    
-    return () => {
-      // Cleanup on unmount
-    };
-  }, []);
-  
-  // Function to load projects and workflows - defined before it's used in useEffect
-  const loadProjectsAndWorkflows = useCallback(async () => {
-    // Prevent concurrent calls to avoid cascading state updates
-    if (isLoadingDataRef.current) {
-      return;
-    }
-    
-    if (shortcutApi.hasApiToken && (projects.length === 0 || tokenState === 'loading')) {
-      // Set the loading flag before any state updates
-      isLoadingDataRef.current = true;
-      dataLoadAttemptedRef.current = true;
-      
-      try {
-        // Only update loadingProjects state if not already true
-        if (!loadingProjects) {
-          setLoadingProjects(true);
-        }
-        
-        const fetchedProjects = await shortcutApi.fetchProjects();
-        const fetchedWorkflows = await shortcutApi.fetchWorkflows();
-        
-        // Only update state if component is still mounted and data has changed
-        if (JSON.stringify(projects) !== JSON.stringify(fetchedProjects)) {
-          setProjects(fetchedProjects);
-        }
-        
-        if (JSON.stringify(workflows) !== JSON.stringify(fetchedWorkflows)) {
-          setWorkflows(fetchedWorkflows);
-        }
-        
-        setAlert({
-          type: 'info',
-          message: 'Connected to Shortcut API successfully',
-        });
-        
-        // Only update tokenState if it's changing
-        if (tokenState !== 'valid') {
-          setTokenState('valid');
-        }
-      } catch (error) {
-        setAlert({
-          type: 'error',
-          message: typeof error === 'object' && error !== null && 'message' in error 
-            ? String(error.message) 
-            : 'Failed to fetch data from Shortcut API',
-        });
-        
-        // Only update tokenState if it's changing
-        if (tokenState !== 'invalid') {
-          setTokenState('invalid');
-        }
-      } finally {
-        setLoadingProjects(false);
-        isLoadingDataRef.current = false;
-      }
-    } else if (!shortcutApi.hasApiToken) {
-      // Only update state if it's changing
-      if (tokenState !== 'invalid') {
-        setTokenState('invalid');
-      }
-    }
-  }, [shortcutApi.hasApiToken, shortcutApi.fetchProjects, shortcutApi.fetchWorkflows, tokenState, loadingProjects, projects, workflows]);
   
   // Navigate to settings page with a flag to know we need to revalidate when returning
   const navigateToSettings = () => {
@@ -158,7 +63,7 @@ const TemplateApply: React.FC = () => {
     navigate('/settings');
   };
   
-  // Check if we returned from settings on mount - now this is defined after loadProjectsAndWorkflows
+  // Check if we returned from settings on mount
   useEffect(() => {
     const checkReturnFromSettings = () => {
       const returnFlag = sessionStorage.getItem('returnToTemplateApply');
@@ -167,48 +72,21 @@ const TemplateApply: React.FC = () => {
         // Clear the flag
         sessionStorage.removeItem('returnToTemplateApply');
         
-        // Before checking if API token is available in the hook,
-        // check localStorage directly as a backup
-        try {
-          const savedSettings = localStorage.getItem('appSettings');
-          if (savedSettings) {
-            const parsed = JSON.parse(savedSettings);
-            if (parsed.apiToken) {
-              // Force a validation of the token found in localStorage
-              const api = window.electronAPI as any;
-              api.shortcutApi.validateToken(parsed.apiToken)
-                .then((result: any) => {
-                  // If validation passed, force a reload
-                  if (result.success) {
-                    // Force a state refresh regardless of shortcutApi.hasApiToken
-                    setTokenState('loading');
-                    setTimeout(() => {
-                      loadProjectsAndWorkflows();
-                    }, 100);
-                  }
-                })
-                .catch((_err: any) => {
-                  // Error in validation
-                });
-            }
-          }
-        } catch (e) {
-          // Error checking localStorage
-        }
-        
-        // Standard flow with shortcutApi
+        // Update token state based on API token availability
         if (shortcutApi.hasApiToken) {
-          // Add a timeout to ensure the component has fully mounted
-          setTimeout(() => {
-            setTokenState('loading'); // Force refresh
-            loadProjectsAndWorkflows();
-          }, 100);
+          setTokenState('valid');
+          setAlert({
+            type: 'info',
+            message: 'Connected to Shortcut API successfully',
+          });
+        } else {
+          setTokenState('invalid');
         }
       }
     };
     
     checkReturnFromSettings();
-  }, [shortcutApi.hasApiToken, loadProjectsAndWorkflows]);
+  }, [shortcutApi.hasApiToken]);
 
   // Load template
   useEffect(() => {
@@ -246,29 +124,19 @@ const TemplateApply: React.FC = () => {
     loadTemplate();
   }, [id, navigate]);
 
-  // Check token state and load data when it changes - with guards to prevent loops
+  // Check token state when it changes
   useEffect(() => {
-    // Skip if nothing has changed
-    if (previousHasApiTokenRef.current === shortcutApi.hasApiToken && dataLoadAttemptedRef.current) {
-      return;
-    }
-    
-    // Update our ref to prevent unnecessary future runs
-    previousHasApiTokenRef.current = shortcutApi.hasApiToken;
-    
-    // Use a small timeout to debounce multiple rapid state changes
-    const timeoutId = setTimeout(() => {
-      if (shortcutApi.hasApiToken) {
-        loadProjectsAndWorkflows();
-      } else {
-        if (tokenState !== 'invalid') {
-          setTokenState('invalid');
-        }
+    // Just update token state based on API token
+    if (shortcutApi.hasApiToken) {
+      if (tokenState !== 'valid') {
+        setTokenState('valid');
       }
-    }, 100);
-    
-    return () => clearTimeout(timeoutId);
-  }, [shortcutApi.hasApiToken, loadProjectsAndWorkflows, tokenState]);
+    } else {
+      if (tokenState !== 'invalid') {
+        setTokenState('invalid');
+      }
+    }
+  }, [shortcutApi.hasApiToken, tokenState]);
 
   // Input change handlers
   const handleVariableChange = (variable: string, value: string) => {
@@ -300,15 +168,23 @@ const TemplateApply: React.FC = () => {
       const epicName = replaceVariables(template.epicDetails.name, variableValues);
       const epicDescription = replaceVariables(template.epicDetails.description, variableValues);
       
-      // Build stories with replaced variables
+      // Build stories with replaced variables and pass workflow data directly from template
       const stories = template.storyTemplates.map(story => ({
         name: replaceVariables(story.name, variableValues),
         description: replaceVariables(story.description, variableValues),
         type: story.type,
         state: story.state,
+        workflow_id: story.workflow_id,
+        workflow_state_id: story.workflow_state_id,
         estimate: story.estimate,
         labels: story.labels,
       }));
+      
+      // Find a workflowId from the first story with one, or use a default
+      const workflowId = template.storyTemplates.find(s => s.workflow_id)?.workflow_id || '';
+      if (!workflowId) {
+        throw new Error('No workflow ID found in any story template');
+      }
       
       // Create the epic with stories in Shortcut
       const result = await shortcutApi.createEpicWithStories(
@@ -316,8 +192,7 @@ const TemplateApply: React.FC = () => {
           name: epicName,
           description: epicDescription,
           state: template.epicDetails.state,
-          projectId: selectedProject,
-          workflowId: selectedWorkflow
+          workflowId: workflowId
         },
         stories
       );
@@ -421,12 +296,12 @@ const TemplateApply: React.FC = () => {
             onClick={handleApplyTemplate}
             disabled={
               loading || 
-              (!overrideDisabled && !shortcutApi.hasApiToken) || // Skip API token check if override is enabled
+              !shortcutApi.hasApiToken || 
               template.variables.some(v => !variableValues[v])
             }
             scanlineEffect
           >
-            {loading ? <CircularProgress size={24} /> : (overrideDisabled ? '🔓 Apply Template' : 'Apply Template')}
+            {loading ? <CircularProgress size={24} /> : 'Apply Template'}
           </CyberButton>
         </Stack>
       </Box>

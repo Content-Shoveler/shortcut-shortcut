@@ -235,7 +235,6 @@ export function useShortcutApi() {
         name: string;
         description: string;
         state: string;
-        projectId: string;
         workflowId: string;
       },
       stories: Array<{
@@ -252,10 +251,9 @@ export function useShortcutApi() {
       }
       
       // 1. Create the epic
-      const epicPayload = {
+      const epicPayload: any = {
         name: epicData.name,
         description: epicData.description,
-        project_ids: [epicData.projectId],
         labels: []
       };
       
@@ -291,13 +289,12 @@ export function useShortcutApi() {
         
         const workflowStateId = state?.id || workflowStates[0]?.id;
         
-        const storyPayload = {
+        const storyPayload: any = {
           name: storyData.name,
           description: storyData.description,
           story_type: storyData.type,
           workflow_state_id: workflowStateId,
           epic_id: epic.id,
-          project_id: epicData.projectId,
           estimate: storyData.estimate,
           labels: storyData.labels?.map(label => ({ name: label }))
         };
