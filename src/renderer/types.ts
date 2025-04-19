@@ -12,6 +12,12 @@ export interface EpicDetails {
   name: string;
   description: string;
   state: string;
+  epic_state_id?: number;
+  owner_ids?: string[];
+  planned_start_date?: string;
+  deadline?: string;
+  labels?: { name: string; color?: string }[];
+  objective_ids?: number[];
 }
 
 export interface StoryTemplate {

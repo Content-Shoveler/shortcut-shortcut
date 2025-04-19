@@ -3,7 +3,8 @@
  */
 import { 
   ShortcutWorkflow, 
-  ShortcutWorkflowState 
+  ShortcutWorkflowState,
+  ShortcutEpicState
 } from '../../types/shortcutApi';
 import { FieldDefinition } from './types';
 
@@ -124,10 +125,43 @@ export const ownerField: FieldDefinition<any> = {
 };
 
 /**
+ * Epic State Field Definition
+ */
+export const epicStateField: FieldDefinition<ShortcutEpicState> = {
+  id: 'epicState',
+  type: 'single',
+  label: 'Epic State',
+  helperText: 'Select an epic state',
+  
+  async fetch(api) {
+    return api.fetchEpicStates();
+  },
+  
+  getOptionLabel(state) {
+    return state.name;
+  },
+  
+  getOptionValue(state) {
+    return state.id.toString();
+  },
+  
+  // ID-based lookup methods
+  getIdFromValue(state) {
+    return state.id;
+  },
+  
+  findOptionById(options, id) {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    return options.find(option => option.id === numericId) || null;
+  }
+};
+
+/**
  * Map of all field definitions
  */
 export const fieldDefinitions = {
   workflow: workflowField,
   workflowState: workflowStateField,
   owner: ownerField,
+  epicState: epicStateField,
 };

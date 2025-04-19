@@ -126,6 +126,7 @@ export interface CreateEpicParams {
   name: string;
   description: string;
   state: string;
+  epic_state_id?: number;
   workflowId?: string;
 }
 
@@ -154,7 +155,9 @@ export async function createEpicWithStories(
     // This allows us to pass any field supported by the Shortcut API
     // including description, owners, dates, objectives, etc.
     const epicPayload = {
-      ...epicData
+      ...epicData,
+      // If epic_state_id is provided, use it
+      ...(epicData.epic_state_id && { epic_state_id: epicData.epic_state_id }),
     };
 
     console.log('Sending epic payload:', JSON.stringify(epicPayload));

@@ -30,15 +30,17 @@ export {
   workflowField,
   workflowStateField,
   ownerField,
+  epicStateField,
   fieldDefinitions
 } from './fieldDefinitions';
 
 // Create and export pre-built components for common field types
 import { createFieldComponent, createDependentFieldComponent } from './components';
-import { workflowField, workflowStateField } from './fieldDefinitions';
+import { workflowField, workflowStateField, epicStateField } from './fieldDefinitions';
 
 export const WorkflowSelector = createFieldComponent(workflowField);
 export const WorkflowStateSelector = createFieldComponent(workflowStateField);
+export const EpicStateSelector = createFieldComponent(epicStateField);
 export const WorkflowAndStateSelector = createDependentFieldComponent(
   workflowField,
   workflowStateField

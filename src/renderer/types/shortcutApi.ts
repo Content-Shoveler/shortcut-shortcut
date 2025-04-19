@@ -90,6 +90,19 @@ export interface ShortcutListResponse<T> {
   next?: string;
 }
 
+export interface ShortcutEpicState extends ShortcutEntity {
+  name: string;
+  type: string;
+  position: number;
+  description?: string;
+  color: string;
+}
+
+export interface ShortcutEpicWorkflow extends ShortcutEntity {
+  default_epic_state_id: number;
+  epic_states: ShortcutEpicState[];
+}
+
 export interface ShortcutApiError {
   message: string;
   code?: string;

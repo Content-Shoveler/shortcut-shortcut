@@ -44,6 +44,7 @@ interface ElectronAPI {
     fetchProjects: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflows: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflowStates: (apiToken: string, workflowId: string) => Promise<ShortcutApiResponse>;
+    fetchEpicWorkflow: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
   };
@@ -71,6 +72,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('shortcut-fetchWorkflows', apiToken),
     fetchWorkflowStates: (apiToken: string, workflowId: string) => 
       ipcRenderer.invoke('shortcut-fetchWorkflowStates', apiToken, workflowId),
+    fetchEpicWorkflow: (apiToken: string) => 
+      ipcRenderer.invoke('shortcut-fetchEpicWorkflow', apiToken),
     createEpic: (apiToken: string, epicData: any) => 
       ipcRenderer.invoke('shortcut-createEpic', apiToken, epicData),
     createStory: (apiToken: string, storyData: any) => 

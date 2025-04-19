@@ -274,6 +274,27 @@ ipcMain.handle('shortcut-fetchWorkflowStates', async (_, apiToken: string, workf
   }
 });
 
+ipcMain.handle('shortcut-fetchEpicWorkflow', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  console.log('Fetching epic workflow');
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/epic-workflow');
+    
+    // Log the entire response for debugging
+    console.log('Epic workflow API response:', JSON.stringify(response.data, null, 2));
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching epic workflow:', error);
+    return handleApiError(error);
+  }
+});
+
 ipcMain.handle('shortcut-createEpic', async (_, apiToken: string, epicData: any) => {
   if (!apiToken) {
     return { success: false, message: 'API token is required' };

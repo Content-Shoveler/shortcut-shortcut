@@ -17,6 +17,7 @@ type ShortcutElectronAPI = {
     fetchProjects: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflows: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflowStates: (apiToken: string, workflowId: string) => Promise<ShortcutApiResponse>;
+    fetchEpicWorkflow: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
   };
@@ -227,6 +228,36 @@ export function useShortcutApi() {
   );
 
   /**
+   * Fetch epic workflow containing all epic states from Shortcut
+   */
+  const fetchEpicWorkflow = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchEpicWorkflow(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch epic workflow');
+    }
+    
+    return response.data || null;
+  }, [apiToken]);
+
+  /**
+   * Fetch epic states from Shortcut
+   */
+  const fetchEpicStates = useCallback(async () => {
+    try {
+      const workflow = await fetchEpicWorkflow();
+      return workflow.epic_states || [];
+    } catch (error) {
+      console.error('Failed to fetch epic states:', error);
+      return [];
+    }
+  }, [fetchEpicWorkflow]);
+
+  /**
    * Create an epic with associated stories
    */
   const createEpicWithStories = useCallback(
@@ -346,6 +377,8 @@ export function useShortcutApi() {
     fetchProjects,
     fetchWorkflows,
     fetchWorkflowStates,
+    fetchEpicWorkflow,
+    fetchEpicStates,
     createEpicWithStories,
   };
 }
