@@ -27,6 +27,7 @@ import {
 import { StoryTemplate } from '../../types';
 import { ShortcutWorkflow, ShortcutWorkflowState } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
+import { WorkflowAndStateSelector } from '../ShortcutFields';
 
 // Story state options
 const storyTypeOptions = [
@@ -50,13 +51,6 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
 }) => {
   const theme = useTheme();
   const shortcutApi = useShortcutApi();
-  
-  // Workflows and states for story creation
-  const [workflows, setWorkflows] = useState<ShortcutWorkflow[]>([]);
-  const [workflowStates, setWorkflowStates] = useState<ShortcutWorkflowState[]>([]);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
-  const [loadingWorkflows, setLoadingWorkflows] = useState<boolean>(false);
-  const [loadingWorkflowStates, setLoadingWorkflowStates] = useState<boolean>(false);
   const [apiTokenAlert, setApiTokenAlert] = useState<boolean>(false);
   const [story, setStory] = useState<StoryTemplate | null>(null);
   
@@ -64,70 +58,15 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
   useEffect(() => {
     if (open && currentStory) {
       setStory(currentStory);
-      
-      // Set selected workflow if it exists in the story
-      if (currentStory.workflow_id) {
-        setSelectedWorkflow(currentStory.workflow_id);
-      }
     }
   }, [open, currentStory]);
   
-  // Fetch workflows when dialog opens
+  // Check if API token is available
   useEffect(() => {
     if (open) {
-      fetchWorkflows();
+      setApiTokenAlert(!shortcutApi.hasApiToken);
     }
-  }, [open]);
-  
-  // Fetch workflow states when a workflow is selected
-  useEffect(() => {
-    if (selectedWorkflow) {
-      fetchWorkflowStates(selectedWorkflow);
-    } else {
-      setWorkflowStates([]);
-    }
-  }, [selectedWorkflow]);
-  
-  const fetchWorkflows = useCallback(async () => {
-    if (!shortcutApi.hasApiToken) {
-      setApiTokenAlert(true);
-      return;
-    }
-    
-    setApiTokenAlert(false);
-    setLoadingWorkflows(true);
-    
-    try {
-      const fetchedWorkflows = await shortcutApi.fetchWorkflows();
-      setWorkflows(fetchedWorkflows);
-      
-      // Reset selected workflow and states when workflows change
-      setSelectedWorkflow('');
-      setWorkflowStates([]);
-    } catch (error) {
-      console.error('Failed to fetch workflows:', error);
-    } finally {
-      setLoadingWorkflows(false);
-    }
-  }, [shortcutApi]);
-  
-  const fetchWorkflowStates = useCallback(async (workflowId: string) => {
-    if (!shortcutApi.hasApiToken || !workflowId) {
-      return;
-    }
-    
-    setLoadingWorkflowStates(true);
-    
-    try {
-      const fetchedStates = await shortcutApi.fetchWorkflowStates(workflowId);
-      setWorkflowStates(fetchedStates);
-    } catch (error) {
-      console.error('Failed to fetch workflow states:', error);
-      setWorkflowStates([]);
-    } finally {
-      setLoadingWorkflowStates(false);
-    }
-  }, [shortcutApi]);
+  }, [open, shortcutApi.hasApiToken]);
   
   const handleStoryChange = (e: React.ChangeEvent<HTMLInputElement> | { target: { name: string; value: unknown } }) => {
     const { name, value } = e.target;
@@ -139,34 +78,26 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     }
   };
   
-  const handleWorkflowChange = (event: SelectChangeEvent<unknown>) => {
-    const workflowId = event.target.value as string;
-    
-    // Update component state
-    setSelectedWorkflow(workflowId);
-    
-    // Update the current story
+  // Handle workflow change
+  const handleWorkflowChange = (workflow: ShortcutWorkflow | null) => {
     if (story) {
       setStory({
         ...story,
-        workflow_id: workflowId,
+        workflow_id: workflow ? workflow.id.toString() : '',
         // Reset workflow state when workflow changes
         workflow_state_id: '',
+        state: '',
       });
     }
   };
   
-  const handleWorkflowStateChange = (event: SelectChangeEvent<unknown>) => {
-    const stateId = event.target.value as string;
-    
+  // Handle workflow state change
+  const handleWorkflowStateChange = (state: ShortcutWorkflowState | null) => {
     if (story) {
-      // Find the state name for display
-      const stateName = workflowStates.find(state => state.id.toString() === stateId)?.name || '';
-      
       setStory({
         ...story,
-        workflow_state_id: stateId,
-        state: stateName, // Store the name for display purposes
+        workflow_state_id: state ? state.id.toString() : '',
+        state: state ? state.name : '', // Store the name for display purposes
       });
     }
   };
@@ -276,52 +207,16 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         </Box>
         
         {/* Workflow and State Selectors */}
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-          <FormControl fullWidth margin="normal">
-            <CyberSelect
-              label="Workflow"
-              value={selectedWorkflow}
-              onChange={handleWorkflowChange}
-              cornerClip
-              disabled={loadingWorkflows}
-            >
-              {loadingWorkflows ? (
-                <MenuItem value="">Loading workflows...</MenuItem>
-              ) : workflows.length > 0 ? (
-                workflows.map(workflow => (
-                  <MenuItem key={workflow.id} value={workflow.id.toString()}>
-                    {workflow.name}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem value="">No workflows found</MenuItem>
-              )}
-            </CyberSelect>
-          </FormControl>
-          
-          <FormControl fullWidth margin="normal">
-            <CyberSelect
-              label="State"
-              value={story.workflow_state_id || ''}
-              onChange={handleWorkflowStateChange}
-              cornerClip
-              disabled={!selectedWorkflow || loadingWorkflowStates}
-            >
-              {loadingWorkflowStates ? (
-                <MenuItem value="">Loading states...</MenuItem>
-              ) : workflowStates.length > 0 ? (
-                workflowStates.map(state => (
-                  <MenuItem key={state.id} value={state.id.toString()}>
-                    {state.name}
-                  </MenuItem>
-                ))
-              ) : selectedWorkflow ? (
-                <MenuItem value="">No states found for this workflow</MenuItem>
-              ) : (
-                <MenuItem value="">Select a workflow first</MenuItem>
-              )}
-            </CyberSelect>
-          </FormControl>
+        <Box sx={{ mt: 2 }}>
+          <WorkflowAndStateSelector 
+            // Just pass the IDs - the component will resolve them
+            parentValue={story.workflow_id ? Number(story.workflow_id) : null}
+            childValue={story.workflow_state_id ? Number(story.workflow_state_id) : null}
+            onParentChange={handleWorkflowChange}
+            onChildChange={handleWorkflowStateChange}
+            disabled={!shortcutApi.hasApiToken}
+            fullWidth
+          />
         </Box>
         
         {apiTokenAlert && (
