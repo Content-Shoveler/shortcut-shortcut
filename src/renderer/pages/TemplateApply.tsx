@@ -141,9 +141,9 @@ const TemplateApply: React.FC = () => {
         {
           name: epicName,
           description: epicDescription,
-          state: template.epicDetails.state,
-          workflowId: workflowId
+          state: template.epicDetails.state
         },
+        workflowId,
         stories
       );
       

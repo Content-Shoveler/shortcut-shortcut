@@ -235,13 +235,14 @@ export function useShortcutApi() {
         name: string;
         description: string;
         state: string;
-        workflowId: string;
       },
+      workflowId: string,
       stories: Array<{
         name: string;
         description: string;
         type: string;
         state: string;
+        workflow_state_id?: string;
         estimate?: number;
         labels?: string[];
       }>
@@ -251,9 +252,10 @@ export function useShortcutApi() {
       }
       
       // 1. Create the epic
-      const epicPayload: any = {
+      const epicPayload = {
         name: epicData.name,
         description: epicData.description,
+        state: epicData.state,
         labels: []
       };
       
@@ -265,31 +267,44 @@ export function useShortcutApi() {
       
       const epic = epicResponse.data;
       
-      // 2. Get workflow states
-      const statesResponse = await api.shortcutApi.fetchWorkflowStates(
-        apiToken, 
-        epicData.workflowId
-      );
-      
-      if (!statesResponse.success) {
-        throw new Error(statesResponse.message || 'Failed to fetch workflow states');
-      }
-      
-      const workflowStates = statesResponse.data || [];
-      
-      // 3. Create stories
+      // 2. Create stories
       const storyIds: string[] = [];
       
-      for (const storyData of stories) {
-        // Find workflow state ID that matches the state name
-        const state = workflowStates.find((s: any) => s.name === storyData.state);
-        if (!state) {
-          console.warn(`State "${storyData.state}" not found in workflow. Using first available state.`);
+      // Only fetch workflow states if any stories need them
+      let workflowStates: any[] = [];
+      const needWorkflowStates = stories.some(story => !story.workflow_state_id);
+      
+      if (needWorkflowStates) {
+        const statesResponse = await api.shortcutApi.fetchWorkflowStates(
+          apiToken, 
+          workflowId
+        );
+        
+        if (!statesResponse.success) {
+          throw new Error(statesResponse.message || 'Failed to fetch workflow states');
         }
         
-        const workflowStateId = state?.id || workflowStates[0]?.id;
+        workflowStates = statesResponse.data || [];
+      }
+      
+      for (const storyData of stories) {
+        // Use the provided workflow_state_id if available
+        let workflowStateId = storyData.workflow_state_id;
         
-        const storyPayload: any = {
+        // If not available, look up by name
+        if (!workflowStateId && workflowStates.length > 0) {
+          const state = workflowStates.find((s: any) => s.name === storyData.state);
+          if (!state) {
+            console.warn(`State "${storyData.state}" not found in workflow. Using first available state.`);
+          }
+          workflowStateId = state?.id || workflowStates[0]?.id;
+        }
+        
+        if (!workflowStateId) {
+          throw new Error(`Cannot determine workflow state ID for story: ${storyData.name}`);
+        }
+        
+        const storyPayload = {
           name: storyData.name,
           description: storyData.description,
           story_type: storyData.type,
@@ -301,7 +316,7 @@ export function useShortcutApi() {
         
         const storyResponse = await api.shortcutApi.createStory(apiToken, storyPayload);
         if (!storyResponse.success) {
-          throw new Error(storyResponse.message || 'Failed to create story');
+          throw new Error(storyResponse.message || `Failed to create story: ${storyData.name}`);
         }
         
         storyIds.push(storyResponse.data.id.toString());
