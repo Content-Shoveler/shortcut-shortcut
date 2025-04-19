@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -11,23 +11,20 @@ import {
   Alert,
   Stack,
   Chip,
-  Collapse,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import SettingsIcon from '@mui/icons-material/Settings';
-import PreviewIcon from '@mui/icons-material/Preview';
+
 import { 
   CyberButton, 
   CyberCard, 
   CyberTextField, 
-  CyberSelect,
   CyberIcon 
 } from '../components/cyberpunk';
 
 import { Template, VariableMapping } from '../types';
 import { useShortcutApi } from '../hooks/useShortcutApi';
-import { useSettings } from '../store/SettingsContext';
 
 // Function to replace variables in text with actual values
 const replaceVariables = (text: string, variables: VariableMapping): string => {
@@ -42,111 +39,64 @@ const replaceVariables = (text: string, variables: VariableMapping): string => {
 const TemplateApply: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { updateApiToken } = useSettings();
+  const shortcutApi = useShortcutApi();
 
+  // State management
   const [template, setTemplate] = useState<Template | null>(null);
   const [variableValues, setVariableValues] = useState<VariableMapping>({});
-  
-  // Initialize Shortcut API hook
-  const shortcutApi = useShortcutApi();
-  
-  // State variables
   const [loading, setLoading] = useState<boolean>(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  const [previewOpen, setPreviewOpen] = useState<boolean>(true);
-  const [tokenState, setTokenState] = useState<'valid' | 'invalid' | 'loading'>('loading');
   
-  // Navigate to settings page with a flag to know we need to revalidate when returning
-  const navigateToSettings = () => {
-    // Set a session flag to know we came from TemplateApply 
-    sessionStorage.setItem('returnToTemplateApply', 'true');
-    navigate('/settings');
-  };
-  
-  // Check if we returned from settings on mount
-  useEffect(() => {
-    const checkReturnFromSettings = () => {
-      const returnFlag = sessionStorage.getItem('returnToTemplateApply');
-      
-      if (returnFlag === 'true') {
-        // Clear the flag
-        sessionStorage.removeItem('returnToTemplateApply');
-        
-        // Update token state based on API token availability
-        if (shortcutApi.hasApiToken) {
-          setTokenState('valid');
-          setAlert({
-            type: 'info',
-            message: 'Connected to Shortcut API successfully',
-          });
-        } else {
-          setTokenState('invalid');
-        }
-      }
-    };
-    
-    checkReturnFromSettings();
-  }, [shortcutApi.hasApiToken]);
-
-  // Load template
+  // Load template on component mount
   useEffect(() => {
     const loadTemplate = async () => {
-      if (id) {
-        try {
-          const templates = await window.electronAPI.getTemplates();
-          const foundTemplate = templates.find((t: Template) => t.id === id);
+      if (!id) return;
+      
+      try {
+        const templates = await window.electronAPI.getTemplates();
+        const foundTemplate = templates.find((t: Template) => t.id === id);
+        
+        if (foundTemplate) {
+          setTemplate(foundTemplate);
           
-          if (foundTemplate) {
-            setTemplate(foundTemplate);
-            
-            // Initialize variable values with empty strings
-            const initialValues: VariableMapping = {};
-            foundTemplate.variables.forEach(variable => {
-              initialValues[variable] = '';
-            });
-            setVariableValues(initialValues);
-          } else {
-            setAlert({
-              type: 'error',
-              message: 'Template not found',
-            });
-            navigate('/');
-          }
-      } catch (error) {
+          // Initialize variable values with empty strings
+          const initialValues: VariableMapping = {};
+          foundTemplate.variables.forEach(variable => {
+            initialValues[variable] = '';
+          });
+          setVariableValues(initialValues);
+        } else {
           setAlert({
             type: 'error',
-            message: 'Failed to load template',
+            message: 'Template not found',
           });
+          navigate('/');
         }
+      } catch (error) {
+        setAlert({
+          type: 'error',
+          message: 'Failed to load template',
+        });
       }
     };
 
     loadTemplate();
   }, [id, navigate]);
 
-  // Check token state when it changes
-  useEffect(() => {
-    // Just update token state based on API token
-    if (shortcutApi.hasApiToken) {
-      if (tokenState !== 'valid') {
-        setTokenState('valid');
-      }
-    } else {
-      if (tokenState !== 'invalid') {
-        setTokenState('invalid');
-      }
-    }
-  }, [shortcutApi.hasApiToken, tokenState]);
+  // Navigate to settings page
+  const navigateToSettings = () => {
+    navigate('/settings');
+  };
 
-  // Input change handlers
+  // Handle variable input changes
   const handleVariableChange = (variable: string, value: string) => {
-    setVariableValues((prev: VariableMapping) => ({
+    setVariableValues(prev => ({
       ...prev,
       [variable]: value,
     }));
   };
 
-
+  // Handle template application
   const handleApplyTemplate = async () => {
     if (!template) return;
     
@@ -168,7 +118,7 @@ const TemplateApply: React.FC = () => {
       const epicName = replaceVariables(template.epicDetails.name, variableValues);
       const epicDescription = replaceVariables(template.epicDetails.description, variableValues);
       
-      // Build stories with replaced variables and pass workflow data directly from template
+      // Build stories with replaced variables
       const stories = template.storyTemplates.map(story => ({
         name: replaceVariables(story.name, variableValues),
         description: replaceVariables(story.description, variableValues),
@@ -207,11 +157,18 @@ const TemplateApply: React.FC = () => {
         navigate('/');
       }, 3000);
     } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to apply template to Shortcut';
+        
+      // Show specific message for API token issues
+      const message = errorMessage.includes('API token') || errorMessage.includes('401') || errorMessage.includes('403')
+        ? 'Invalid API token. Please update your Shortcut API token in Settings.'
+        : errorMessage;
+        
       setAlert({
         type: 'error',
-        message: typeof error === 'object' && error !== null && 'message' in error 
-          ? String(error.message) 
-          : 'Failed to apply template to Shortcut',
+        message
       });
     } finally {
       setLoading(false);
@@ -226,12 +183,10 @@ const TemplateApply: React.FC = () => {
       </Box>
     );
   }
-
+  
   // Generate preview content
   const previewEpicName = replaceVariables(template.epicDetails.name, variableValues);
   const previewEpicDescription = replaceVariables(template.epicDetails.description, variableValues);
-  
-  // Prepare preview stories
   const previewStories = template.storyTemplates.map(story => ({
     name: replaceVariables(story.name, variableValues),
     description: replaceVariables(story.description, variableValues),
@@ -253,8 +208,8 @@ const TemplateApply: React.FC = () => {
         </Alert>
       )}
 
-      {/* API Token Status Alert - Modified to match connected state alert */}
-      {tokenState !== 'valid' && (
+      {/* API Token Status Alert - Only shown when shortcutApi.hasApiToken is false */}
+      {!shortcutApi.hasApiToken && (
         <Alert 
           severity="warning" 
           sx={{ mb: 2, display: 'flex', alignItems: 'center' }}
@@ -296,7 +251,6 @@ const TemplateApply: React.FC = () => {
             onClick={handleApplyTemplate}
             disabled={
               loading || 
-              !shortcutApi.hasApiToken || 
               template.variables.some(v => !variableValues[v])
             }
             scanlineEffect
@@ -333,7 +287,7 @@ const TemplateApply: React.FC = () => {
         )}
       </CyberCard>
 
-      {/* Preview Section - Always visible */}
+      {/* Preview Section */}
       <CyberCard sx={{ p: 3, mb: 3 }} title="Preview" cornerAccent glowOnHover>
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" gutterBottom>
