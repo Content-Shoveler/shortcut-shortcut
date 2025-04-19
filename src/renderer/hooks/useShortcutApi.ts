@@ -18,6 +18,9 @@ type ShortcutElectronAPI = {
     fetchWorkflows: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflowStates: (apiToken: string, workflowId: string) => Promise<ShortcutApiResponse>;
     fetchEpicWorkflow: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
   };
@@ -367,6 +370,57 @@ export function useShortcutApi() {
   // We're removing the memoization temporarily to make sure it's not causing issues
   const hasApiToken = !!apiToken && tokenValidated === true;
   
+  /**
+   * Fetch all members from Shortcut
+   */
+  const fetchMembers = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchMembers(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch members');
+    }
+    
+    return response.data || [];
+  }, [apiToken]);
+
+  /**
+   * Fetch all labels from Shortcut
+   */
+  const fetchLabels = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchLabels(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch labels');
+    }
+    
+    return response.data || [];
+  }, [apiToken]);
+
+  /**
+   * Fetch all objectives from Shortcut
+   */
+  const fetchObjectives = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchObjectives(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch objectives');
+    }
+    
+    return response.data || [];
+  }, [apiToken]);
+
   return {
     // Check if we have a valid token set
     hasApiToken,
@@ -379,6 +433,9 @@ export function useShortcutApi() {
     fetchWorkflowStates,
     fetchEpicWorkflow,
     fetchEpicStates,
+    fetchMembers,
+    fetchLabels,
+    fetchObjectives,
     createEpicWithStories,
   };
 }

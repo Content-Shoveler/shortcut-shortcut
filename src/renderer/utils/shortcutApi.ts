@@ -132,7 +132,7 @@ export interface CreateEpicParams {
 
 export async function createEpicWithStories(
   apiToken: string,
-  epicData: CreateEpicParams,
+  epicData: CreateEpicParams & Record<string, any>, // Allow additional fields from the API
   stories: Array<{
     name: string;
     description: string;
@@ -152,15 +152,55 @@ export async function createEpicWithStories(
     const api = window.electronAPI as APIWithShortcut;
     
     // 1. Create the epic with all fields from epicData
-    // This allows us to pass any field supported by the Shortcut API
-    // including description, owners, dates, objectives, etc.
-    const epicPayload = {
+    // with proper format transformations for Shortcut API
+    const epicPayload: Record<string, any> = {
       ...epicData,
       // If epic_state_id is provided, use it
       ...(epicData.epic_state_id && { epic_state_id: epicData.epic_state_id }),
     };
+    
+    // Format owner_ids to ensure it's an array of UUIDs
+    if (epicData.owner_ids) {
+      // Ensure it's an array even if a single value is provided
+      const ownerIds = Array.isArray(epicData.owner_ids) ? epicData.owner_ids : [epicData.owner_ids];
+      epicPayload.owner_ids = ownerIds.map(id => id.toString());
+    }
+    
+    // Format labels to match Shortcut API expected structure
+    if (epicData.labels && Array.isArray(epicData.labels)) {
+      epicPayload.labels = epicData.labels.map(label => {
+        // If it's already an object with name and color, use it
+        if (typeof label === 'object' && label !== null) {
+          return {
+            name: label.name,
+            color: label.color || undefined,
+            description: label.description || undefined,
+            external_id: label.external_id || undefined
+          };
+        }
+        // If it's just a string, create a label with just the name
+        if (typeof label === 'string') {
+          return { name: label };
+        }
+        return label;
+      });
+    }
+    
+    // Format objective_ids to ensure it's an array of integers
+    if (epicData.objective_ids && Array.isArray(epicData.objective_ids)) {
+      epicPayload.objective_ids = epicData.objective_ids.map(id => {
+        // Convert to number if it's a string but contains only digits
+        if (typeof id === 'string' && /^\d+$/.test(id)) {
+          return parseInt(id, 10);
+        }
+        return id;
+      });
+    }
 
-    console.log('Sending epic payload:', JSON.stringify(epicPayload));
+    // Remove any properties that shouldn't be sent to the API
+    delete epicPayload.workflowId;
+
+    console.log('Sending epic payload:', JSON.stringify(epicPayload, null, 2));
     const epicResponse = await api.shortcutApi.createEpic(apiToken, epicPayload);
     
     if (!epicResponse.success) {
@@ -194,9 +234,21 @@ export async function createEpicWithStories(
       delete storyPayload.type; // Replaced with story_type
       delete storyPayload.state; // Will be handled by workflow_state_id
       
-      // Transform labels if they exist
+      // Transform labels if they exist to match Shortcut API format
       if (storyPayload.labels && Array.isArray(storyPayload.labels)) {
-        storyPayload.labels = storyPayload.labels.map(label => ({ name: label }));
+        storyPayload.labels = storyPayload.labels.map(label => {
+          // If it's already an object with name and color, use it
+          if (typeof label === 'object' && label !== null) {
+            return {
+              name: label.name,
+              color: label.color || undefined,
+              description: label.description || undefined,
+              external_id: label.external_id || undefined
+            };
+          }
+          // If it's just a string, create a label with just the name
+          return { name: label };
+        });
       }
       
       // Handle workflow state ID resolution if not explicitly provided

@@ -7,3 +7,6 @@ export { default as CyberSwitch } from './CyberSwitch';
 export { default as CyberTabs } from './CyberTabs';
 export { default as CyberIcon } from './CyberIcon';
 export { default as CyberRadio } from './CyberRadio';
+export { default as CyberDatePicker } from './CyberDatePicker';
+export { default as CyberMultiSelect } from './CyberMultiSelect';
+export type { MultiSelectOption } from './CyberMultiSelect';

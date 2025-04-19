@@ -202,6 +202,8 @@ ipcMain.handle('importTemplates', async () => {
 });
 
 // Shortcut API handlers
+
+// Validate API token
 ipcMain.handle('shortcut-validateToken', async (_, apiToken: string) => {
   if (!apiToken) {
     return { success: false, message: 'API token is required' };
@@ -212,6 +214,65 @@ ipcMain.handle('shortcut-validateToken', async (_, apiToken: string) => {
     const response = await client.get('/member');
     return { success: true, data: response.data };
   } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+// Fetch members (for owner selection)
+ipcMain.handle('shortcut-fetchMembers', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/members');
+    
+    // Log the entire response for debugging
+    console.log('Members API response count:', response.data.length);
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching members:', error);
+    return handleApiError(error);
+  }
+});
+
+// Fetch labels
+ipcMain.handle('shortcut-fetchLabels', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    // Using slim=true to get only essential label data
+    const response = await client.get('/labels?slim=true');
+    
+    console.log('Labels API response count:', response.data.length);
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching labels:', error);
+    return handleApiError(error);
+  }
+});
+
+// Fetch objectives
+ipcMain.handle('shortcut-fetchObjectives', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/objectives');
+    
+    console.log('Objectives API response count:', response.data.length);
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching objectives:', error);
     return handleApiError(error);
   }
 });
@@ -302,17 +363,23 @@ ipcMain.handle('shortcut-createEpic', async (_, apiToken: string, epicData: any)
   
   try {
     // Log what we're sending to the API for debugging
-    console.log('Creating epic with payload:', JSON.stringify(epicData));
+    console.log('Creating epic with payload:', JSON.stringify(epicData, null, 2));
     
-    // Ensure we're sending a pure JSON object with string properties
-    const simplifiedPayload = {
-      name: String(epicData.name || 'New Epic')
-    };
+    // Log specific fields we're troubleshooting
+    if (epicData.owner_ids) {
+      console.log('Owner IDs format:', JSON.stringify(epicData.owner_ids), 'Type:', Array.isArray(epicData.owner_ids) ? 'Array' : typeof epicData.owner_ids);
+    }
     
-    console.log('Simplified payload:', JSON.stringify(simplifiedPayload));
+    if (epicData.labels) {
+      console.log('Labels format:', JSON.stringify(epicData.labels), 'Type:', Array.isArray(epicData.labels) ? 'Array' : typeof epicData.labels);
+    }
+    
+    if (epicData.objective_ids) {
+      console.log('Objective IDs format:', JSON.stringify(epicData.objective_ids), 'Type:', Array.isArray(epicData.objective_ids) ? 'Array' : typeof epicData.objective_ids);
+    }
     
     const client = createShortcutClient(apiToken);
-    const response = await client.post('/epics', simplifiedPayload);
+    const response = await client.post('/epics', epicData);
     
     console.log('Epic created successfully:', response.data);
     return { success: true, data: response.data };
@@ -321,7 +388,17 @@ ipcMain.handle('shortcut-createEpic', async (_, apiToken: string, epicData: any)
     
     // Enhanced error handling with more details
     if (error.response && error.response.data) {
-      console.error('API error details:', error.response.data);
+      console.error('API error response status:', error.response.status);
+      console.error('API error details:', JSON.stringify(error.response.data, null, 2));
+      
+      // Check for specific field errors
+      if (error.response.data.errors) {
+        const errorFields = Object.keys(error.response.data.errors);
+        console.error('Fields with errors:', errorFields);
+        errorFields.forEach(field => {
+          console.error(`${field} errors:`, error.response.data.errors[field]);
+        });
+      }
     }
     
     return handleApiError(error);
@@ -335,7 +412,16 @@ ipcMain.handle('shortcut-createStory', async (_, apiToken: string, storyData: an
   
   try {
     // Log what we're sending to the API for debugging
-    console.log('Creating story with payload:', JSON.stringify(storyData));
+    console.log('Creating story with payload:', JSON.stringify(storyData, null, 2));
+    
+    // Log specific fields we're troubleshooting
+    if (storyData.owner_ids) {
+      console.log('Owner IDs format:', JSON.stringify(storyData.owner_ids), 'Type:', Array.isArray(storyData.owner_ids) ? 'Array' : typeof storyData.owner_ids);
+    }
+    
+    if (storyData.labels) {
+      console.log('Labels format:', JSON.stringify(storyData.labels), 'Type:', Array.isArray(storyData.labels) ? 'Array' : typeof storyData.labels);
+    }
     
     const client = createShortcutClient(apiToken);
     const response = await client.post('/stories', storyData);
@@ -347,7 +433,17 @@ ipcMain.handle('shortcut-createStory', async (_, apiToken: string, storyData: an
     
     // Enhanced error handling with more details
     if (error.response && error.response.data) {
-      console.error('API error details:', error.response.data);
+      console.error('API error response status:', error.response.status);
+      console.error('API error details:', JSON.stringify(error.response.data, null, 2));
+      
+      // Check for specific field errors
+      if (error.response.data.errors) {
+        const errorFields = Object.keys(error.response.data.errors);
+        console.error('Fields with errors:', errorFields);
+        errorFields.forEach(field => {
+          console.error(`${field} errors:`, error.response.data.errors[field]);
+        });
+      }
     }
     
     return handleApiError(error);
