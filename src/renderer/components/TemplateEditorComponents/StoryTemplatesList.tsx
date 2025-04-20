@@ -10,6 +10,14 @@ import {
   Badge,
   LinearProgress,
   Stack,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
   alpha,
   useTheme,
 } from '@mui/material';
@@ -36,6 +44,7 @@ import { StoryTemplate, TaskTemplate } from '../../types';
 import { memberField, iterationField } from '../ShortcutFields/fieldDefinitions';
 import { useField } from '../ShortcutFields/hooks';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
+import { useSettings } from '../../store/AppProviders';
 import StoryEditor from './StoryEditor';
 
 // Animation variants for the story preview card
@@ -421,6 +430,359 @@ interface StoryTemplatesListProps {
   onDeleteStory: (index: number) => void;
 }
 
+// Story Card View for grid layout
+const CardView: React.FC<{
+  stories: StoryTemplate[];
+  onEdit: (index: number) => void;
+  onDelete: (index: number) => void;
+  getMemberName: (id: string) => string;
+  getIterationName: (id: string) => string;
+}> = ({ stories, onEdit, onDelete, getMemberName, getIterationName }) => {
+  return (
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', margin: -1 }}>
+      {stories.map((story, index) => (
+        <Box key={index} sx={{ width: { xs: '100%', sm: '50%', md: '33.333%' }, padding: 1 }}>
+          <StoryPreview 
+            story={story} 
+            onEdit={() => onEdit(index)} 
+            onDelete={() => onDelete(index)}
+            getMemberName={getMemberName}
+            getIterationName={getIterationName}
+          />
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
+// Story List View for compact table-like layout
+const ListView: React.FC<{
+  stories: StoryTemplate[];
+  onEdit: (index: number) => void;
+  onDelete: (index: number) => void;
+  getMemberName: (id: string) => string;
+  getIterationName: (id: string) => string;
+}> = ({ stories, onEdit, onDelete, getMemberName, getIterationName }) => {
+  const theme = useTheme();
+  
+  return (
+    <TableContainer 
+      component={Paper}
+      sx={{ 
+        background: 'transparent',
+        boxShadow: 'none',
+        mb: 2,
+        '& .MuiTableCell-root': {
+          borderColor: alpha(theme.palette.divider, 0.1),
+          padding: theme.spacing(1.5),
+          fontFamily: "'Rajdhani', sans-serif",
+        },
+        '& .MuiTableHead-root': {
+          '& .MuiTableCell-root': {
+            backgroundColor: alpha(theme.palette.background.paper, 0.3),
+            backdropFilter: 'blur(5px)',
+            fontWeight: 600,
+            letterSpacing: '0.02em',
+            color: theme.palette.text.secondary,
+          },
+        },
+        '& .MuiTableBody-root': {
+          '& .MuiTableRow-root': {
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            // Cyber style outline that only appears on hover
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              border: `1px solid transparent`,
+              clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+              transition: 'all 0.2s ease',
+              pointerEvents: 'none',
+              opacity: 0,
+            },
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.05),
+              backdropFilter: 'blur(5px)',
+              cursor: 'pointer',
+              '&::before': {
+                borderColor: alpha(theme.palette.primary.main, 0.3),
+                opacity: 1,
+              },
+            },
+          },
+        },
+      }}
+    >
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Type</TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>State</TableCell>
+            <TableCell>Details</TableCell>
+            <TableCell>Owner</TableCell>
+            <TableCell align="right">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {stories.map((story, index) => {
+            // Get type info
+            let typeIcon;
+            let typeColor;
+            switch(story.type) {
+              case 'bug':
+                typeIcon = BugReportIcon;
+                typeColor = theme.palette.error.main;
+                break;
+              case 'chore':
+                typeIcon = BuildIcon;
+                typeColor = theme.palette.info.main;
+                break;
+              case 'feature':
+              default:
+                typeIcon = ExtensionIcon;
+                typeColor = theme.palette.success.main;
+            }
+            
+            // Calculate task completion
+            const taskProgress = story.tasks?.length 
+              ? {
+                  total: story.tasks.length,
+                  completed: story.tasks.filter(task => task.complete).length,
+                }
+              : null;
+              
+            // Process owner IDs
+            const ownerIds = story.owner_ids && Array.isArray(story.owner_ids) ? story.owner_ids : [];
+            
+            return (
+              <TableRow 
+                key={index}
+                onClick={() => onEdit(index)}
+                sx={{
+                  // Row with data flow animation on hover
+                  overflow: 'hidden',
+                  '&:hover .data-flow': {
+                    opacity: 0.1,
+                    transform: 'translateX(100%)',
+                  }
+                }}
+              >
+                <TableCell>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      p: 0.5,
+                      borderRadius: '4px',
+                      backgroundColor: alpha(typeColor, 0.1),
+                      border: `1px solid ${alpha(typeColor, 0.3)}`,
+                      width: 'fit-content',
+                    }}
+                  >
+                    <CyberIcon 
+                      icon={typeIcon} 
+                      size={20} 
+                      color={typeColor} 
+                      glowIntensity={0.5} 
+                    />
+                  </Box>
+                  {/* Data flow animation element */}
+                  <Box
+                    className="data-flow"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: '-100%',
+                      width: '100%',
+                      height: '100%',
+                      background: `linear-gradient(90deg, transparent 0%, ${alpha(typeColor, 0.2)} 50%, transparent 100%)`,
+                      opacity: 0,
+                      transform: 'translateX(0%)',
+                      transition: 'all 0.8s ease',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography 
+                    sx={{ 
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '200px',
+                      textShadow: `0 0 5px ${alpha(typeColor, 0.3)}`,
+                    }}
+                  >
+                    {story.name || '(Unnamed Story)'}
+                  </Typography>
+                  {story.description && (
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontSize: '0.75rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '200px',
+                        opacity: 0.7,
+                        fontFamily: "'Share Tech Mono', monospace",
+                      }}
+                    >
+                      {story.description.substring(0, 40)}{story.description.length > 40 ? '...' : ''}
+                    </Typography>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {story.state && (
+                    <Chip 
+                      label={story.state}
+                      size="small"
+                      sx={{ 
+                        height: '20px',
+                        fontSize: '0.7rem',
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                        borderRadius: '4px',
+                      }}
+                    />
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {story.estimate !== undefined && story.estimate > 0 && (
+                      <Chip 
+                        icon={<CyberIcon icon={TimerIcon} size={14} />}
+                        label={`${story.estimate}pt`}
+                        size="small"
+                        sx={{ 
+                          height: '20px',
+                          fontSize: '0.7rem',
+                          backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                          border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                          borderRadius: '4px',
+                        }}
+                      />
+                    )}
+                    
+                    {taskProgress && (
+                      <Chip 
+                        icon={<CyberIcon icon={AssignmentTurnedInIcon} size={14} />}
+                        label={`${taskProgress.completed}/${taskProgress.total}`}
+                        size="small"
+                        sx={{ 
+                          height: '20px',
+                          fontSize: '0.7rem',
+                          backgroundColor: alpha(
+                            taskProgress.completed === taskProgress.total 
+                              ? theme.palette.success.main 
+                              : theme.palette.warning.main, 
+                            0.1
+                          ),
+                          border: `1px solid ${alpha(
+                            taskProgress.completed === taskProgress.total 
+                              ? theme.palette.success.main 
+                              : theme.palette.warning.main, 
+                            0.3
+                          )}`,
+                          borderRadius: '4px',
+                        }}
+                      />
+                    )}
+                    
+                    {story.iteration_id && (
+                      <Chip 
+                        icon={<CyberIcon icon={LocalOfferIcon} size={14} />}
+                        label={getIterationName(story.iteration_id)}
+                        size="small"
+                        sx={{ 
+                          height: '20px',
+                          fontSize: '0.7rem',
+                          backgroundColor: alpha(theme.palette.info.main, 0.1),
+                          border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                          borderRadius: '4px',
+                        }}
+                      />
+                    )}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  {ownerIds.length > 0 ? (
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {ownerIds.map((ownerId, idx) => (
+                        <Chip 
+                          key={idx}
+                          icon={<CyberIcon icon={PersonIcon} size={14} />}
+                          label={getMemberName(ownerId)}
+                          size="small"
+                          sx={{ 
+                            height: '20px',
+                            fontSize: '0.7rem',
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                            borderRadius: '4px',
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                      No owners
+                    </Typography>
+                  )}
+                </TableCell>
+                <TableCell align="right">
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <IconButton 
+                      size="small" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(index);
+                      }}
+                      sx={{ 
+                        mr: 0.5,
+                        padding: 0.5,
+                        '&:hover': { 
+                          backgroundColor: alpha(theme.palette.primary.main, 0.1) 
+                        } 
+                      }}
+                    >
+                      <CyberIcon icon={EditIcon} size={18} color={theme.palette.primary.main} />
+                    </IconButton>
+                    <IconButton 
+                      size="small" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(index);
+                      }}
+                      sx={{ 
+                        padding: 0.5,
+                        '&:hover': { 
+                          backgroundColor: alpha(theme.palette.error.main, 0.1) 
+                        } 
+                      }}
+                    >
+                      <CyberIcon icon={DeleteIcon} size={18} color={theme.palette.error.main} />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
 const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
   stories,
   onAddStory,
@@ -429,6 +791,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
 }) => {
   const theme = useTheme();
   const shortcutApi = useShortcutApi();
+  const { settings } = useSettings(); // Get user settings
   const [storyDialogOpen, setStoryDialogOpen] = useState(false);
   const [currentStory, setCurrentStory] = useState<StoryTemplate | null>(null);
   const [editingStoryIndex, setEditingStoryIndex] = useState<number | null>(null);
@@ -491,6 +854,9 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
     setEditingStoryIndex(null);
   };
 
+  // Determine which view to show based on user settings
+  const viewMode = settings.appearance.viewMode;
+
   return (
     <CyberCard sx={{ p: 3, mb: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -512,21 +878,23 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
           No stories added yet. Click "Add Story" to create your first story template.
         </Typography>
       ) : (
-        <List sx={{ width: '100%' }}>
-          <Stack spacing={2}>
-            {stories.map((story, index) => (
-              <Box key={index}>
-                <StoryPreview 
-                  story={story} 
-                  onEdit={() => openEditStoryDialog(index)} 
-                  onDelete={() => onDeleteStory(index)}
-                  getMemberName={getMemberName}
-                  getIterationName={getIterationName}
-                />
-              </Box>
-            ))}
-          </Stack>
-        </List>
+        viewMode === 'card' ? (
+          <CardView 
+            stories={stories}
+            onEdit={openEditStoryDialog}
+            onDelete={onDeleteStory}
+            getMemberName={getMemberName}
+            getIterationName={getIterationName}
+          />
+        ) : (
+          <ListView 
+            stories={stories}
+            onEdit={openEditStoryDialog}
+            onDelete={onDeleteStory}
+            getMemberName={getMemberName}
+            getIterationName={getIterationName}
+          />
+        )
       )}
 
       <StoryEditor
