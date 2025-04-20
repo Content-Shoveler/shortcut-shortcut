@@ -1,81 +1,65 @@
-/* 
-  Cyberpunk Global Styles
-  These styles provide global cyberpunk-themed classes and animations
-  that can be applied throughout the application
-*/
+/* Cyberpunk styling for the application */
 
-/* Cyberpunk font imports - using Google Fonts */
+/* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
-/* Cyberpunk text highlights and effects */
-.cyber-highlight {
+/* Variables */
+:root {
+  --cyber-primary-color: #00FFFF;
+  --cyber-secondary-color: #FF00FF;
+  --cyber-warning-color: #FFFF00;
+  --cyber-error-color: #FF0000;
+  --cyber-success-color: #00FF00;
+  
+  /* Glow intensity levels */
+  --cyber-glow-low: 0.3;
+  --cyber-glow-medium: 0.5;
+  --cyber-glow-high: 0.7;
+  --cyber-glow-intense: 1;
+  
+  /* Corner clip sizes */
+  --cyber-corner-xs: 4px;
+  --cyber-corner-sm: 8px;
+  --cyber-corner-md: 12px;
+  --cyber-corner-lg: 15px;
+  --cyber-corner-xl: 20px;
+}
+
+/* Global styles */
+body {
+  font-family: 'Rajdhani', sans-serif;
+  /* Add padding for fixed header */
+  padding-top: 64px;
+  overflow-x: hidden;
+}
+
+.dark-mode {
+  --cyber-primary-glow: 0 0 10px rgba(0, 255, 255, 0.7);
+  --cyber-secondary-glow: 0 0 10px rgba(255, 0, 255, 0.7);
+}
+
+.light-mode {
+  --cyber-primary-glow: 0 0 5px rgba(0, 136, 170, 0.5);
+  --cyber-secondary-glow: 0 0 5px rgba(170, 0, 170, 0.5);
+}
+
+/* Cyber neon text effect */
+.cyber-neon {
   position: relative;
-  display: inline-block;
-  color: #00FFFF;
-  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
-}
-
-.cyber-glitch {
-  position: relative;
-  animation: glitch 6s infinite;
-}
-
-@keyframes glitch {
-  0% {
-    text-shadow: none;
-  }
-  10% {
-    text-shadow: -2px 0 rgba(255, 0, 255, 0.5), 2px 2px rgba(0, 255, 255, 0.5);
-  }
-  15% {
-    text-shadow: 2px -2px rgba(0, 255, 255, 0.5), -2px -2px rgba(255, 0, 255, 0.5);
-  }
-  20% {
-    text-shadow: none;
-  }
-  100% {
-    text-shadow: none;
-  }
-}
-
-/* Cyberpunk corner border */
-.cyber-box {
-  position: relative;
-  border: 1px solid rgba(95, 158, 160, 0.3);
-  overflow: hidden;
-  padding: 1.5rem;
-}
-
-.cyber-box::before,
-.cyber-box::after {
-  content: "";
-  position: absolute;
-  width: 25px;
-  height: 25px;
-}
-
-.cyber-box::before {
-  top: 0;
-  right: 0;
-  border-top: 2px solid #00FFFF;
-  border-right: 2px solid #00FFFF;
-}
-
-.cyber-box::after {
-  bottom: 0;
-  left: 0;
-  border-bottom: 2px solid #00FFFF;
-  border-left: 2px solid #00FFFF;
+  text-shadow: var(--cyber-primary-glow);
+  z-index: 1;
 }
 
 /* Scanline effect */
 .cyber-scanlines {
   position: relative;
+  overflow: hidden;
 }
 
-.cyber-scanlines::after {
+.cyber-scanlines::before {
   content: "";
+  pointer-events: none;
   position: absolute;
   top: 0;
   left: 0;
@@ -83,25 +67,27 @@
   bottom: 0;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.05),
-    rgba(0, 0, 0, 0.05) 1px,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.1) 1px,
     transparent 1px,
     transparent 2px
   );
-  pointer-events: none;
+  background-size: 100% 2px;
+  opacity: 0.05;
+  z-index: 2;
+  animation: scanlines 1s linear infinite;
 }
 
-/* Grid background */
-.cyber-grid-bg {
-  position: relative;
-  background-color: rgba(0, 0, 0, 0.1);
-  background-image: 
-    linear-gradient(rgba(95, 158, 160, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(95, 158, 160, 0.1) 1px, transparent 1px);
-  background-size: 20px 20px;
+@keyframes scanlines {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 -20px;
+  }
 }
 
-/* Data flow animation */
+/* Data flow animation effect */
 .cyber-data-flow {
   position: relative;
   overflow: hidden;
@@ -111,103 +97,83 @@
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
+  left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(0, 255, 255, 0.1) 50%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 255, 0.2) 50%,
     transparent 100%
   );
-  animation: data-flow 3s infinite linear;
+  z-index: 1;
+  animation: dataFlow 1.5s linear infinite;
+  pointer-events: none;
 }
 
-@keyframes data-flow {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
+@keyframes dataFlow {
+  to {
+    left: 100%;
   }
 }
 
-/* Cyber headings */
-.cyber-heading {
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+/* Corner clip styling */
+.cyber-corner-clip {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--cyber-corner-md)) 0,
+    100% var(--cyber-corner-md),
+    100% 100%,
+    var(--cyber-corner-md) 100%,
+    0 calc(100% - var(--cyber-corner-md))
+  );
   position: relative;
-  display: inline-block;
-  padding-left: 12px;
-  margin-bottom: 1rem;
 }
 
-.cyber-heading::before {
+.cyber-corner-clip::before {
   content: "";
   position: absolute;
+  width: var(--cyber-corner-md);
+  height: var(--cyber-corner-md);
   top: 0;
+  right: 0;
+  border-top: 2px solid var(--cyber-primary-color);
+  border-right: 2px solid var(--cyber-primary-color);
+}
+
+.cyber-corner-clip::after {
+  content: "";
+  position: absolute;
+  width: var(--cyber-corner-md);
+  height: var(--cyber-corner-md);
+  bottom: 0;
   left: 0;
-  height: 100%;
-  width: 4px;
-  background: #00FFFF;
+  border-bottom: 2px solid var(--cyber-primary-color);
+  border-left: 2px solid var(--cyber-primary-color);
 }
 
-/* Neon text effect */
-.cyber-neon {
-  color: var(--primary-color, var(--text-color, #FFFFFF)) !important;
-  text-shadow: 0 0 5px rgba(95, 158, 160, 0.5),
-               0 0 10px rgba(95, 158, 160, 0.3),
-               0 0 15px rgba(95, 158, 160, 0.1);
+/* Animation utilities */
+.cyber-pulse {
+  animation: pulse 1.5s ease-in-out infinite alternate;
 }
 
-/* Light mode version of cyber-neon */
-@media (prefers-color-scheme: light) {
-  .cyber-neon {
-    color: var(--primary-color, var(--text-color, #FFFFFF)) !important;
-    text-shadow: 0 0 5px rgba(95, 158, 160, 0.7),
-                 0 0 10px rgba(95, 158, 160, 0.5),
-                 0 0 15px rgba(95, 158, 160, 0.3);
+@keyframes pulse {
+  from {
+    filter: brightness(1);
+    text-shadow: var(--cyber-primary-glow);
+  }
+  to {
+    filter: brightness(1.2);
+    text-shadow: var(--cyber-primary-glow), 0 0 15px rgba(0, 255, 255, 0.5);
   }
 }
 
-/* Cyber badge */
-.cyber-badge {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.8rem;
-  background-color: rgba(95, 158, 160, 0.1);
-  border: 1px solid rgba(95, 158, 160, 0.3);
-  padding: 2px 6px;
-  border-radius: 2px;
-  display: inline-block;
+/* Specific adjustments for components */
+.MuiAppBar-root {
+  z-index: 1200 !important;
 }
 
-/* Cyberpunk Code block */
-.cyber-code {
-  font-family: 'Share Tech Mono', monospace;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-left: 3px solid #00FFFF;
-  padding: 1rem;
-  color: #00FFFF;
-  overflow-x: auto;
-}
-
-/* Cyberpunk horizontal divider */
-.cyber-divider {
-  height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(95, 158, 160, 0.5) 50%, 
-    transparent 100%
-  );
-  border: none;
-  margin: 1.5rem 0;
-}
-
-/* Utility classes */
-.font-cyber-mono {
-  font-family: 'Share Tech Mono', monospace;
-}
-
-.font-cyber {
-  font-family: 'Rajdhani', sans-serif;
+/* Adjust main content to account for fixed header */
+main {
+  margin-top: 20px;
 }

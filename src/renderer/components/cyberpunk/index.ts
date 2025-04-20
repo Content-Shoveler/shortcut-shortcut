@@ -10,3 +10,6 @@ export { default as CyberRadio } from './CyberRadio';
 export { default as CyberDatePicker } from './CyberDatePicker';
 export { default as CyberMultiSelect } from './CyberMultiSelect';
 export type { MultiSelectOption } from './CyberMultiSelect';
+export { default as CyberBase, CyberMotionBase } from './CyberBase';
+export { default as CyberDialog } from './CyberDialog';
+export type { CyberDialogProps } from './CyberDialog';
