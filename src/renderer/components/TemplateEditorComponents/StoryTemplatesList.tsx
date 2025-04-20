@@ -520,6 +520,7 @@ const ListView: React.FC<{
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell></TableCell>
             <TableCell>Type</TableCell>
             <TableCell>Name</TableCell>
             <TableCell>State</TableCell>

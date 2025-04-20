@@ -1,20 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
   CircularProgress,
   Alert,
   Stack,
   Chip,
+  Grid,
+  alpha,
+  useTheme,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import SettingsIcon from '@mui/icons-material/Settings';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import ExtensionIcon from '@mui/icons-material/Extension';
+import BuildIcon from '@mui/icons-material/Build';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import TimerIcon from '@mui/icons-material/Timer';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PersonIcon from '@mui/icons-material/Person';
+import { motion } from 'framer-motion';
 
 import { 
   CyberButton, 
@@ -25,6 +37,405 @@ import {
 
 import { Template, VariableMapping } from '../types';
 import { useShortcutApi } from '../hooks/useShortcutApi';
+
+// Animation variants for the preview cards
+const previewCardVariants = {
+  initial: { 
+    scale: 1,
+    boxShadow: '0 0 0px rgba(0, 0, 0, 0)'
+  },
+  hover: { 
+    scale: 1.02,
+    boxShadow: '0 0 20px rgba(0, 255, 255, 0.2)',
+    transition: { 
+      type: 'spring',
+      stiffness: 400,
+      damping: 10
+    }
+  }
+};
+
+// Animation variants for the data flow effect
+const dataFlowVariants = {
+  initial: {
+    opacity: 0,
+    x: '-100%'
+  },
+  animate: {
+    opacity: 0.2,
+    x: '100%',
+    transition: {
+      repeat: Infinity,
+      duration: 1.5,
+      ease: 'linear'
+    }
+  }
+};
+
+// Helper component for animated epic preview
+interface EpicPreviewProps {
+  name: string;
+  description: string;
+  state: string;
+}
+
+const EpicPreview: React.FC<EpicPreviewProps> = ({ 
+  name, 
+  description, 
+  state 
+}) => {
+  const theme = useTheme();
+  
+  return (
+    <motion.div
+      variants={previewCardVariants}
+      initial="initial"
+      whileHover="hover"
+      style={{ borderRadius: 4 }}
+    >
+      <Box 
+        sx={{
+          position: 'relative',
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+          borderRadius: '2px',
+          overflow: 'hidden',
+          background: alpha(theme.palette.background.paper, 0.7),
+          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+          transition: 'all 0.3s ease',
+          pb: 1,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '12px',
+            height: '12px',
+            borderTop: `2px solid ${theme.palette.primary.main}`,
+            borderRight: `2px solid ${theme.palette.primary.main}`,
+            zIndex: 1,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '12px',
+            height: '12px',
+            borderBottom: `2px solid ${theme.palette.primary.main}`,
+            borderLeft: `2px solid ${theme.palette.primary.main}`,
+            zIndex: 1,
+          }
+        }}
+      >
+        {/* Data flow animation effect */}
+        <motion.div
+          variants={dataFlowVariants}
+          initial="initial"
+          whileHover="animate"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100%',
+            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.2)} 50%, transparent 100%)`,
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Header with title */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          p: 1.5,
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          backgroundColor: alpha(theme.palette.primary.main, 0.05),
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              flex: 1,
+              fontFamily: "'Rajdhani', sans-serif",
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              letterSpacing: '0.02em',
+              textShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.4)}`,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {name || '(Unnamed Epic)'}
+          </Typography>
+        </Box>
+
+        {/* Content section with description and state */}
+        <Box sx={{ p: 1.5, position: 'relative', zIndex: 1 }}>
+          {/* State badge */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: description ? 1.5 : 0, gap: 1 }}>
+            {state && (
+              <Chip 
+                icon={<CyberIcon icon={AssignmentIcon} size={16} />}
+                label={state}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.primary.main
+                  }
+                }}
+              />
+            )}
+          </Box>
+          
+          {/* Description */}
+          {description && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: alpha(theme.palette.text.primary, 0.9),
+                fontSize: '0.9rem',
+                fontFamily: "'Share Tech Mono', monospace",
+                backgroundColor: alpha(theme.palette.background.default, 0.4),
+                p: 1,
+                borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.3,
+              }}
+            >
+              {description}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </motion.div>
+  );
+};
+
+// Helper component for animated story preview
+interface StoryPreviewProps {
+  story: {
+    name: string;
+    description: string;
+    type: string;
+    state: string;
+    estimate?: number;
+  };
+}
+
+const StoryPreview: React.FC<StoryPreviewProps> = ({ story }) => {
+  const theme = useTheme();
+  
+  // Helper to get the appropriate icon and color for the story type
+  const getTypeInfo = useMemo(() => {
+    switch(story.type) {
+      case 'bug':
+        return { 
+          icon: BugReportIcon, 
+          color: theme.palette.error.main,
+          label: 'Bug'
+        };
+      case 'chore':
+        return { 
+          icon: BuildIcon, 
+          color: theme.palette.info.main,
+          label: 'Chore'
+        };
+      case 'feature':
+      default:
+        return { 
+          icon: ExtensionIcon, 
+          color: theme.palette.success.main,
+          label: 'Feature'
+        };
+    }
+  }, [story.type, theme]);
+
+  return (
+    <motion.div
+      variants={previewCardVariants}
+      initial="initial"
+      whileHover="hover"
+      style={{ borderRadius: 4 }}
+    >
+      <Box 
+        sx={{
+          position: 'relative',
+          border: `1px solid ${alpha(getTypeInfo.color, 0.5)}`,
+          borderRadius: '2px',
+          overflow: 'hidden',
+          background: alpha(theme.palette.background.paper, 0.7),
+          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+          transition: 'all 0.3s ease',
+          pb: 1,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '12px',
+            height: '12px',
+            borderTop: `2px solid ${getTypeInfo.color}`,
+            borderRight: `2px solid ${getTypeInfo.color}`,
+            zIndex: 1,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '12px',
+            height: '12px',
+            borderBottom: `2px solid ${getTypeInfo.color}`,
+            borderLeft: `2px solid ${getTypeInfo.color}`,
+            zIndex: 1,
+          }
+        }}
+      >
+        {/* Data flow animation effect */}
+        <motion.div
+          variants={dataFlowVariants}
+          initial="initial"
+          whileHover="animate"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100%',
+            background: `linear-gradient(90deg, transparent 0%, ${alpha(getTypeInfo.color, 0.2)} 50%, transparent 100%)`,
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Header with story type, name and actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          p: 1.5,
+          borderBottom: `1px solid ${alpha(getTypeInfo.color, 0.2)}`,
+          backgroundColor: alpha(getTypeInfo.color, 0.05),
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 0.5,
+              mr: 1.5,
+              borderRadius: '4px',
+              backgroundColor: alpha(getTypeInfo.color, 0.1),
+              border: `1px solid ${alpha(getTypeInfo.color, 0.3)}`,
+            }}
+          >
+            <CyberIcon 
+              icon={getTypeInfo.icon} 
+              size={22} 
+              color={getTypeInfo.color} 
+              glowIntensity={0.7} 
+            />
+          </Box>
+
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              flex: 1,
+              fontFamily: "'Rajdhani', sans-serif",
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              letterSpacing: '0.02em',
+              textShadow: `0 0 8px ${alpha(getTypeInfo.color, 0.4)}`,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {story.name || '(Unnamed Story)'}
+          </Typography>
+        </Box>
+
+        {/* Content section with description and metadata */}
+        <Box sx={{ p: 1.5, position: 'relative', zIndex: 1 }}>
+          {/* Status and metadata badges */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: story.description ? 1.5 : 0, gap: 1 }}>
+            {story.state && (
+              <Chip 
+                icon={<CyberIcon icon={AssignmentIcon} size={16} />}
+                label={story.state}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.primary.main
+                  }
+                }}
+              />
+            )}
+            
+            {story.estimate !== undefined && story.estimate > 0 && (
+              <Chip 
+                icon={<CyberIcon icon={TimerIcon} size={16} />}
+                label={`${story.estimate} points`}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.secondary.main
+                  }
+                }}
+              />
+            )}
+          </Box>
+          
+          {/* Description */}
+          {story.description && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: alpha(theme.palette.text.primary, 0.9),
+                fontSize: '0.9rem',
+                fontFamily: "'Share Tech Mono', monospace",
+                backgroundColor: alpha(theme.palette.background.default, 0.4),
+                p: 1,
+                borderLeft: `2px solid ${alpha(getTypeInfo.color, 0.5)}`,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.3,
+              }}
+            >
+              {story.description.length > 120 
+                ? `${story.description.substring(0, 120)}...` 
+                : story.description}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </motion.div>
+  );
+};
 
 // Function to replace variables in text with actual values
 const replaceVariables = (text: string, variables: VariableMapping): string => {
@@ -304,17 +715,11 @@ const TemplateApply: React.FC = () => {
           <Typography variant="subtitle1" gutterBottom>
             Epic
           </Typography>
-          <CyberCard sx={{ p: 2, mb: 2 }} cornerAccent>
-            <Typography variant="h6" gutterBottom>
-              {previewEpicName || '(Epic Name)'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {previewEpicDescription || '(Epic Description)'}
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              State: {template.epicDetails.state}
-            </Typography>
-          </CyberCard>
+          <EpicPreview 
+            name={previewEpicName || '(Epic Name)'}
+            description={previewEpicDescription || '(Epic Description)'}
+            state={template.epicDetails.state}
+          />
         </Box>
         
         <Typography variant="subtitle1" gutterBottom>
@@ -326,35 +731,13 @@ const TemplateApply: React.FC = () => {
             No stories in this template.
           </Typography>
         ) : (
-          <List>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', margin: -1 }}>
             {previewStories.map((story, index) => (
-              <React.Fragment key={index}>
-                {index > 0 && <Divider />}
-                <ListItem alignItems="flex-start">
-                  <ListItemText
-                    primary={story.name || '(Story Name)'}
-                    secondary={
-                      <React.Fragment>
-                        <Typography component="span" variant="body2" color="text.primary">
-                          {story.type} • {story.state} {story.estimate ? `• ${story.estimate} points` : ''}
-                        </Typography>
-                        {story.description && (
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            sx={{ display: 'block', mt: 0.5 }}
-                          >
-                            {story.description}
-                          </Typography>
-                        )}
-                        {/* Removed label rendering */}
-                      </React.Fragment>
-                    }
-                  />
-                </ListItem>
-              </React.Fragment>
+              <Box key={index} sx={{ width: { xs: '100%', sm: '50%', md: '33.333%' }, padding: 1 }}>
+                <StoryPreview story={story} />
+              </Box>
             ))}
-          </List>
+          </Box>
         )}
       </CyberCard>
     </Box>
