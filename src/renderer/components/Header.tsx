@@ -86,7 +86,8 @@ const Header: React.FC = () => {
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 1100,
+        zIndex: 
+        1100,
         backdropFilter: scrolled ? 'blur(10px)' : 'none',
         boxShadow: scrolled ? 2 : 0,
         background: scrolled 
@@ -151,10 +152,10 @@ const Header: React.FC = () => {
                 initial={{ opacity: 1 }}
                 animate={{ 
                   opacity: [1, 0.85 + Math.random() * 0.15, 1, 0.9 + Math.random() * 0.1, 1],
-                  color: themeAppearance === 'dark' ? '#00FFFF' : '#0088aa',
+                  color: themeAppearance === 'dark' ? '#00000ff' : '#0088aa',
                   textShadow: themeAppearance === 'dark' 
-                    ? '0 0 5px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5), 0 0 15px rgba(0, 255, 255, 0.3)'
-                    : '0 0 3px rgba(0, 136, 170, 0.5), 0 0 6px rgba(0, 136, 170, 0.3)',
+                    ? '0 0 5px rgba(1, 108, 116, 0.7), 0 0 5px rgba(0, 94, 106, 0.5), 0 0 10px rgba(0, 90, 90, 0.3)'
+                    : '0 0 1px rgba(0, 136, 170, 0.5), 0 0 3px rgba(0, 136, 170, 0.3)',
                 }}
                 transition={{ 
                   duration: 2 + Math.random() * 2,
