@@ -137,46 +137,243 @@ const Header: React.FC = () => {
             background: alpha(muiTheme.palette.background.paper, scrolled ? 0.3 : 0),
           }}
         >
+          {/* CyberPunk Title with advanced effects */}
           <Box 
             sx={{ 
-              display: 'flex', 
-              fontFamily: fonts.display,
-              letterSpacing: '0.08em',
-              fontWeight: 'bold',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pr: 3,
+              pl: 1,
             }}
           >
-            {/* Split the text into individual letters for neon effect */}
-            {"SHORTCUT SHORTCUT".split('').map((letter, index) => (
-              <motion.span
-                key={index}
-                initial={{ opacity: 1 }}
+            {/* Background layers */}
+            <Box sx={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              overflow: 'hidden',
+              pointerEvents: 'none',
+            }}>
+              {/* Retro grid plane */}
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  width: '150%',
+                  height: '150%',
+                  top: '-25%',
+                  left: '-25%',
+                  backgroundImage: `radial-gradient(
+                    circle at 50% 50%,
+                    ${alpha(muiTheme.palette.primary.dark, 0.1)} 1px,
+                    transparent 1px
+                  )`,
+                  backgroundSize: '10px 10px',
+                  perspective: '500px',
+                  perspectiveOrigin: 'center',
+                  zIndex: -1,
+                  opacity: themeAppearance === 'dark' ? 0.5 : 0.2,
+                }}
+                animate={{
+                  rotateX: [0, 15, 0],
+                  rotateY: [0, -5, 0],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+            </Box>
+
+            {/* Main title - primary layer */}
+            <motion.div
+              initial={{ y: 0 }}
+              animate={{ y: [0, -2, 0] }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              style={{
+                position: 'relative',
+                fontFamily: fonts.display,
+                fontWeight: 700,
+                fontSize: scrolled ? '1.15rem' : '1.3rem',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                marginBottom: '-0.8rem',
+                zIndex: 3,
+                padding: '0.25rem 0.5rem',
+                overflow: 'visible',
+              }}
+            >
+              <motion.div
+                initial={{ filter: 'none' }}
                 animate={{ 
-                  opacity: [1, 0.85 + Math.random() * 0.15, 1, 0.9 + Math.random() * 0.1, 1],
-                  color: themeAppearance === 'dark' ? '#00000ff' : '#0088aa',
-                  textShadow: themeAppearance === 'dark' 
-                    ? '0 0 5px rgba(1, 108, 116, 0.7), 0 0 5px rgba(0, 94, 106, 0.5), 0 0 10px rgba(0, 90, 90, 0.3)'
-                    : '0 0 1px rgba(0, 136, 170, 0.5), 0 0 3px rgba(0, 136, 170, 0.3)',
+                  filter: [
+                    'drop-shadow(0 0 2px rgba(10, 206, 130, 0.5))', 
+                    'drop-shadow(0 0 8px rgba(9, 165, 106, 0.7))', 
+                    'drop-shadow(0 0 2px rgba(10, 206, 130, 0.5))'
+                  ],
                 }}
                 transition={{ 
-                  duration: 2 + Math.random() * 2,
-                  delay: index * 0.1,
+                  duration: 3, 
                   repeat: Infinity,
-                  repeatType: 'mirror',
-                  ease: 'easeInOut',
-                  times: [0, 0.2, 0.3, 0.45, 1],
+                  ease: "easeInOut",
                 }}
-                style={{ 
-                  display: 'inline-block',
-                  fontWeight: 'bold',
-                  whiteSpace: 'pre',
-                  fontSize: scrolled ? '1.1rem' : '1.25rem',
-                  transition: 'font-size 0.3s ease',
-                }}
-                className="cyber-neon"
+                style={{ position: 'relative' }}
               >
-                {letter}
+                {/* Main text with clipping */}
+                <motion.div
+                  style={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    clipPath: 'polygon(0 0, 100% 0, 100% 100%, 92% 100%, 90% 90%, 0% 90%)',
+                  }}
+                >
+                  {/* Glitch segments */}
+                  <motion.div
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      color: themeAppearance === 'dark' ? '#0ACE82' : '#2D5F5D',
+                      textShadow: themeAppearance === 'dark' 
+                        ? '0 0 5px #0ACE82, 0 0 10px #09A56A' 
+                        : '0 0 3px #2D5F5D, 0 0 5px #2D5F5D',
+                      left: 0,
+                      top: 0,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      left: ['-5%', '2%', '-2%', '0%', '-1%', '0%'],
+                      opacity: [0, 0.8, 0, 0.9, 0],
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      repeat: Infinity,
+                      repeatDelay: 5 + Math.random() * 10,
+                      times: [0, 0.2, 0.3, 0.4, 0.5, 1],
+                    }}
+                  >
+                    SHORTCUT
+                  </motion.div>
+                  
+                  {/* Main text */}
+                  <motion.span
+                    style={{
+                      display: 'block',
+                      color: themeAppearance === 'dark' ? '#0ACE82' : '#2D5F5D',
+                      textShadow: themeAppearance === 'dark' 
+                        ? '0 0 5px rgba(10, 206, 130, 0.7), 0 0 10px rgba(9, 165, 106, 0.5), 0 0 15px rgba(7, 140, 90, 0.3)' 
+                        : '0 0 3px rgba(45, 95, 93, 0.5), 0 0 6px rgba(45, 95, 93, 0.3)',
+                      zIndex: 2,
+                    }}
+                  >
+                    SHORTCUT
+                  </motion.span>
+                  
+                  {/* Highlight scanline */}
+                  <motion.span
+                    style={{
+                      position: 'absolute',
+                      width: '150%',
+                      height: '3px',
+                      background: themeAppearance === 'dark' 
+                        ? 'linear-gradient(90deg, transparent, rgba(10, 206, 130, 0.7), transparent)' 
+                        : 'linear-gradient(90deg, transparent, rgba(45, 95, 93, 0.7), transparent)',
+                      left: '-25%',
+                      opacity: 0,
+                    }}
+                    animate={{
+                      top: ['0%', '100%'],
+                      opacity: [0, 0.9, 0],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                      ease: "easeInOut",
+                      times: [0, 0.5, 1],
+                    }}
+                  />
+                </motion.div>
+              </motion.div>
+            </motion.div>
+            
+            {/* Subtitle/badge with NASA-inspired look */}
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              style={{
+                position: 'relative',
+                background: themeAppearance === 'dark' 
+                  ? 'linear-gradient(90deg, rgba(27,32,43,0.9) 0%, rgba(32,42,58,0.9) 100%)' 
+                  : 'linear-gradient(90deg, rgba(232,240,248,0.9) 0%, rgba(219,227,242,0.9) 100%)',
+                border: `1px solid ${themeAppearance === 'dark' ? '#304c75' : '#b0c2e0'}`,
+                padding: '0.1rem 0.6rem',
+                borderRadius: '2px',
+                fontSize: '0.65rem',
+                letterSpacing: '0.15em',
+                fontFamily: fonts.mono,
+                color: themeAppearance === 'dark' ? '#e2ebff' : '#0d3278',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 2,
+                marginTop: '0.15rem',
+                width: 'fit-content',
+                clipPath: scrolled 
+                  ? 'polygon(0% 0%, 100% 0%, 100% 100%, 90% 100%, 85% 70%, 0% 70%)'  
+                  : 'polygon(0% 0%, 100% 0%, 100% 100%, 80% 100%, 75% 70%, 0% 70%)',
+                transform: 'translateX(8px)',
+              }}
+            >
+              <motion.span
+                animate={{
+                  opacity: [1, 0.7, 1],
+                }}
+                transition={{
+                  duration: 3.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                TEMPLATE ENGINE
               </motion.span>
-            ))}
+              
+              {/* Animated data light */}
+              <motion.div
+                style={{
+                  width: '4px',
+                  height: '4px',
+                  borderRadius: '50%',
+                  background: themeAppearance === 'dark' ? '#5d8aff' : '#0055cc',
+                  marginLeft: '6px',
+                }}
+                animate={{
+                  opacity: [1, 0.3, 1],
+                  boxShadow: [
+                    themeAppearance === 'dark' ? '0 0 2px #5d8aff' : '0 0 1px #0055cc', 
+                    themeAppearance === 'dark' ? '0 0 5px #5d8aff' : '0 0 3px #0055cc', 
+                    themeAppearance === 'dark' ? '0 0 2px #5d8aff' : '0 0 1px #0055cc'
+                  ],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </motion.div>
           </Box>
         </CyberMotionBase>
         
