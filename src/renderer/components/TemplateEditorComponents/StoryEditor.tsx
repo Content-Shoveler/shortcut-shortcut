@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { TaskManager } from './TaskComponents';
 import {
   Dialog,
   DialogActions,
@@ -18,9 +19,9 @@ import {
   CyberSelect, 
   CyberIcon,
   CyberMultiSelect,
-  MultiSelectOption 
+  MultiSelectOption
 } from '../cyberpunk';
-import { StoryTemplate } from '../../types';
+import { StoryTemplate, TaskTemplate } from '../../types';
 import { ShortcutWorkflow, ShortcutWorkflowState, ShortcutMember, ShortcutIteration } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 import { WorkflowAndStateSelector, MemberSelector, IterationSelector } from '../ShortcutFields';
@@ -49,11 +50,43 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
   const shortcutApi = useShortcutApi();
   const [apiTokenAlert, setApiTokenAlert] = useState<boolean>(false);
   const [story, setStory] = useState<StoryTemplate | null>(null);
+  const [members, setMembers] = useState<MultiSelectOption[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  
+  // Load members for both story owners and tasks
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        setLoadingMembers(true);
+        if (shortcutApi.hasApiToken) {
+          const memberData = await shortcutApi.fetchMembers();
+          // Convert to MultiSelectOption format
+          const options = memberData.map((member: any) => ({
+            id: member.id,
+            name: member.profile ? member.profile.name : `Member ${member.id}`,
+          }));
+          setMembers(options);
+        }
+      } catch (error) {
+        console.error('Error fetching members:', error);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+    
+    if (open) {
+      fetchMembers();
+    }
+  }, [open, shortcutApi]);
   
   // Initialize story state when the dialog opens with a currentStory
   useEffect(() => {
     if (open && currentStory) {
-      setStory(currentStory);
+      // Initialize with empty tasks array if not defined
+      setStory({
+        ...currentStory,
+        tasks: currentStory.tasks || []
+      });
     }
   }, [open, currentStory]);
   
@@ -105,32 +138,6 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     disabled?: boolean;
     fullWidth?: boolean;
   }> = ({ value, onChange, disabled, fullWidth }) => {
-    const [members, setMembers] = useState<MultiSelectOption[]>([]);
-    const [loading, setLoading] = useState(true);
-    
-    // Load members from the API
-    useEffect(() => {
-      const fetchMembers = async () => {
-        try {
-          setLoading(true);
-          const memberData = await shortcutApi.fetchMembers();
-          // Convert to MultiSelectOption format
-          const options = memberData.map((member: any) => ({
-            id: member.id,
-            name: member.profile ? member.profile.name : `Member ${member.id}`,
-          }));
-          setMembers(options);
-        } catch (error) {
-          console.error('Error fetching members:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      if (shortcutApi.hasApiToken) {
-        fetchMembers();
-      }
-    }, []);
     
     // Convert current value to MultiSelectOption format
     const selectedMembers = useMemo(() => {
@@ -144,7 +151,7 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         .filter((mem): mem is MultiSelectOption => mem !== null);
     }, [value, members]);
     
-    if (loading) {
+    if (loadingMembers) {
       return <Typography color="text.secondary">Loading members...</Typography>;
     }
     
@@ -191,6 +198,16 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
       setStory({
         ...story,
         estimate: value,
+      });
+    }
+  };
+  
+  // Handle task changes
+  const handleTasksChange = (tasks: TaskTemplate[]) => {
+    if (story) {
+      setStory({
+        ...story,
+        tasks
       });
     }
   };
@@ -328,6 +345,14 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
             Please set up your Shortcut API token in Settings to use the workflow features.
           </Alert>
         )}
+        
+        {/* Task Management Section */}
+        <TaskManager
+          tasks={story.tasks || []}
+          onChange={handleTasksChange}
+          members={members}
+          disabled={!shortcutApi.hasApiToken}
+        />
       </DialogContent>
       <DialogActions>
         <CyberButton onClick={onClose}>

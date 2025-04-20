@@ -29,6 +29,14 @@ export interface StoryTemplate {
   estimate?: number;
   owner_ids?: string[];
   iteration_id?: string;
+  tasks?: TaskTemplate[]; // Added tasks array
+}
+
+// New interface for task templates
+export interface TaskTemplate {
+  description: string;
+  complete: boolean;
+  owner_ids?: string[];
 }
 
 // For variable replacement in templates
