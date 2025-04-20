@@ -38,7 +38,8 @@ import { motion } from 'framer-motion';
 import { 
   CyberCard, 
   CyberButton, 
-  CyberIcon 
+  CyberIcon,
+  CyberDialog
 } from '../cyberpunk';
 import { StoryTemplate, TaskTemplate } from '../../types';
 import { memberField, iterationField } from '../ShortcutFields/fieldDefinitions';
@@ -796,6 +797,8 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
   const [storyDialogOpen, setStoryDialogOpen] = useState(false);
   const [currentStory, setCurrentStory] = useState<StoryTemplate | null>(null);
   const [editingStoryIndex, setEditingStoryIndex] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingStoryIndex, setDeletingStoryIndex] = useState<number | null>(null);
   
   // Use field hooks for members and iterations
   const memberFieldHandler = useField(memberField);
@@ -854,6 +857,27 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
     setCurrentStory(null);
     setEditingStoryIndex(null);
   };
+  
+  // Open delete confirmation dialog
+  const openDeleteConfirmDialog = (index: number) => {
+    setDeletingStoryIndex(index);
+    setDeleteDialogOpen(true);
+  };
+  
+  // Handle delete confirmation
+  const handleDeleteConfirm = () => {
+    if (deletingStoryIndex !== null) {
+      onDeleteStory(deletingStoryIndex);
+      setDeleteDialogOpen(false);
+      setDeletingStoryIndex(null);
+    }
+  };
+  
+  // Handle delete cancellation
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDeletingStoryIndex(null);
+  };
 
   // Determine which view to show based on user settings
   const viewMode = settings.appearance.viewMode;
@@ -883,7 +907,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
           <CardView 
             stories={stories}
             onEdit={openEditStoryDialog}
-            onDelete={onDeleteStory}
+            onDelete={openDeleteConfirmDialog}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
           />
@@ -891,7 +915,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
           <ListView 
             stories={stories}
             onEdit={openEditStoryDialog}
-            onDelete={onDeleteStory}
+            onDelete={openDeleteConfirmDialog}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
           />
@@ -904,6 +928,47 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
         currentStory={currentStory}
         onSave={handleSaveStory}
       />
+
+      {/* Delete confirmation dialog */}
+      <CyberDialog 
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        title="Delete Story"
+        contentSx={{ 
+          p: 3, 
+          maxWidth: 500,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2
+        }}
+        actions={
+          <>
+            <CyberButton 
+              variant="outlined" 
+              onClick={handleDeleteCancel}
+              color="secondary"
+            >
+              Cancel
+            </CyberButton>
+            <CyberButton 
+              variant="contained" 
+              onClick={handleDeleteConfirm}
+              color="error"
+              startIcon={<CyberIcon icon={DeleteIcon} size={18} />}
+              scanlineEffect
+            >
+              Delete Story
+            </CyberButton>
+          </>
+        }
+      >
+        <Typography variant="body1" gutterBottom>
+          Are you sure you want to delete this story template?
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          This action cannot be undone. The story will be permanently removed from this template.
+        </Typography>
+      </CyberDialog>
     </CyberCard>
   );
 };
