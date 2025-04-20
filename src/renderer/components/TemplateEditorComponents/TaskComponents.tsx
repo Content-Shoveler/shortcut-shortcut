@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -25,12 +25,12 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { TaskTemplate } from '../../types';
+import { useShortcutApi } from '../../hooks/useShortcutApi';
 
 // Props for the TaskManager component
 interface TaskManagerProps {
   tasks: TaskTemplate[];
   onChange: (tasks: TaskTemplate[]) => void;
-  members?: MultiSelectOption[];
   disabled?: boolean;
 }
 
@@ -40,7 +40,7 @@ interface TaskItemProps {
   onEdit: (task: TaskTemplate) => void;
   onDelete: () => void;
   onToggleComplete: () => void;
-  members?: MultiSelectOption[];
+  members: MultiSelectOption[];
   disabled?: boolean;
 }
 
@@ -49,7 +49,7 @@ interface TaskFormProps {
   task: TaskTemplate | null;
   onSave: (task: TaskTemplate) => void;
   onCancel: () => void;
-  members?: MultiSelectOption[];
+  members: MultiSelectOption[];
   isEdit?: boolean;
 }
 
@@ -61,7 +61,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   onEdit,
   onDelete,
   onToggleComplete,
-  members = [],
+  members,
   disabled = false,
 }) => {
   const theme = useTheme();
@@ -189,7 +189,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   task,
   onSave,
   onCancel,
-  members = [],
+  members,
   isEdit = false,
 }) => {
   const theme = useTheme();
@@ -305,8 +305,8 @@ export const TaskEditDialog: React.FC<{
   task: TaskTemplate | null;
   onClose: () => void;
   onSave: (task: TaskTemplate) => void;
-  members?: MultiSelectOption[];
-}> = ({ open, task, onClose, onSave, members = [] }) => {
+  members: MultiSelectOption[];
+}> = ({ open, task, onClose, onSave, members }) => {
   const theme = useTheme();
 
   if (!task) return null;
@@ -368,9 +368,35 @@ export const TaskEditDialog: React.FC<{
 export const TaskManager: React.FC<TaskManagerProps> = ({
   tasks = [],
   onChange,
-  members = [],
   disabled = false,
 }) => {
+  const shortcutApi = useShortcutApi();
+  const [members, setMembers] = useState<MultiSelectOption[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  
+  // Load members from API
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        setLoadingMembers(true);
+        if (shortcutApi.hasApiToken) {
+          const memberData = await shortcutApi.fetchMembers();
+          // Convert to MultiSelectOption format
+          const options = memberData.map((member: any) => ({
+            id: member.id,
+            name: member.profile ? member.profile.name : `Member ${member.id}`,
+          }));
+          setMembers(options);
+        }
+      } catch (error) {
+        console.error('Error fetching members for task management:', error);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+    
+    fetchMembers();
+  }, [shortcutApi.hasApiToken]);
   const theme = useTheme();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskTemplate | null>(null);
@@ -418,6 +444,12 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
     <Box sx={{ mt: 3 }}>
       <Divider sx={{ mb: 2 }} />
       
+      {loadingMembers && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+          <Typography color="text.secondary">Loading members...</Typography>
+        </Box>
+      )}
+      
       {/* Section header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Typography
@@ -445,7 +477,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
             startIcon={<AddIcon />}
             onClick={() => setShowAddForm(true)}
             size="small"
-            disabled={disabled}
+            disabled={disabled || loadingMembers}
             sx={{ ml: 'auto' }}
           >
             Add Task
@@ -505,7 +537,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
       )}
 
       {/* Edit task dialog */}
-      {editingTask && (
+      {editingTask && !loadingMembers && (
         <TaskEditDialog
           open={editDialogOpen}
           task={editingTask}

@@ -50,34 +50,6 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
   const shortcutApi = useShortcutApi();
   const [apiTokenAlert, setApiTokenAlert] = useState<boolean>(false);
   const [story, setStory] = useState<StoryTemplate | null>(null);
-  const [members, setMembers] = useState<MultiSelectOption[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-  
-  // Load members for both story owners and tasks
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        setLoadingMembers(true);
-        if (shortcutApi.hasApiToken) {
-          const memberData = await shortcutApi.fetchMembers();
-          // Convert to MultiSelectOption format
-          const options = memberData.map((member: any) => ({
-            id: member.id,
-            name: member.profile ? member.profile.name : `Member ${member.id}`,
-          }));
-          setMembers(options);
-        }
-      } catch (error) {
-        console.error('Error fetching members:', error);
-      } finally {
-        setLoadingMembers(false);
-      }
-    };
-    
-    if (open) {
-      fetchMembers();
-    }
-  }, [open, shortcutApi]);
   
   // Initialize story state when the dialog opens with a currentStory
   useEffect(() => {
@@ -138,6 +110,32 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     disabled?: boolean;
     fullWidth?: boolean;
   }> = ({ value, onChange, disabled, fullWidth }) => {
+    const [members, setMembers] = useState<MultiSelectOption[]>([]);
+    const [loading, setLoading] = useState(true);
+    
+    // Load members from the API
+    useEffect(() => {
+      const fetchMembers = async () => {
+        try {
+          setLoading(true);
+          const memberData = await shortcutApi.fetchMembers();
+          // Convert to MultiSelectOption format
+          const options = memberData.map((member: any) => ({
+            id: member.id,
+            name: member.profile ? member.profile.name : `Member ${member.id}`,
+          }));
+          setMembers(options);
+        } catch (error) {
+          console.error('Error fetching members:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      if (shortcutApi.hasApiToken) {
+        fetchMembers();
+      }
+    }, []);
     
     // Convert current value to MultiSelectOption format
     const selectedMembers = useMemo(() => {
@@ -151,7 +149,7 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         .filter((mem): mem is MultiSelectOption => mem !== null);
     }, [value, members]);
     
-    if (loadingMembers) {
+    if (loading) {
       return <Typography color="text.secondary">Loading members...</Typography>;
     }
     
@@ -350,7 +348,6 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         <TaskManager
           tasks={story.tasks || []}
           onChange={handleTasksChange}
-          members={members}
           disabled={!shortcutApi.hasApiToken}
         />
       </DialogContent>
