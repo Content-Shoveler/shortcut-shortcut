@@ -83,7 +83,7 @@ const MemberMultiSelect: React.FC<MemberMultiSelectProps> = ({ value, onChange, 
       value={selectedMembers}
       onChange={onChange}
       placeholder="Select owners..."
-      helperText="You can select multiple owners"
+      helperText="Assign one or more owners to this epic"
       cornerClip
       fullWidth
     />
@@ -147,7 +147,7 @@ const ObjectiveMultiSelect: React.FC<ObjectiveMultiSelectProps> = ({ value, onCh
       value={selectedObjectives}
       onChange={onChange}
       placeholder="Select objectives..."
-      helperText="You can select multiple objectives"
+      helperText="Link this epic to company objectives"
       cornerClip
       fullWidth
     />
@@ -302,71 +302,44 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
         </FormControl>
       )}
       
-      {/* Date Picker Section */}
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-          Timeline
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-          <CyberDatePicker
-            label="Start Date"
-            value={epicDetails.planned_start_date || ''}
-            onChange={(date) => handleDateChange('planned_start_date', date)}
-            helperText="You can use {{Variable}} syntax here"
-            fullWidth
-            cornerClip
-          />
-          <CyberDatePicker
-            label="End Date (Deadline)"
-            value={epicDetails.deadline || ''}
-            onChange={(date) => handleDateChange('deadline', date)}
-            helperText="You can use {{Variable}} syntax here"
-            fullWidth
-            cornerClip
-          />
-        </Box>
+      {/* Date Picker Section - Timeline */}
+      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
+        <CyberDatePicker
+          label="Start Date"
+          value={epicDetails.planned_start_date || ''}
+          onChange={(date) => handleDateChange('planned_start_date', date)}
+          helperText="You can use {{Variable}} syntax here"
+          fullWidth
+          cornerClip
+        />
+        <CyberDatePicker
+          label="End Date (Deadline)"
+          value={epicDetails.deadline || ''}
+          onChange={(date) => handleDateChange('deadline', date)}
+          helperText="You can use {{Variable}} syntax here"
+          fullWidth
+          cornerClip
+        />
       </Box>
       
       {/* API-based selectors - only show when API token is available */}
       {shortcutApi.hasApiToken && (
-        <>
-          {/* Multi-select Owner selector */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-              Assignment
-            </Typography>
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Assign one or more owners to this epic
-              </Typography>
-            </Box>
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
+          <Box sx={{ flex: 1 }}>
             <MemberMultiSelect
               value={epicDetails.owner_ids || []}
               onChange={handleOwnersChange}
               shortcutApi={shortcutApi}
             />
           </Box>
-
-
-          {/* Multi-select Objective selector */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-              Objectives
-            </Typography>
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Link this epic to one or more company objectives
-              </Typography>
-            </Box>
-            {shortcutApi.hasApiToken && (
-              <ObjectiveMultiSelect
-                value={epicDetails.objective_ids || []}
-                onChange={handleObjectivesChange}
-                shortcutApi={shortcutApi}
-              />
-            )}
+          <Box sx={{ flex: 1 }}>
+            <ObjectiveMultiSelect
+              value={epicDetails.objective_ids || []}
+              onChange={handleObjectivesChange}
+              shortcutApi={shortcutApi}
+            />
           </Box>
-        </>
+        </Box>
       )}
       
       {apiTokenAlert && (
