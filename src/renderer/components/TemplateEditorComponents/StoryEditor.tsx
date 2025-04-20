@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogActions,
@@ -16,7 +16,9 @@ import {
   CyberTextField, 
   CyberButton, 
   CyberSelect, 
-  CyberIcon 
+  CyberIcon,
+  CyberMultiSelect,
+  MultiSelectOption 
 } from '../cyberpunk';
 import { StoryTemplate } from '../../types';
 import { ShortcutWorkflow, ShortcutWorkflowState, ShortcutMember, ShortcutIteration } from '../../types/shortcutApi';
@@ -96,12 +98,75 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     }
   };
   
+  // Helper component for multi-select member field
+  const MemberMultiSelect: React.FC<{
+    value: any[];
+    onChange: (selectedMembers: MultiSelectOption[]) => void;
+    disabled?: boolean;
+    fullWidth?: boolean;
+  }> = ({ value, onChange, disabled, fullWidth }) => {
+    const [members, setMembers] = useState<MultiSelectOption[]>([]);
+    const [loading, setLoading] = useState(true);
+    
+    // Load members from the API
+    useEffect(() => {
+      const fetchMembers = async () => {
+        try {
+          setLoading(true);
+          const memberData = await shortcutApi.fetchMembers();
+          // Convert to MultiSelectOption format
+          const options = memberData.map((member: any) => ({
+            id: member.id,
+            name: member.profile ? member.profile.name : `Member ${member.id}`,
+          }));
+          setMembers(options);
+        } catch (error) {
+          console.error('Error fetching members:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      if (shortcutApi.hasApiToken) {
+        fetchMembers();
+      }
+    }, []);
+    
+    // Convert current value to MultiSelectOption format
+    const selectedMembers = useMemo(() => {
+      if (!value || !Array.isArray(value) || value.length === 0) return [];
+      
+      return value
+        .map((id: string) => {
+          const member = members.find(mem => mem.id === id);
+          return member ? member : null;
+        })
+        .filter((mem): mem is MultiSelectOption => mem !== null);
+    }, [value, members]);
+    
+    if (loading) {
+      return <Typography color="text.secondary">Loading members...</Typography>;
+    }
+    
+    return (
+      <CyberMultiSelect
+        options={members}
+        value={selectedMembers}
+        onChange={onChange}
+        placeholder="Select owners..."
+        helperText="You can select multiple owners"
+        cornerClip
+        fullWidth={fullWidth}
+        disabled={disabled}
+      />
+    );
+  };
+  
   // Handle owner change
-  const handleOwnerChange = (member: ShortcutMember | null) => {
+  const handleOwnerChange = (selectedMembers: MultiSelectOption[]) => {
     if (story) {
-      // If the owner is selected, add their ID to the owner_ids array
-      // If not, set to empty array
-      const ownerIds = member ? [member.id.toString()] : [];
+      // Extract IDs from the selected members and convert to strings
+      const ownerIds = selectedMembers.map(member => member.id.toString());
       
       setStory({
         ...story,
@@ -198,19 +263,19 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         />
         
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-          <FormControl fullWidth margin="normal">
-            <CyberSelect
-              label="Story Type"
-              name="type"
-              value={story.type}
-              onChange={handleStoryChange}
-              cornerClip
-            >
-              {storyTypeOptions.map(option => (
-                <MenuItem key={option} value={option}>{option}</MenuItem>
-              ))}
-            </CyberSelect>
-          </FormControl>
+          <CyberSelect
+            fullWidth
+            label="Story Type"
+            name="type"
+            value={story.type}
+            onChange={handleStoryChange}
+            cornerClip
+            sx={{ mt: 2, mb: 1 }}
+          >
+            {storyTypeOptions.map(option => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
+            ))}
+          </CyberSelect>
           
           <CyberTextField
             fullWidth
@@ -225,7 +290,7 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         </Box>
         
         {/* Workflow and State Selectors */}
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2, mb: 2 }}>
           <WorkflowAndStateSelector 
             // Just pass the IDs - the component will resolve them
             parentValue={story.workflow_id ? Number(story.workflow_id) : null}
@@ -238,35 +303,23 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         </Box>
         
         {/* Owner and Iteration Selectors */}
-        <Box sx={{ display: 'flex', gap: 2, mt: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Owner
-            </Typography>
-            <MemberSelector
-              value={story.owner_ids && story.owner_ids.length > 0 ? story.owner_ids[0] : null}
+            <MemberMultiSelect
+              value={story.owner_ids || []}
               onChange={handleOwnerChange}
               disabled={!shortcutApi.hasApiToken}
               fullWidth
             />
-            <Typography variant="caption" color="text.secondary">
-              Assign a primary owner to this story
-            </Typography>
           </Box>
           
           <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Iteration
-            </Typography>
             <IterationSelector
               value={story.iteration_id ? Number(story.iteration_id) : null}
               onChange={handleIterationChange}
               disabled={!shortcutApi.hasApiToken}
               fullWidth
             />
-            <Typography variant="caption" color="text.secondary">
-              Assign to an iteration/sprint
-            </Typography>
           </Box>
         </Box>
         
