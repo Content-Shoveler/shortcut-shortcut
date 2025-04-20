@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -33,6 +33,9 @@ import {
   CyberIcon 
 } from '../cyberpunk';
 import { StoryTemplate, TaskTemplate } from '../../types';
+import { memberField, iterationField } from '../ShortcutFields/fieldDefinitions';
+import { useField } from '../ShortcutFields/hooks';
+import { useShortcutApi } from '../../hooks/useShortcutApi';
 import StoryEditor from './StoryEditor';
 
 // Animation variants for the story preview card
@@ -74,9 +77,17 @@ interface StoryPreviewProps {
   story: StoryTemplate;
   onEdit: () => void;
   onDelete: () => void;
+  getMemberName: (id: string) => string;
+  getIterationName: (id: string) => string;
 }
 
-const StoryPreview: React.FC<StoryPreviewProps> = ({ story, onEdit, onDelete }) => {
+const StoryPreview: React.FC<StoryPreviewProps> = ({ 
+  story, 
+  onEdit, 
+  onDelete,
+  getMemberName,
+  getIterationName 
+}) => {
   const theme = useTheme();
   
   // Helper to get the appropriate icon and color for the story type
@@ -338,7 +349,7 @@ const StoryPreview: React.FC<StoryPreviewProps> = ({ story, onEdit, onDelete }) 
             {story.iteration_id && (
               <Chip 
                 icon={<CyberIcon icon={LocalOfferIcon} size={16} />}
-                label={story.iteration_id}
+                label={getIterationName(story.iteration_id)}
                 size="small"
                 sx={{ 
                   backgroundColor: alpha(theme.palette.info.main, 0.1),
@@ -358,7 +369,7 @@ const StoryPreview: React.FC<StoryPreviewProps> = ({ story, onEdit, onDelete }) 
               <Chip 
                 key={index}
                 icon={<CyberIcon icon={PersonIcon} size={16} />}
-                label={ownerId}
+                label={getMemberName(ownerId)}
                 size="small"
                 sx={{ 
                   backgroundColor: alpha(theme.palette.primary.main, 0.1),
@@ -417,9 +428,36 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
   onDeleteStory,
 }) => {
   const theme = useTheme();
+  const shortcutApi = useShortcutApi();
   const [storyDialogOpen, setStoryDialogOpen] = useState(false);
   const [currentStory, setCurrentStory] = useState<StoryTemplate | null>(null);
   const [editingStoryIndex, setEditingStoryIndex] = useState<number | null>(null);
+  
+  // Use field hooks for members and iterations
+  const memberFieldHandler = useField(memberField);
+  const iterationFieldHandler = useField(iterationField);
+  
+  // Load members and iterations when component mounts
+  useEffect(() => {
+    if (shortcutApi.hasApiToken) {
+      memberFieldHandler.refresh();
+      iterationFieldHandler.refresh();
+    }
+  }, [shortcutApi.hasApiToken]);
+  
+  // Helper functions to get names from IDs
+  const getMemberName = (memberId: string) => {
+    const member = memberFieldHandler.options.find(m => m.id.toString() === memberId);
+    if (member?.profile?.name) {
+      return member.profile.name.split(' ')[0]; // First name only
+    }
+    return memberId; // Fallback to ID
+  };
+  
+  const getIterationName = (iterationId: string) => {
+    const iteration = iterationFieldHandler.options.find(i => i.id.toString() === iterationId);
+    return iteration?.name || iterationId; // Return name or ID as fallback
+  };
 
   const openNewStoryDialog = () => {
     setCurrentStory({
@@ -481,7 +519,9 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
                 <StoryPreview 
                   story={story} 
                   onEdit={() => openEditStoryDialog(index)} 
-                  onDelete={() => onDeleteStory(index)} 
+                  onDelete={() => onDeleteStory(index)}
+                  getMemberName={getMemberName}
+                  getIterationName={getIterationName}
                 />
               </Box>
             ))}
