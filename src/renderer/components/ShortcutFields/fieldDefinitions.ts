@@ -6,7 +6,9 @@ import {
   ShortcutWorkflowState,
   ShortcutEpicState,
   ShortcutMember,
-  ShortcutLabel
+  ShortcutLabel,
+  ShortcutEntity,
+  ShortcutIteration
 } from '../../types/shortcutApi';
 import { FieldDefinition } from './types';
 
@@ -220,6 +222,38 @@ export const epicStateField: FieldDefinition<ShortcutEpicState> = {
 };
 
 /**
+ * Iteration Field Definition
+ */
+export const iterationField: FieldDefinition<ShortcutIteration> = {
+  id: 'iteration',
+  type: 'single',
+  label: 'Iteration',
+  helperText: 'Select an iteration',
+  
+  async fetch(api) {
+    return api.fetchIterations ? api.fetchIterations() : [];
+  },
+  
+  getOptionLabel(iteration) {
+    return iteration.name || 'Unknown Iteration';
+  },
+  
+  getOptionValue(iteration) {
+    return iteration.id.toString();
+  },
+  
+  // ID-based lookup methods
+  getIdFromValue(iteration) {
+    return iteration.id;
+  },
+  
+  findOptionById(options, id) {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    return options.find(option => option.id === numericId) || null;
+  }
+};
+
+/**
  * Map of all field definitions
  */
 export const fieldDefinitions = {
@@ -229,4 +263,5 @@ export const fieldDefinitions = {
   label: labelField,
   objective: objectiveField,
   epicState: epicStateField,
+  iteration: iterationField,
 };

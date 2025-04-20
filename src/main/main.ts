@@ -277,6 +277,25 @@ ipcMain.handle('shortcut-fetchObjectives', async (_, apiToken: string) => {
   }
 });
 
+// Fetch iterations
+ipcMain.handle('shortcut-fetchIterations', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/iterations');
+    
+    console.log('Iterations API response count:', response.data.length);
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching iterations:', error);
+    return handleApiError(error);
+  }
+});
+
 ipcMain.handle('shortcut-fetchProjects', async (_, apiToken: string) => {
   if (!apiToken) {
     return { success: false, message: 'API token is required' };

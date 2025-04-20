@@ -67,6 +67,14 @@ export interface ShortcutLabel extends ShortcutEntity {
   archived: boolean;
 }
 
+export interface ShortcutIteration extends ShortcutEntity {
+  name: string;
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  description?: string;
+}
+
 export interface ShortcutWorkflow extends ShortcutEntity {
   name: string;
   description?: string;

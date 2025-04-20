@@ -21,6 +21,7 @@ type ShortcutElectronAPI = {
     fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
   };
@@ -437,6 +438,23 @@ export function useShortcutApi() {
     return response.data || [];
   }, [apiToken]);
 
+  /**
+   * Fetch all iterations from Shortcut
+   */
+  const fetchIterations = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchIterations(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch iterations');
+    }
+    
+    return response.data || [];
+  }, [apiToken]);
+
   return {
     // Check if we have a valid token set
     hasApiToken,
@@ -452,6 +470,7 @@ export function useShortcutApi() {
     fetchMembers,
     fetchLabels,
     fetchObjectives,
+    fetchIterations,
     createEpicWithStories,
   };
 }

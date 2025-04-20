@@ -27,6 +27,8 @@ export interface StoryTemplate {
   workflow_id?: string;
   workflow_state_id?: string;
   estimate?: number;
+  owner_ids?: string[];
+  iteration_id?: string;
 }
 
 // For variable replacement in templates

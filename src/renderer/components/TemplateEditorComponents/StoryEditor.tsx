@@ -19,9 +19,9 @@ import {
   CyberIcon 
 } from '../cyberpunk';
 import { StoryTemplate } from '../../types';
-import { ShortcutWorkflow, ShortcutWorkflowState } from '../../types/shortcutApi';
+import { ShortcutWorkflow, ShortcutWorkflowState, ShortcutMember, ShortcutIteration } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
-import { WorkflowAndStateSelector } from '../ShortcutFields';
+import { WorkflowAndStateSelector, MemberSelector, IterationSelector } from '../ShortcutFields';
 
 // Story state options
 const storyTypeOptions = [
@@ -92,6 +92,30 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         ...story,
         workflow_state_id: state ? state.id.toString() : '',
         state: state ? state.name : '', // Store the name for display purposes
+      });
+    }
+  };
+  
+  // Handle owner change
+  const handleOwnerChange = (member: ShortcutMember | null) => {
+    if (story) {
+      // If the owner is selected, add their ID to the owner_ids array
+      // If not, set to empty array
+      const ownerIds = member ? [member.id.toString()] : [];
+      
+      setStory({
+        ...story,
+        owner_ids: ownerIds,
+      });
+    }
+  };
+  
+  // Handle iteration change
+  const handleIterationChange = (iteration: ShortcutIteration | null) => {
+    if (story) {
+      setStory({
+        ...story,
+        iteration_id: iteration ? iteration.id.toString() : undefined,
       });
     }
   };
@@ -211,6 +235,39 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
             disabled={!shortcutApi.hasApiToken}
             fullWidth
           />
+        </Box>
+        
+        {/* Owner and Iteration Selectors */}
+        <Box sx={{ display: 'flex', gap: 2, mt: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Owner
+            </Typography>
+            <MemberSelector
+              value={story.owner_ids && story.owner_ids.length > 0 ? story.owner_ids[0] : null}
+              onChange={handleOwnerChange}
+              disabled={!shortcutApi.hasApiToken}
+              fullWidth
+            />
+            <Typography variant="caption" color="text.secondary">
+              Assign a primary owner to this story
+            </Typography>
+          </Box>
+          
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Iteration
+            </Typography>
+            <IterationSelector
+              value={story.iteration_id ? Number(story.iteration_id) : null}
+              onChange={handleIterationChange}
+              disabled={!shortcutApi.hasApiToken}
+              fullWidth
+            />
+            <Typography variant="caption" color="text.secondary">
+              Assign to an iteration/sprint
+            </Typography>
+          </Box>
         </Box>
         
         {apiTokenAlert && (
