@@ -13,3 +13,4 @@ export type { MultiSelectOption } from './CyberMultiSelect';
 export { default as CyberBase, CyberMotionBase } from './CyberBase';
 export { default as CyberDialog } from './CyberDialog';
 export type { CyberDialogProps } from './CyberDialog';
+export { default as CyberToggleButton } from './CyberToggleButton';

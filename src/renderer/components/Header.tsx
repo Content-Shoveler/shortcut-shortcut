@@ -12,13 +12,18 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { useTheme } from '../store/AppProviders';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import ComputerIcon from '@mui/icons-material/Computer';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import { useTheme, useSettings } from '../store/AppProviders';
 import { motion } from 'framer-motion';
 import { 
   dataFlowVariants, 
   buttonVariants 
 } from '../utils/animations/cyberpunk';
-import { CyberButton, CyberIcon, CyberBase, CyberMotionBase } from './cyberpunk';
+import { CyberButton, CyberIcon, CyberBase, CyberMotionBase, CyberToggleButton } from './cyberpunk';
 import { fonts } from '../theme/cyberpunkTokens';
 import { getCornerClipPath, getCornerAccents } from '../utils/cyberpunkUtils';
 
@@ -51,7 +56,8 @@ const useScrollDirection = () => {
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { themeAppearance } = useTheme();
+  const { mode, themeAppearance, setTheme } = useTheme();
+  const { settings, updateSettings } = useSettings();
   const muiTheme = useMuiTheme();
   const [scrolled, setScrolled] = useState(false);
   
@@ -437,12 +443,74 @@ const Header: React.FC = () => {
           </CyberMotionBase>
         </Box>
         
-        {/* Settings button isolated on the right */}
-        <Box sx={{ ml: 'auto' }}>
+        {/* Right side buttons */}
+        <Box sx={{ ml: 'auto', display: 'flex', gap: 1.5 }}>
+          {/* Theme toggle button */}
+          <Box
+            sx={{
+              transform: 'translateY(0)',
+              opacity: 1,
+              animation: 'fadeInDown 0.5s ease-out',
+              '@keyframes fadeInDown': {
+                '0%': { opacity: 0, transform: 'translateY(-10px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' }
+              }
+            }}
+          >
+            <CyberToggleButton
+              icon={mode === 'dark' ? DarkModeIcon : mode === 'light' ? LightModeIcon : ComputerIcon}
+              tooltip={`Theme: ${mode === 'dark' ? 'Dark' : mode === 'light' ? 'Light' : 'System'}`}
+              onClick={() => {
+                // Cycle through theme modes: dark -> light -> system -> dark
+                const nextMode = mode === 'dark' ? 'light' : mode === 'light' ? 'system' : 'dark';
+                setTheme(nextMode);
+              }}
+              variant="theme"
+              currentState={mode}
+              size={24}
+              accentColor={muiTheme.palette.info.main}
+              scanlineEffect={themeAppearance === 'dark'}
+            />
+          </Box>
+
+          {/* View mode toggle button */}
+          <Box
+            sx={{
+              transform: 'translateY(0)',
+              opacity: 1,
+              animation: 'fadeInDown 0.5s ease-out 0.05s',
+              '@keyframes fadeInDown': {
+                '0%': { opacity: 0, transform: 'translateY(-10px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' }
+              }
+            }}
+          >
+            <CyberToggleButton
+              icon={settings.appearance.viewMode === 'card' ? ViewModuleIcon : ViewListIcon}
+              tooltip={`View Mode: ${settings.appearance.viewMode === 'card' ? 'Card' : 'List'}`}
+              onClick={() => {
+                // Toggle between card and list view modes
+                const nextViewMode = settings.appearance.viewMode === 'card' ? 'list' : 'card';
+                updateSettings({
+                  appearance: {
+                    ...settings.appearance,
+                    viewMode: nextViewMode,
+                  },
+                });
+              }}
+              variant="view"
+              currentState={settings.appearance.viewMode}
+              size={24}
+              accentColor={muiTheme.palette.success.main}
+              scanlineEffect={themeAppearance === 'dark'}
+            />
+          </Box>
+          
+          {/* Settings button */}
           <CyberMotionBase
             initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
           >
             <Tooltip title="Settings">
               <CyberButton
