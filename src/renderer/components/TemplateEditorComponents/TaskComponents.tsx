@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -14,16 +14,38 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
+  DndContext, 
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter
+} from '@dnd-kit/core';
+import {
+  SortableContext, 
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
   CyberTextField,
   CyberButton,
   CyberCard,
   CyberSwitch,
   CyberMultiSelect,
+  CyberIcon,
   MultiSelectOption,
 } from '../cyberpunk';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { TaskTemplate } from '../../types';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 
@@ -34,6 +56,65 @@ interface TaskManagerProps {
   disabled?: boolean;
 }
 
+// Animation variants for drag operations
+const dragItemVariants = {
+  idle: {
+    boxShadow: '0px 0px 0px rgba(0, 255, 255, 0)',
+  },
+  hover: {
+    boxShadow: '0px 0px 10px rgba(0, 255, 255, 0.3)',
+  },
+  dragging: {
+    boxShadow: [
+      '0px 0px 15px rgba(0, 255, 255, 0.5)',
+      '0px 0px 20px rgba(0, 255, 255, 0.5)',
+      '0px 0px 15px rgba(0, 255, 255, 0.5)'
+    ],
+    scale: 1.03,
+    zIndex: 10,
+    transition: {
+      boxShadow: {
+        repeat: Infinity,
+        duration: 2,
+      },
+      default: {
+        type: 'spring',
+        damping: 15,
+        stiffness: 300,
+      }
+    }
+  }
+};
+
+// Animation for the drag handle
+const dragHandleVariants = {
+  initial: {
+    opacity: 0.7,
+    scale: 1,
+  },
+  hover: {
+    opacity: 1,
+    scale: 1.1,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 10,
+    }
+  },
+  active: {
+    opacity: 1,
+    scale: 1.2,
+    filter: 'drop-shadow(0 0 8px rgba(0, 255, 255, 0.7))',
+    transition: {
+      scale: {
+        type: 'spring',
+        stiffness: 400,
+        damping: 10
+      }
+    }
+  }
+};
+
 // Props for the individual TaskItem component
 interface TaskItemProps {
   task: TaskTemplate;
@@ -42,6 +123,12 @@ interface TaskItemProps {
   onToggleComplete: () => void;
   members: MultiSelectOption[];
   disabled?: boolean;
+  id?: string;
+}
+
+// Props for the sortable wrapper component
+interface SortableTaskItemProps extends TaskItemProps {
+  id: string;
 }
 
 // Props for the TaskForm component (add/edit)
@@ -54,15 +141,61 @@ interface TaskFormProps {
 }
 
 /**
+ * Sortable wrapper component for TaskItem
+ */
+export const SortableTaskItem: React.FC<SortableTaskItemProps> = (props) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.id });
+
+  const theme = useTheme();
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 999 : 1,
+    position: 'relative' as const,
+    marginBottom: theme.spacing(1),
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      variants={dragItemVariants}
+      initial="idle"
+      animate={isDragging ? "dragging" : "idle"}
+      whileHover={!isDragging ? "hover" : undefined}
+    >
+      <TaskItem 
+        {...props} 
+        dragHandleProps={{ ...attributes, ...listeners }}
+        isDragging={isDragging}
+      />
+    </motion.div>
+  );
+};
+
+/**
  * Component for displaying and managing individual task
  */
-export const TaskItem: React.FC<TaskItemProps> = ({
+export const TaskItem: React.FC<TaskItemProps & { 
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  isDragging?: boolean;
+}> = ({
   task,
   onEdit,
   onDelete,
   onToggleComplete,
   members,
   disabled = false,
+  dragHandleProps,
+  isDragging = false,
 }) => {
   const theme = useTheme();
 
@@ -94,20 +227,46 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   return (
     <Box
       sx={{
-        mb: 1,
         border: `1px solid ${alpha(
           task.complete ? theme.palette.success.main : theme.palette.primary.main,
-          0.3
+          isDragging ? 0.6 : 0.3
         )}`,
         borderRadius: '4px',
         overflow: 'hidden',
         transition: 'all 0.2s ease',
+        clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
         '&:hover': {
           boxShadow: `0 0 8px ${alpha(
             task.complete ? theme.palette.success.main : theme.palette.primary.main,
             0.2
           )}`,
         },
+        ...(isDragging && {
+          background: alpha(theme.palette.background.paper, 0.9),
+          backdropFilter: 'blur(4px)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '8px',
+            height: '8px',
+            borderTop: `2px solid ${task.complete ? theme.palette.success.main : theme.palette.primary.main}`,
+            borderRight: `2px solid ${task.complete ? theme.palette.success.main : theme.palette.primary.main}`,
+            zIndex: 1,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '8px',
+            height: '8px',
+            borderBottom: `2px solid ${task.complete ? theme.palette.success.main : theme.palette.primary.main}`,
+            borderLeft: `2px solid ${task.complete ? theme.palette.success.main : theme.palette.primary.main}`,
+            zIndex: 1,
+          },
+        })
       }}
     >
       <Box
@@ -117,10 +276,41 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           padding: theme.spacing(1, 2),
           backgroundColor: alpha(
             task.complete ? theme.palette.success.main : theme.palette.primary.main,
-            0.05
+            isDragging ? 0.1 : 0.05
           ),
         }}
       >
+        {/* Drag handle */}
+        {dragHandleProps && (
+          <Box 
+            {...dragHandleProps}
+            sx={{ 
+              mr: 1,
+              cursor: disabled ? 'default' : 'grab',
+              '&:active': {
+                cursor: 'grabbing'
+              }
+            }}
+          >
+            <motion.div
+              variants={dragHandleVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="active"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: alpha(
+                  task.complete ? theme.palette.success.main : theme.palette.primary.main,
+                  0.7
+                ),
+              }}
+            >
+              <DragIndicatorIcon fontSize="small" />
+            </motion.div>
+          </Box>
+        )}
         {/* Task completion toggle */}
         <CyberSwitch
           checked={task.complete}
@@ -402,6 +592,47 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
   const [editingTask, setEditingTask] = useState<TaskTemplate | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
+  // State for drag and drop
+  const [activeId, setActiveId] = useState<string | null>(null);
+  
+  // Setup sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Find active task for drag overlay
+  const activeTask = useMemo(() => {
+    if (!activeId) return null;
+    return tasks.find((_, i) => `task-${i}` === activeId);
+  }, [activeId, tasks]);
+  
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+  
+  // Handle drag end - reorder tasks
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(active.id.toString().split('-')[1]);
+      const newIndex = parseInt(over.id.toString().split('-')[1]);
+      
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
+      onChange(newTasks);
+    }
+    
+    setActiveId(null);
+  };
+
   // Handle adding a new task
   const handleAddTask = (task: TaskTemplate) => {
     onChange([...tasks, task]);
@@ -485,7 +716,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
         )}
       </Box>
 
-      {/* Task list */}
+      {/* Task list with drag and drop */}
       <Box
         sx={{
           backgroundColor: alpha(theme.palette.background.paper, 0.3),
@@ -496,17 +727,56 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
         }}
       >
         {tasks.length > 0 ? (
-          tasks.map((task, index) => (
-            <TaskItem
-              key={index}
-              task={task}
-              onEdit={(task) => handleEditTask(task, index)}
-              onDelete={() => handleDeleteTask(index)}
-              onToggleComplete={() => handleToggleComplete(index)}
-              members={members}
-              disabled={disabled}
-            />
-          ))
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={tasks.map((_, i) => `task-${i}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              <AnimatePresence>
+                {tasks.map((task, index) => (
+                  <SortableTaskItem
+                    key={`task-${index}`}
+                    id={`task-${index}`}
+                    task={task}
+                    onEdit={(task) => handleEditTask(task, index)}
+                    onDelete={() => handleDeleteTask(index)}
+                    onToggleComplete={() => handleToggleComplete(index)}
+                    members={members}
+                    disabled={disabled}
+                  />
+                ))}
+              </AnimatePresence>
+            </SortableContext>
+            
+            {/* Drag overlay - shows the item being dragged */}
+            <DragOverlay adjustScale={true} zIndex={1000}>
+              {activeId && activeTask ? (
+                <Box
+                  sx={{
+                    opacity: 0.8,
+                    width: '100%',
+                    pointerEvents: 'none',
+                    transformOrigin: '0 0',
+                  }}
+                >
+                  <TaskItem
+                    task={activeTask}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                    onToggleComplete={() => {}}
+                    members={members}
+                    disabled={true}
+                    isDragging={true}
+                  />
+                </Box>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         ) : (
           !showAddForm && (
             <Box

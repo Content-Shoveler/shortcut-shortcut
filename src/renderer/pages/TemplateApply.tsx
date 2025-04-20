@@ -120,6 +120,12 @@ const TemplateApply: React.FC = () => {
       
       // Build stories with replaced variables - making sure we match expected types
       const stories = template.storyTemplates.map(story => {
+        // Process tasks if they exist, applying variable replacement to each task description
+        const processedTasks = story.tasks?.map(task => ({
+          ...task,
+          description: replaceVariables(task.description, variableValues)
+        }));
+        
         // Create a properly typed object with exact fields expected by the API
         const storyPayload = {
           name: replaceVariables(story.name, variableValues),
@@ -130,7 +136,9 @@ const TemplateApply: React.FC = () => {
           estimate: story.estimate,
           owner_ids: story.owner_ids,
           // Explicitly convert iteration_id to number when it exists
-          iteration_id: story.iteration_id ? Number(story.iteration_id) : undefined
+          iteration_id: story.iteration_id ? Number(story.iteration_id) : undefined,
+          // Include the processed tasks with variable replacement
+          tasks: processedTasks
         };
         
         return storyPayload;

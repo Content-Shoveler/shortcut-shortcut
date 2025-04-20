@@ -376,16 +376,22 @@ export function useShortcutApi() {
           throw new Error(`Cannot determine workflow state ID for story: ${storyData.name}`);
         }
         
+        // Create a universal payload that passes through all original fields
+        // and only transforms or adds what's needed
         return {
-          name: storyData.name,
-          description: storyData.description,
+          // Pass through ALL original properties 
+          ...storyData,
+          
+          // Override fields that need transformation for the API
           story_type: storyData.type,
           workflow_state_id: workflowStateId,
+          
+          // Add computed fields
           epic_id: epic.id,
-          ...(storyData.estimate !== undefined && { estimate: storyData.estimate }),
-          ...(storyData.owner_ids && { owner_ids: storyData.owner_ids }),
-          ...(storyData.iteration_id && { iteration_id: storyData.iteration_id })
-          // Remove labels property
+          
+          // Remove fields that shouldn't be sent to the API
+          type: undefined,
+          state: undefined
         };
       });
       
