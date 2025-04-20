@@ -1,24 +1,407 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
   Divider,
   IconButton,
   List,
-  ListItem,
-  ListItemText,
+  Chip,
+  Tooltip,
+  Badge,
+  LinearProgress,
+  Stack,
   alpha,
   useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import ExtensionIcon from '@mui/icons-material/Extension';
+import BuildIcon from '@mui/icons-material/Build';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import GroupIcon from '@mui/icons-material/Group';
+import TimerIcon from '@mui/icons-material/Timer';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PersonIcon from '@mui/icons-material/Person';
+import { motion } from 'framer-motion';
 import { 
   CyberCard, 
   CyberButton, 
   CyberIcon 
 } from '../cyberpunk';
-import { StoryTemplate } from '../../types';
+import { StoryTemplate, TaskTemplate } from '../../types';
 import StoryEditor from './StoryEditor';
+
+// Animation variants for the story preview card
+const previewCardVariants = {
+  initial: { 
+    scale: 1,
+    boxShadow: '0 0 0px rgba(0, 0, 0, 0)'
+  },
+  hover: { 
+    scale: 1.02,
+    boxShadow: '0 0 20px rgba(0, 255, 255, 0.2)',
+    transition: { 
+      type: 'spring',
+      stiffness: 400,
+      damping: 10
+    }
+  }
+};
+
+// Animation variants for the data flow effect
+const dataFlowVariants = {
+  initial: {
+    opacity: 0,
+    x: '-100%'
+  },
+  animate: {
+    opacity: 0.2,
+    x: '100%',
+    transition: {
+      repeat: Infinity,
+      duration: 1.5,
+      ease: 'linear'
+    }
+  }
+};
+
+// Helper component for animated story preview
+interface StoryPreviewProps {
+  story: StoryTemplate;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const StoryPreview: React.FC<StoryPreviewProps> = ({ story, onEdit, onDelete }) => {
+  const theme = useTheme();
+  
+  // Helper to get the appropriate icon and color for the story type
+  const getTypeInfo = useMemo(() => {
+    switch(story.type) {
+      case 'bug':
+        return { 
+          icon: BugReportIcon, 
+          color: theme.palette.error.main,
+          label: 'Bug'
+        };
+      case 'chore':
+        return { 
+          icon: BuildIcon, 
+          color: theme.palette.info.main,
+          label: 'Chore'
+        };
+      case 'feature':
+      default:
+        return { 
+          icon: ExtensionIcon, 
+          color: theme.palette.success.main,
+          label: 'Feature'
+        };
+    }
+  }, [story.type, theme]);
+  
+  // Calculate task completion percentage if tasks exist
+  const taskProgress = useMemo(() => {
+    if (!story.tasks || story.tasks.length === 0) return null;
+    
+    const totalTasks = story.tasks.length;
+    const completedTasks = story.tasks.filter(task => task.complete).length;
+    const percentage = Math.round((completedTasks / totalTasks) * 100);
+    
+    return {
+      total: totalTasks,
+      completed: completedTasks,
+      percentage
+    };
+  }, [story.tasks]);
+  
+  // Process owner IDs for badges
+  const ownerIds = useMemo(() => {
+    if (!story.owner_ids || !Array.isArray(story.owner_ids) || story.owner_ids.length === 0) {
+      return [];
+    }
+    
+    // Use the actual owner_ids from the template storage
+    return story.owner_ids;
+  }, [story.owner_ids]);
+
+  return (
+    <motion.div
+      variants={previewCardVariants}
+      initial="initial"
+      whileHover="hover"
+      style={{ borderRadius: 4 }}
+    >
+      <Box 
+        sx={{
+          position: 'relative',
+          border: `1px solid ${alpha(getTypeInfo.color, 0.5)}`,
+          borderRadius: '2px',
+          overflow: 'hidden',
+          background: alpha(theme.palette.background.paper, 0.7),
+          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
+          pb: 1,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '12px',
+            height: '12px',
+            borderTop: `2px solid ${getTypeInfo.color}`,
+            borderRight: `2px solid ${getTypeInfo.color}`,
+            zIndex: 1,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '12px',
+            height: '12px',
+            borderBottom: `2px solid ${getTypeInfo.color}`,
+            borderLeft: `2px solid ${getTypeInfo.color}`,
+            zIndex: 1,
+          }
+        }}
+        onClick={onEdit}
+      >
+        {/* Data flow animation effect */}
+        <motion.div
+          variants={dataFlowVariants}
+          initial="initial"
+          whileHover="animate"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100%',
+            background: `linear-gradient(90deg, transparent 0%, ${alpha(getTypeInfo.color, 0.2)} 50%, transparent 100%)`,
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Header with story type, name and actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          p: 1.5,
+          borderBottom: `1px solid ${alpha(getTypeInfo.color, 0.2)}`,
+          backgroundColor: alpha(getTypeInfo.color, 0.05),
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <Tooltip title={getTypeInfo.label}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 0.5,
+                mr: 1.5,
+                borderRadius: '4px',
+                backgroundColor: alpha(getTypeInfo.color, 0.1),
+                border: `1px solid ${alpha(getTypeInfo.color, 0.3)}`,
+              }}
+            >
+              <CyberIcon 
+                icon={getTypeInfo.icon} 
+                size={22} 
+                color={getTypeInfo.color} 
+                glowIntensity={0.7} 
+              />
+            </Box>
+          </Tooltip>
+
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              flex: 1,
+              fontFamily: "'Rajdhani', sans-serif",
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              letterSpacing: '0.02em',
+              textShadow: `0 0 8px ${alpha(getTypeInfo.color, 0.4)}`,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {story.name || '(Unnamed Story)'}
+          </Typography>
+
+          <Box sx={{ display: 'flex', ml: 1 }}>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              sx={{ 
+                mr: 0.5,
+                '&:hover': { 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1) 
+                } 
+              }}
+            >
+              <CyberIcon icon={EditIcon} size={20} color={theme.palette.primary.main} />
+            </IconButton>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              sx={{ 
+                '&:hover': { 
+                  backgroundColor: alpha(theme.palette.error.main, 0.1) 
+                } 
+              }}
+            >
+              <CyberIcon icon={DeleteIcon} size={20} color={theme.palette.error.main} />
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* Content section with description and metadata */}
+        <Box sx={{ p: 1.5, position: 'relative', zIndex: 1 }}>
+          {/* Status and metadata badges */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: story.description ? 1.5 : 0, gap: 1 }}>
+            {story.state && (
+              <Chip 
+                icon={<CyberIcon icon={AssignmentIcon} size={16} />}
+                label={story.state}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.primary.main
+                  }
+                }}
+              />
+            )}
+            
+            {story.estimate !== undefined && story.estimate > 0 && (
+              <Chip 
+                icon={<CyberIcon icon={TimerIcon} size={16} />}
+                label={`${story.estimate} points`}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.secondary.main
+                  }
+                }}
+              />
+            )}
+            
+            {taskProgress && (
+              <Chip 
+                icon={<CyberIcon icon={AssignmentTurnedInIcon} size={16} />}
+                label={`${taskProgress.completed}/${taskProgress.total} tasks${taskProgress.percentage < 100 ? ` (${taskProgress.percentage}%)` : ''}`}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(taskProgress.percentage === 100 
+                    ? theme.palette.success.main 
+                    : theme.palette.warning.main, 0.1),
+                  border: `1px solid ${alpha(taskProgress.percentage === 100 
+                    ? theme.palette.success.main 
+                    : theme.palette.warning.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: taskProgress.percentage === 100 
+                      ? theme.palette.success.main 
+                      : theme.palette.warning.main
+                  }
+                }}
+              />
+            )}
+            
+            {story.iteration_id && (
+              <Chip 
+                icon={<CyberIcon icon={LocalOfferIcon} size={16} />}
+                label={story.iteration_id}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.info.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.info.main
+                  }
+                }}
+              />
+            )}
+            
+            {/* Owner badges - one per owner ID */}
+            {ownerIds.map((ownerId, index) => (
+              <Chip 
+                key={index}
+                icon={<CyberIcon icon={PersonIcon} size={16} />}
+                label={ownerId}
+                size="small"
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                  borderRadius: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 500,
+                  '& .MuiChip-icon': {
+                    color: theme.palette.primary.main
+                  }
+                }}
+              />
+            ))}
+          </Box>
+          
+          {/* Description */}
+          {story.description && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: alpha(theme.palette.text.primary, 0.9),
+                fontSize: '0.9rem',
+                fontFamily: "'Share Tech Mono', monospace",
+                backgroundColor: alpha(theme.palette.background.default, 0.4),
+                p: 1,
+                borderLeft: `2px solid ${alpha(getTypeInfo.color, 0.5)}`,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.3,
+              }}
+            >
+              {story.description.length > 120 
+                ? `${story.description.substring(0, 120)}...` 
+                : story.description}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </motion.div>
+  );
+};
 
 interface StoryTemplatesListProps {
   stories: StoryTemplate[];
@@ -91,51 +474,18 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
           No stories added yet. Click "Add Story" to create your first story template.
         </Typography>
       ) : (
-        <List>
-          {stories.map((story, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <Divider />}
-              <ListItem
-                secondaryAction={
-                  <IconButton edge="end" onClick={() => onDeleteStory(index)}>
-                    <CyberIcon icon={DeleteIcon} size={20} />
-                  </IconButton>
-                }
-                sx={{ 
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                  borderRadius: '2px',
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.secondary.main, 0.1),
-                  }
-                }}
-                onClick={() => openEditStoryDialog(index)}
-              >
-                <ListItemText
-                  primary={story.name || '(Unnamed Story)'}
-                  secondary={
-                    <React.Fragment>
-                      <Typography component="span" variant="body2" color="text.primary">
-                        {story.type} • {story.state} {story.estimate ? `• ${story.estimate} points` : ''}
-                      </Typography>
-                      {story.description && (
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ display: 'block', mt: 0.5 }}
-                        >
-                          {story.description.length > 100
-                            ? `${story.description.substring(0, 100)}...`
-                            : story.description}
-                        </Typography>
-                      )}
-                    </React.Fragment>
-                  }
+        <List sx={{ width: '100%' }}>
+          <Stack spacing={2}>
+            {stories.map((story, index) => (
+              <Box key={index}>
+                <StoryPreview 
+                  story={story} 
+                  onEdit={() => openEditStoryDialog(index)} 
+                  onDelete={() => onDeleteStory(index)} 
                 />
-              </ListItem>
-            </React.Fragment>
-          ))}
+              </Box>
+            ))}
+          </Stack>
         </List>
       )}
 
