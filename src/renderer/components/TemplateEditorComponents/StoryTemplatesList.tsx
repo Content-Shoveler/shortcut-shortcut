@@ -24,6 +24,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import BuildIcon from '@mui/icons-material/Build';
@@ -87,6 +88,7 @@ interface StoryPreviewProps {
   story: StoryTemplate;
   onEdit: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   getMemberName: (id: string) => string;
   getIterationName: (id: string) => string;
 }
@@ -95,6 +97,7 @@ const StoryPreview: React.FC<StoryPreviewProps> = ({
   story, 
   onEdit, 
   onDelete,
+  onDuplicate,
   getMemberName,
   getIterationName 
 }) => {
@@ -279,6 +282,21 @@ const StoryPreview: React.FC<StoryPreviewProps> = ({
               size="small" 
               onClick={(e) => {
                 e.stopPropagation();
+                onDuplicate();
+              }}
+              sx={{
+                mr: 0.5,
+                '&:hover': { 
+                  backgroundColor: alpha(theme.palette.info.main, 0.1) 
+                } 
+              }}
+            >
+              <CyberIcon icon={ContentCopyIcon} size={20} color={theme.palette.info.main} />
+            </IconButton>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
                 onDelete();
               }}
               sx={{ 
@@ -436,9 +454,10 @@ const CardView: React.FC<{
   stories: StoryTemplate[];
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
+  onDuplicate: (index: number) => void;
   getMemberName: (id: string) => string;
   getIterationName: (id: string) => string;
-}> = ({ stories, onEdit, onDelete, getMemberName, getIterationName }) => {
+}> = ({ stories, onEdit, onDelete, onDuplicate, getMemberName, getIterationName }) => {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', margin: -1 }}>
       {stories.map((story, index) => (
@@ -447,6 +466,7 @@ const CardView: React.FC<{
             story={story} 
             onEdit={() => onEdit(index)} 
             onDelete={() => onDelete(index)}
+            onDuplicate={() => onDuplicate(index)}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
           />
@@ -461,9 +481,10 @@ const ListView: React.FC<{
   stories: StoryTemplate[];
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
+  onDuplicate: (index: number) => void;
   getMemberName: (id: string) => string;
   getIterationName: (id: string) => string;
-}> = ({ stories, onEdit, onDelete, getMemberName, getIterationName }) => {
+}> = ({ stories, onEdit, onDelete, onDuplicate, getMemberName, getIterationName }) => {
   const theme = useTheme();
   
   return (
@@ -763,6 +784,22 @@ const ListView: React.FC<{
                       size="small" 
                       onClick={(e) => {
                         e.stopPropagation();
+                        onDuplicate(index);
+                      }}
+                      sx={{ 
+                        mr: 0.5,
+                        padding: 0.5,
+                        '&:hover': { 
+                          backgroundColor: alpha(theme.palette.info.main, 0.1) 
+                        } 
+                      }}
+                    >
+                      <CyberIcon icon={ContentCopyIcon} size={18} color={theme.palette.info.main} />
+                    </IconButton>
+                    <IconButton 
+                      size="small" 
+                      onClick={(e) => {
+                        e.stopPropagation();
                         onDelete(index);
                       }}
                       sx={{ 
@@ -878,6 +915,18 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
     setDeleteDialogOpen(false);
     setDeletingStoryIndex(null);
   };
+  
+  // Handle story duplication
+  const handleDuplicateStory = (index: number) => {
+    // Create a deep copy of the story
+    const storyToDuplicate = JSON.parse(JSON.stringify(stories[index]));
+    
+    // Add "Copy" to the name to distinguish it
+    storyToDuplicate.name = `${storyToDuplicate.name} (Copy)`;
+    
+    // Add the duplicate to the list
+    onAddStory(storyToDuplicate);
+  };
 
   // Determine which view to show based on user settings
   const viewMode = settings.appearance.viewMode;
@@ -908,6 +957,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
             stories={stories}
             onEdit={openEditStoryDialog}
             onDelete={openDeleteConfirmDialog}
+            onDuplicate={handleDuplicateStory}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
           />
@@ -916,6 +966,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
             stories={stories}
             onEdit={openEditStoryDialog}
             onDelete={openDeleteConfirmDialog}
+            onDuplicate={handleDuplicateStory}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
           />
