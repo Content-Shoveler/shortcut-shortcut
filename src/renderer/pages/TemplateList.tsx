@@ -101,202 +101,253 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
   const theme = useTheme();
   
   return (
-    <motion.div
-      variants={templateCardVariants}
-      initial="initial"
-      whileHover="hover"
-      style={{ borderRadius: 4, height: '100%' }}
+  <motion.div
+    variants={templateCardVariants}
+    initial="initial"
+    whileHover="hover"
+    style={{ borderRadius: 4, height: '100%' }}
+  >
+    <Box 
+      sx={{
+        position: 'relative',
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+        borderRadius: '2px',
+        overflow: 'hidden',
+        background: alpha(theme.palette.background.paper, 0.7),
+        clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+        transition: 'all 0.3s ease',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '12px',
+          height: '12px',
+          borderTop: `2px solid ${theme.palette.primary.main}`,
+          borderRight: `2px solid ${theme.palette.primary.main}`,
+          zIndex: 1,
+        },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '12px',
+          height: '12px',
+          borderBottom: `2px solid ${theme.palette.primary.main}`,
+          borderLeft: `2px solid ${theme.palette.primary.main}`,
+          zIndex: 1,
+        }
+      }}
     >
-      <Box 
-        sx={{
-          position: 'relative',
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
-          borderRadius: '2px',
-          overflow: 'hidden',
-          background: alpha(theme.palette.background.paper, 0.7),
-          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
-          transition: 'all 0.3s ease',
+      {/* Data flow animation effect */}
+      <motion.div
+        variants={dataFlowVariants}
+        initial="initial"
+        whileHover="animate"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
           height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '12px',
-            height: '12px',
-            borderTop: `2px solid ${theme.palette.primary.main}`,
-            borderRight: `2px solid ${theme.palette.primary.main}`,
-            zIndex: 1,
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: '12px',
-            height: '12px',
-            borderBottom: `2px solid ${theme.palette.primary.main}`,
-            borderLeft: `2px solid ${theme.palette.primary.main}`,
-            zIndex: 1,
-          }
+          background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.2)} 50%, transparent 100%)`,
+          zIndex: 0,
+          pointerEvents: 'none',
         }}
-      >
-        {/* Data flow animation effect */}
-        <motion.div
-          variants={dataFlowVariants}
-          initial="initial"
-          whileHover="animate"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '100%',
-            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.2)} 50%, transparent 100%)`,
-            zIndex: 0,
-            pointerEvents: 'none',
-          }}
-        />
+      />
 
-        {/* Header with title */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          p: 1.5,
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          backgroundColor: alpha(theme.palette.primary.main, 0.05),
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              flex: 1,
-              fontFamily: "'Rajdhani', sans-serif",
-              fontWeight: 600,
-              fontSize: '1.1rem',
-              letterSpacing: '0.02em',
-              textShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.4)}`,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+      {/* Header with title and badge */}
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        p: 1.5,
+        borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <Tooltip title="Epic">
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 0.5,
+              mr: 1.5,
+              borderRadius: '4px',
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
             }}
           >
-            {template.epicDetails.name || template.name || '(Unnamed Epic)'}
-          </Typography>
-        </Box>
-
-        {/* Content section */}
-        <Box sx={{ p: 1.5, position: 'relative', zIndex: 1, flexGrow: 1 }}>
-          {/* Stats badges */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <Chip 
-              icon={<CyberIcon icon={CodeIcon} size={16} />}
-              label={`${template.storyTemplates.length} Stories`}
-              size="small"
-              sx={{ 
-                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                borderRadius: '4px',
-                fontFamily: "'Rajdhani', sans-serif",
-                fontWeight: 500,
-                '& .MuiChip-icon': {
-                  color: theme.palette.primary.main
-                }
-              }}
+            <CyberIcon 
+              icon={MemoryIcon} 
+              size={22} 
+              color={theme.palette.primary.main} 
+              glowIntensity={0.7} 
             />
           </Box>
-          
-          {/* Variables section */}
-          <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
-            Variables:
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-            {template.variables.length > 0 ? (
-              template.variables.map(variable => (
-                <Chip 
-                  key={variable}
-                  label={variable}
-                  size="small"
-                  variant="outlined"
-                  sx={{ 
-                    height: '20px',
-                    fontSize: '0.7rem',
-                    backgroundColor: alpha(theme.palette.secondary.main, 0.1),
-                    border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
-                    borderRadius: '4px',
-                  }}
-                />
-              ))
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                No variables defined
-              </Typography>
-            )}
-          </Box>
-          
-          <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'text.secondary', fontSize: '0.7rem' }}>
-            ID: {template.id.substring(0, 8)}
-          </Typography>
+        </Tooltip>
+        
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            flex: 1,
+            fontFamily: "'Rajdhani', sans-serif",
+            fontWeight: 600,
+            fontSize: '1.1rem',
+            letterSpacing: '0.02em',
+            textShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.4)}`,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {template.epicDetails.name || template.name || '(Unnamed Epic)'}
+        </Typography>
+      </Box>
+
+      {/* Content section */}
+      <Box sx={{ p: 1.5, position: 'relative', zIndex: 1, flexGrow: 1 }}>
+        {/* Stats badges */}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          <Chip 
+            icon={<CyberIcon icon={CodeIcon} size={16} />}
+            label={`${template.storyTemplates.length} Stories`}
+            size="small"
+            sx={{ 
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+              borderRadius: '4px',
+              fontFamily: "'Rajdhani', sans-serif",
+              fontWeight: 500,
+              '& .MuiChip-icon': {
+                color: theme.palette.primary.main
+              }
+            }}
+          />
         </Box>
         
-        {/* Actions */}
-        <Box sx={{ 
-          borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          p: 1, 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          backgroundColor: alpha(theme.palette.background.paper, 0.4),
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <Box>
-            <Tooltip title="Apply Template">
-              <IconButton 
-                size="small" 
-                onClick={onApply}
+        {/* Variables section with improved styling */}
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            fontWeight: 'bold', 
+            display: 'block', 
+            mb: 1, 
+            color: theme.palette.text.secondary,
+            textTransform: 'uppercase',
+            fontSize: '0.65rem',
+            letterSpacing: '0.05em'
+          }}
+        >
+          Variables:
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+          {template.variables.length > 0 ? (
+            template.variables.map(variable => (
+              <Chip 
+                key={variable}
+                label={variable}
+                size="small"
+                variant="outlined"
                 sx={{ 
-                  mr: 0.5,
-                  '&:hover': { 
-                    backgroundColor: alpha(theme.palette.success.main, 0.1) 
-                  }
+                  height: '20px',
+                  fontSize: '0.7rem',
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                  borderRadius: '4px',
                 }}
-              >
-                <CyberIcon icon={PlayArrowIcon} size={20} color={theme.palette.success.main} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Edit Template">
-              <IconButton 
-                size="small" 
-                onClick={onEdit}
-                sx={{ 
-                  '&:hover': { 
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1) 
-                  } 
-                }}
-              >
-                <CyberIcon icon={EditIcon} size={20} color={theme.palette.primary.main} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <Tooltip title="Delete Template">
+              />
+            ))
+          ) : (
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                opacity: 0.7,
+                fontStyle: 'italic',
+                fontSize: '0.7rem'
+              }}
+            >
+              No variables defined
+            </Typography>
+          )}
+        </Box>
+        
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            display: 'block', 
+            mt: 2, 
+            color: 'text.secondary', 
+            fontSize: '0.7rem',
+            fontFamily: "'Share Tech Mono', monospace",
+            opacity: 0.6 
+          }}
+        >
+          ID: {template.id.substring(0, 8)}
+        </Typography>
+      </Box>
+      
+      {/* Actions */}
+      <Box sx={{ 
+        borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        p: 1, 
+        display: 'flex', 
+        justifyContent: 'space-between',
+        backgroundColor: alpha(theme.palette.background.paper, 0.4),
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <Box>
+          <Tooltip title="Apply Template">
             <IconButton 
               size="small" 
-              onClick={onDelete}
+              onClick={onApply}
+              sx={{ 
+                mr: 0.5,
+                '&:hover': { 
+                  backgroundColor: alpha(theme.palette.success.main, 0.1) 
+                }
+              }}
+            >
+              <CyberIcon icon={PlayArrowIcon} size={20} color={theme.palette.success.main} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Template">
+            <IconButton 
+              size="small" 
+              onClick={onEdit}
               sx={{ 
                 '&:hover': { 
-                  backgroundColor: alpha(theme.palette.error.main, 0.1) 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1) 
                 } 
               }}
             >
-              <CyberIcon icon={DeleteIcon} size={20} color={theme.palette.error.main} />
+              <CyberIcon icon={EditIcon} size={20} color={theme.palette.primary.main} />
             </IconButton>
           </Tooltip>
         </Box>
+        <Tooltip title="Delete Template">
+          <IconButton 
+            size="small" 
+            onClick={onDelete}
+            sx={{ 
+              '&:hover': { 
+                backgroundColor: alpha(theme.palette.error.main, 0.1) 
+              } 
+            }}
+          >
+            <CyberIcon icon={DeleteIcon} size={20} color={theme.palette.error.main} />
+          </IconButton>
+        </Tooltip>
       </Box>
-    </motion.div>
+    </Box>
+  </motion.div>
   );
 };
 
@@ -617,12 +668,15 @@ const TemplateList: React.FC = () => {
                     '& th': {
                       fontWeight: 'bold',
                       color: theme.palette.text.primary,
-                      borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`
+                      borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                      fontFamily: "'Rajdhani', sans-serif",
+                      letterSpacing: '0.02em',
                     }
                   }}>
-                    <TableCell>Epic Name</TableCell>
+                    <TableCell width="60px" align="center" sx={{ fontSize: '0.8rem' }}></TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>ID</TableCell>
                     <TableCell>Stories</TableCell>
-                    <TableCell>Variables</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -634,20 +688,74 @@ const TemplateList: React.FC = () => {
                       variants={listItemVariants}
                       custom={index}
                       whileHover={{ 
-                        backgroundColor: alpha(theme.palette.secondary.main, 0.05)
+                        backgroundColor: alpha(theme.palette.primary.main, 0.05)
                       }}
                       sx={{ 
+                        overflow: 'hidden',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        // Cyber style outline that only appears on hover
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          border: `1px solid transparent`,
+                          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+                          transition: 'all 0.2s ease',
+                          pointerEvents: 'none',
+                          opacity: 0,
+                        },
+                        '&:hover': {
+                          '&::before': {
+                            borderColor: alpha(theme.palette.primary.main, 0.3),
+                            opacity: 1,
+                          },
+                        },
                         '& td': {
-                          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+                          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                          fontFamily: "'Rajdhani', sans-serif",
+                        },
+                        '&:hover .data-flow': {
+                          opacity: 0.1,
+                          transform: 'translateX(100%)',
                         }
                       }}
+                      onClick={() => navigate(`/editor/${template.id}`)}
                     >
+
                       <TableCell component="th" scope="row">
                         <Typography 
                           variant="subtitle1"
-                          sx={{ fontWeight: 500 }}
+                          sx={{ 
+                            fontWeight: 600, 
+                            textShadow: `0 0 5px ${alpha(theme.palette.primary.main, 0.3)}`,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '200px',
+                          }}
                         >
-                          {template.epicDetails.name}
+                          {template.epicDetails.name || '(Unnamed Epic)'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{ 
+                            fontSize: '0.75rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '200px',
+                            opacity: 0.7,
+                            fontFamily: "'Share Tech Mono', monospace",
+                          }}
+                        >
+                          ID: {template.id.substring(0, 8)}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -665,73 +773,62 @@ const TemplateList: React.FC = () => {
                           }}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {template.variables.length > 0 ? (
-                            template.variables.map((variable) => (
-                              <Chip 
-                                key={variable} 
-                                label={variable} 
-                                size="small" 
-                                variant="outlined"
-                                sx={{ 
-                                  height: '20px',
-                                  borderRadius: '4px',
-                                  borderColor: alpha(theme.palette.secondary.main, 0.5),
-                                  fontSize: '0.7rem',
-                                  backgroundColor: alpha(theme.palette.secondary.main, 0.1)
-                                }}
-                              />
-                            ))
-                          ) : (
-                            <Typography variant="caption" color="text.secondary">
-                              No variables
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Apply Epic">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => navigate(`/apply/${template.id}`)}
-                            sx={{ 
-                              mr: 0.5,
-                              '&:hover': { 
-                                backgroundColor: alpha(theme.palette.success.main, 0.1) 
-                              }
-                            }}
-                          >
-                            <CyberIcon icon={PlayArrowIcon} size={18} color={theme.palette.success.main} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit Epic">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => navigate(`/editor/${template.id}`)}
-                            sx={{ 
-                              mr: 0.5,
-                              '&:hover': { 
-                                backgroundColor: alpha(theme.palette.primary.main, 0.1) 
-                              }
-                            }}
-                          >
-                            <CyberIcon icon={EditIcon} size={18} color={theme.palette.primary.main} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete Epic">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleDeleteClick(template.id)}
-                            sx={{ 
-                              '&:hover': { 
-                                backgroundColor: alpha(theme.palette.error.main, 0.1) 
-                              }
-                            }}
-                          >
-                            <CyberIcon icon={DeleteIcon} size={18} color={theme.palette.error.main} />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Tooltip title="Apply Epic">
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/apply/${template.id}`);
+                              }}
+                              sx={{ 
+                                mr: 0.5,
+                                padding: 0.5,
+                                '&:hover': { 
+                                  backgroundColor: alpha(theme.palette.success.main, 0.1) 
+                                }
+                              }}
+                            >
+                              <CyberIcon icon={PlayArrowIcon} size={18} color={theme.palette.success.main} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit Epic">
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/editor/${template.id}`);
+                              }}
+                              sx={{ 
+                                mr: 0.5,
+                                padding: 0.5,
+                                '&:hover': { 
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.1) 
+                                }
+                              }}
+                            >
+                              <CyberIcon icon={EditIcon} size={18} color={theme.palette.primary.main} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Epic">
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(template.id);
+                              }}
+                              sx={{ 
+                                padding: 0.5,
+                                '&:hover': { 
+                                  backgroundColor: alpha(theme.palette.error.main, 0.1) 
+                                }
+                              }}
+                            >
+                              <CyberIcon icon={DeleteIcon} size={18} color={theme.palette.error.main} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </MotionTableRow>
                   ))}
