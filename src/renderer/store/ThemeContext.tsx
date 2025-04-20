@@ -15,8 +15,8 @@ interface ThemeContextType {
 
 // Create context with default values
 const ThemeContext = createContext<ThemeContextType>({
-  mode: 'light',
-  themeAppearance: 'light',
+  mode: 'dark',
+  themeAppearance: 'dark',
   setTheme: () => {},
 });
 
@@ -456,10 +456,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const defaultAppearance = prefersDarkMode ? 'dark' : 'light';
   
-  // Try to get saved theme mode from localStorage, default to 'system'
+  // Try to get saved theme mode from localStorage, default to 'dark'
   const [mode, setMode] = useState<ThemeMode>(() => {
     const savedMode = localStorage.getItem('themeMode');
-    return (savedMode as ThemeMode) || 'system';
+    return (savedMode as ThemeMode) || 'dark';
   });
   
   // Track the actual theme appearance (light/dark)
