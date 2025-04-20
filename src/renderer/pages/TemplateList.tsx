@@ -34,6 +34,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import UploadIcon from '@mui/icons-material/Upload';
 import DownloadIcon from '@mui/icons-material/Download';
 import CodeIcon from '@mui/icons-material/Code';
@@ -90,13 +91,15 @@ interface TemplateCardProps {
   onApply: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
 }
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ 
   template, 
   onApply, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onDuplicate
 }) => {
   const theme = useTheme();
   
@@ -323,12 +326,26 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
               size="small" 
               onClick={onEdit}
               sx={{ 
+                mr: 0.5,
                 '&:hover': { 
                   backgroundColor: alpha(theme.palette.primary.main, 0.1) 
                 } 
               }}
             >
               <CyberIcon icon={EditIcon} size={20} color={theme.palette.primary.main} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Duplicate Template">
+            <IconButton 
+              size="small" 
+              onClick={onDuplicate}
+              sx={{ 
+                '&:hover': { 
+                  backgroundColor: alpha(theme.palette.info.main, 0.1) 
+                } 
+              }}
+            >
+              <CyberIcon icon={ContentCopyIcon} size={20} color={theme.palette.info.main} />
             </IconButton>
           </Tooltip>
         </Box>
@@ -390,6 +407,39 @@ const TemplateList: React.FC = () => {
   const handleDeleteClick = (templateId: string) => {
     setTemplateToDelete(templateId);
     setDeleteDialogOpen(true);
+  };
+  
+  // Handle template duplication
+  const handleDuplicateTemplate = (templateId: string) => {
+    // Find the template to duplicate
+    const templateToDuplicate = templates.find(t => t.id === templateId);
+    
+    if (templateToDuplicate) {
+      // Create a deep copy of the template
+      const duplicatedTemplate = JSON.parse(JSON.stringify(templateToDuplicate));
+      
+      // Generate a new ID and update the name
+      duplicatedTemplate.id = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
+      duplicatedTemplate.epicDetails.name = `${duplicatedTemplate.epicDetails.name || 'Template'} (Copy)`;
+      
+      // Add the duplicate to the templates list
+      setTemplates([...templates, duplicatedTemplate]);
+      
+      // Save the duplicate to storage
+      window.electronAPI.saveTemplate(duplicatedTemplate)
+        .then(() => {
+          setAlert({
+            type: 'success',
+            message: 'Template duplicated successfully.',
+          });
+        })
+        .catch(() => {
+          setAlert({
+            type: 'error',
+            message: 'Failed to save duplicated template.',
+          });
+        });
+    }
   };
 
   const confirmDelete = async () => {
@@ -631,6 +681,7 @@ const TemplateList: React.FC = () => {
                   onApply={() => navigate(`/apply/${template.id}`)}
                   onEdit={() => navigate(`/editor/${template.id}`)}
                   onDelete={() => handleDeleteClick(template.id)}
+                  onDuplicate={() => handleDuplicateTemplate(template.id)}
                 />
               </Box>
             ))}
@@ -1026,6 +1077,24 @@ const TemplateList: React.FC = () => {
                               }}
                             >
                               <CyberIcon icon={EditIcon} size={18} color={theme.palette.primary.main} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Duplicate Epic">
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDuplicateTemplate(template.id);
+                              }}
+                              sx={{ 
+                                mr: 0.5,
+                                padding: 0.5,
+                                '&:hover': { 
+                                  backgroundColor: alpha(theme.palette.info.main, 0.1) 
+                                }
+                              }}
+                            >
+                              <CyberIcon icon={ContentCopyIcon} size={18} color={theme.palette.info.main} />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete Epic">
