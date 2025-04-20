@@ -7,7 +7,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  Chip,
   alpha,
   useTheme,
 } from '@mui/material';
@@ -47,8 +46,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
       state: 'Ready for Development',
       workflow_id: '',
       workflow_state_id: '',
-      estimate: 0,
-      labels: [],
+      estimate: 0
     });
     setEditingStoryIndex(null);
     setStoryDialogOpen(true);
@@ -131,24 +129,6 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
                             ? `${story.description.substring(0, 100)}...`
                             : story.description}
                         </Typography>
-                      )}
-                      {story.labels && story.labels.length > 0 && (
-                        <Box sx={{ mt: 1 }}>
-                          {story.labels.map(label => (
-                            <Chip
-                              key={label}
-                              label={label}
-                              size="small"
-                              sx={{ 
-                                mr: 0.5, 
-                                mb: 0.5,
-                                borderRadius: '4px',
-                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                              }}
-                            />
-                          ))}
-                        </Box>
                       )}
                     </React.Fragment>
                   }

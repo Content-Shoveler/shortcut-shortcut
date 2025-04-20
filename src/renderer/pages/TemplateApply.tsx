@@ -118,7 +118,7 @@ const TemplateApply: React.FC = () => {
       const epicName = replaceVariables(template.epicDetails.name, variableValues);
       const epicDescription = replaceVariables(template.epicDetails.description, variableValues);
       
-      // Build stories with replaced variables
+      // Build stories with replaced variables - without labels
       const stories = template.storyTemplates.map(story => ({
         name: replaceVariables(story.name, variableValues),
         description: replaceVariables(story.description, variableValues),
@@ -126,8 +126,7 @@ const TemplateApply: React.FC = () => {
         state: story.state,
         workflow_id: story.workflow_id,
         workflow_state_id: story.workflow_state_id,
-        estimate: story.estimate,
-        labels: story.labels,
+        estimate: story.estimate
       }));
       
       // Find a workflowId from the first story with one, or use a default
@@ -139,9 +138,9 @@ const TemplateApply: React.FC = () => {
       // Create the epic with stories in Shortcut
       const result = await shortcutApi.createEpicWithStories(
         {
-          name: epicName,
-          description: epicDescription,
-          state: template.epicDetails.state
+          ...template.epicDetails,  // Include ALL fields from the template
+          name: epicName,           // Override just the fields that need variable replacement
+          description: epicDescription
         },
         workflowId,
         stories
@@ -192,8 +191,8 @@ const TemplateApply: React.FC = () => {
     description: replaceVariables(story.description, variableValues),
     type: story.type,
     state: story.state,
-    estimate: story.estimate,
-    labels: story.labels,
+    estimate: story.estimate
+    // Removed labels property
   }));
 
   return (
@@ -333,18 +332,7 @@ const TemplateApply: React.FC = () => {
                             {story.description}
                           </Typography>
                         )}
-                        {story.labels && story.labels.length > 0 && (
-                          <Box sx={{ mt: 1 }}>
-                            {story.labels.map(label => (
-                              <Chip
-                                key={label}
-                                label={label}
-                                size="small"
-                                sx={{ mr: 0.5, mb: 0.5 }}
-                              />
-                            ))}
-                          </Box>
-                        )}
+                        {/* Removed label rendering */}
                       </React.Fragment>
                     }
                   />

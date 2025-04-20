@@ -166,24 +166,9 @@ export async function createEpicWithStories(
       epicPayload.owner_ids = ownerIds.map(id => id.toString());
     }
     
-    // Format labels to match Shortcut API expected structure
-    if (epicData.labels && Array.isArray(epicData.labels)) {
-      epicPayload.labels = epicData.labels.map(label => {
-        // If it's already an object with name and color, use it
-        if (typeof label === 'object' && label !== null) {
-          return {
-            name: label.name,
-            color: label.color || undefined,
-            description: label.description || undefined,
-            external_id: label.external_id || undefined
-          };
-        }
-        // If it's just a string, create a label with just the name
-        if (typeof label === 'string') {
-          return { name: label };
-        }
-        return label;
-      });
+    // Remove state if epic_state_id is provided to avoid conflicts
+    if (epicPayload.epic_state_id && epicPayload.state) {
+      delete epicPayload.state;
     }
     
     // Format objective_ids to ensure it's an array of integers
@@ -234,22 +219,7 @@ export async function createEpicWithStories(
       delete storyPayload.type; // Replaced with story_type
       delete storyPayload.state; // Will be handled by workflow_state_id
       
-      // Transform labels if they exist to match Shortcut API format
-      if (storyPayload.labels && Array.isArray(storyPayload.labels)) {
-        storyPayload.labels = storyPayload.labels.map(label => {
-          // If it's already an object with name and color, use it
-          if (typeof label === 'object' && label !== null) {
-            return {
-              name: label.name,
-              color: label.color || undefined,
-              description: label.description || undefined,
-              external_id: label.external_id || undefined
-            };
-          }
-          // If it's just a string, create a label with just the name
-          return { name: label };
-        });
-      }
+      // Remove labels functionality entirely
       
       // Handle workflow state ID resolution if not explicitly provided
       if (!storyPayload.workflow_state_id) {

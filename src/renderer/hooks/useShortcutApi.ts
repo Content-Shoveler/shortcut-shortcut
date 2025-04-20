@@ -269,6 +269,7 @@ export function useShortcutApi() {
         name: string;
         description: string;
         state: string;
+        [key: string]: any; // Allow any additional fields from the template
       },
       workflowId: string,
       stories: Array<{
@@ -285,13 +286,28 @@ export function useShortcutApi() {
         throw new Error('API token is not set');
       }
       
-      // 1. Create the epic
-      const epicPayload = {
+      // 1. Create the epic with all fields from epicData
+      // Create a comprehensive payload that includes all valid fields
+      const epicPayload: Record<string, any> = {
+        // Include the basic required fields
         name: epicData.name,
         description: epicData.description,
-        state: epicData.state,
-        labels: []
+        
+        // Include additional fields if they exist in the template
+        ...(epicData.epic_state_id && { epic_state_id: epicData.epic_state_id }),
+        // Only include state if epic_state_id is not provided (avoid conflict)
+        ...(!epicData.epic_state_id && { state: epicData.state }),
+        ...(epicData.deadline && { deadline: epicData.deadline }),
+        ...(epicData.planned_start_date && { planned_start_date: epicData.planned_start_date }),
+        
+        // Handle arrays properly
+        ...(epicData.objective_ids && { objective_ids: epicData.objective_ids }),
+        ...(epicData.owner_ids && { owner_ids: epicData.owner_ids })
+        
+        // Remove all label-related properties
       };
+      
+      console.log('Full epic payload being sent:', epicPayload);
       
       const api = window.electronAPI as ShortcutElectronAPI;
       const epicResponse = await api.shortcutApi.createEpic(apiToken, epicPayload);
@@ -344,8 +360,8 @@ export function useShortcutApi() {
           story_type: storyData.type,
           workflow_state_id: workflowStateId,
           epic_id: epic.id,
-          estimate: storyData.estimate,
-          labels: storyData.labels?.map(label => ({ name: label }))
+          estimate: storyData.estimate
+          // Remove labels property
         };
         
         const storyResponse = await api.shortcutApi.createStory(apiToken, storyPayload);

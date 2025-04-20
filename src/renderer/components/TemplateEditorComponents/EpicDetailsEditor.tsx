@@ -20,74 +20,76 @@ import { EpicDetails } from '../../types';
 import { 
   EpicStateSelector,
   MemberSelector, 
-  LabelSelector, 
   ObjectiveSelector
 } from '../ShortcutFields';
 import { ShortcutEpicState } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 
 // Helper components for the multi-select fields
-interface LabelMultiSelectProps {
+interface MemberMultiSelectProps {
   value: any[];
-  onChange: (selectedLabels: MultiSelectOption[]) => void;
+  onChange: (selectedMembers: MultiSelectOption[]) => void;
   shortcutApi: ReturnType<typeof useShortcutApi>;
 }
 
-const LabelMultiSelect: React.FC<LabelMultiSelectProps> = ({ value, onChange, shortcutApi }) => {
-  const [labels, setLabels] = useState<MultiSelectOption[]>([]);
+const MemberMultiSelect: React.FC<MemberMultiSelectProps> = ({ value, onChange, shortcutApi }) => {
+  const [members, setMembers] = useState<MultiSelectOption[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Load labels from the API
+  // Load members from the API
   useEffect(() => {
-    const fetchLabels = async () => {
+    const fetchMembers = async () => {
       try {
         setLoading(true);
-        const labelData = await shortcutApi.fetchLabels();
+        const memberData = await shortcutApi.fetchMembers();
         // Convert to MultiSelectOption format
-        const options = labelData.map((label: any) => ({
-          id: label.id,
-          name: label.name,
-          color: label.color
+        const options = memberData.map((member: any) => ({
+          id: member.id,
+          name: member.profile ? member.profile.name : `Member ${member.id}`,
+          // You can add an avatar or color property if desired
         }));
-        setLabels(options);
+        setMembers(options);
       } catch (error) {
-        console.error('Error fetching labels:', error);
+        console.error('Error fetching members:', error);
       } finally {
         setLoading(false);
       }
     };
     
     if (shortcutApi.hasApiToken) {
-      fetchLabels();
+      fetchMembers();
     }
   }, [shortcutApi]);
   
   // Convert current value to MultiSelectOption format
-  const selectedLabels = useMemo(() => {
-    if (!value) return [];
-    return value.map((label: any) => ({
-      id: label.id || label.name, // Use name as ID if ID is not available
-      name: label.name,
-      color: label.color
-    }));
-  }, [value]);
+  const selectedMembers = useMemo(() => {
+    if (!value || !Array.isArray(value) || value.length === 0) return [];
+    
+    return value
+      .map((id: string) => {
+        const member = members.find(mem => mem.id === id);
+        return member ? member : null;
+      })
+      .filter((mem): mem is MultiSelectOption => mem !== null);
+  }, [value, members]);
   
   if (loading) {
-    return <Typography color="text.secondary">Loading labels...</Typography>;
+    return <Typography color="text.secondary">Loading members...</Typography>;
   }
   
   return (
     <CyberMultiSelect
-      options={labels}
-      value={selectedLabels}
+      options={members}
+      value={selectedMembers}
       onChange={onChange}
-      placeholder="Select labels..."
-      helperText="You can select multiple labels"
+      placeholder="Select owners..."
+      helperText="You can select multiple owners"
       cornerClip
       fullWidth
     />
   );
 };
+
 
 interface ObjectiveMultiSelectProps {
   value: any[];
@@ -172,10 +174,10 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
     setApiTokenAlert(!shortcutApi.hasApiToken);
   }, [shortcutApi.hasApiToken]);
   
-  // Handle owner selection
-  const handleOwnerChange = (member: any | null) => {
-    // Store the ID in owner_ids array
-    const ownerIds = member ? [member.id] : [];
+  // Handle multiple owner selection
+  const handleOwnersChange = (selectedMembers: MultiSelectOption[]) => {
+    // Extract IDs from the selected members
+    const ownerIds = selectedMembers.map(member => member.id);
     
     onStateChange({
       target: {
@@ -195,21 +197,6 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
     });
   };
   
-  // Handle multiple label selection
-  const handleLabelsChange = (selectedLabels: MultiSelectOption[]) => {
-    // Map selected options to label objects with name and color
-    const labels = selectedLabels.map(label => ({
-      name: label.name,
-      color: label.color
-    }));
-    
-    onStateChange({
-      target: {
-        name: 'labels',
-        value: labels
-      }
-    });
-  };
   
   // Handle multiple objective selection
   const handleObjectivesChange = (selectedObjectives: MultiSelectOption[]) => {
@@ -343,41 +330,23 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
       {/* API-based selectors - only show when API token is available */}
       {shortcutApi.hasApiToken && (
         <>
-          {/* Owner selector */}
+          {/* Multi-select Owner selector */}
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
               Assignment
             </Typography>
             <Box sx={{ mb: 1 }}>
               <Typography variant="caption" color="text.secondary">
-                Select an owner for the epic
+                Assign one or more owners to this epic
               </Typography>
             </Box>
-            <MemberSelector
-              value={epicDetails.owner_ids?.[0] || null}
-              onChange={handleOwnerChange}
-              fullWidth
+            <MemberMultiSelect
+              value={epicDetails.owner_ids || []}
+              onChange={handleOwnersChange}
+              shortcutApi={shortcutApi}
             />
           </Box>
 
-          {/* Multi-select Label selector */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-              Labels
-            </Typography>
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Categorize your epic with one or more labels
-              </Typography>
-            </Box>
-            {shortcutApi.hasApiToken && (
-              <LabelMultiSelect
-                value={epicDetails.labels || []}
-                onChange={handleLabelsChange}
-                shortcutApi={shortcutApi}
-              />
-            )}
-          </Box>
 
           {/* Multi-select Objective selector */}
           <Box sx={{ mt: 3 }}>

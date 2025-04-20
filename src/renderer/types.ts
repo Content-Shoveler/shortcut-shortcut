@@ -16,7 +16,6 @@ export interface EpicDetails {
   owner_ids?: string[];
   planned_start_date?: string;
   deadline?: string;
-  labels?: { name: string; color?: string }[];
   objective_ids?: number[];
 }
 
@@ -28,7 +27,6 @@ export interface StoryTemplate {
   workflow_id?: string;
   workflow_state_id?: string;
   estimate?: number;
-  labels?: string[];
 }
 
 // For variable replacement in templates

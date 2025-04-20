@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogActions,
@@ -9,15 +9,9 @@ import {
   Typography,
   Alert,
   MenuItem,
-  Chip,
   alpha,
   useTheme,
-  SelectChangeEvent,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { 
   CyberTextField, 
   CyberButton, 
@@ -224,68 +218,6 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
             Please set up your Shortcut API token in Settings to use the workflow features.
           </Alert>
         )}
-        
-        <Accordion sx={{ 
-          mt: 2,
-          backgroundImage: 'none',
-          backgroundColor: alpha(theme.palette.background.paper, 0.5),
-          '&::before': {
-            display: 'none',
-          }
-        }}>
-          <AccordionSummary 
-            expandIcon={<CyberIcon icon={ExpandMoreIcon} size={20} />}
-            sx={{
-              '&.Mui-expanded': {
-                borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-              }
-            }}
-          >
-            <Typography>Labels (Optional)</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <CyberTextField
-              fullWidth
-              label="Add Labels (comma separated)"
-              placeholder="e.g., frontend, backend, design, urgent"
-              value={story.labels?.join(', ') || ''}
-              onChange={(e) => {
-                const labelValue = e.target.value;
-                const labels = labelValue
-                  .split(',')
-                  .map(label => label.trim())
-                  .filter(label => label !== '');
-                
-                setStory({
-                  ...story,
-                  labels,
-                });
-              }}
-              cornerClip
-            />
-            {story.labels && story.labels.length > 0 && (
-              <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {story.labels.map((label) => (
-                  <Chip
-                    key={label}
-                    label={label}
-                    onDelete={() => {
-                      setStory({
-                        ...story,
-                        labels: story.labels?.filter(l => l !== label) || [],
-                      });
-                    }}
-                    sx={{ 
-                      borderRadius: '4px',
-                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                      border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-          </AccordionDetails>
-        </Accordion>
       </DialogContent>
       <DialogActions>
         <CyberButton onClick={onClose}>
