@@ -282,7 +282,7 @@ const CyberMultiSelect: React.FC<CyberMultiSelectProps> = ({
             fontSize: '0.7rem',
             marginLeft: cornerClip ? '8px' : '14px',
             transition: 'all 0.3s ease',
-            color: error ? theme.palette.error.main : undefined,
+            color: error ? theme.palette.error.main : theme.palette.text.secondary,
           }}
         >
           {helperText}

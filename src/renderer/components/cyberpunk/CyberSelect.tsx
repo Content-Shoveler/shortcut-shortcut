@@ -138,6 +138,7 @@ const CyberSelect: React.FC<CyberSelectProps> = ({
               fontSize: '0.7rem',
               marginLeft: cornerClip ? '8px' : '14px',
               transition: 'all 0.3s ease',
+              color: theme.palette.text.secondary,
             }}
           >
             {helperText}
