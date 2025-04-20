@@ -33,12 +33,22 @@ const VariablesManager: React.FC<VariablesManagerProps> = ({
   const [variableDialogOpen, setVariableDialogOpen] = useState(false);
   const [newVariable, setNewVariable] = useState('');
 
+  // Auto-save whenever variable name changes
   const handleAddVariable = () => {
     if (newVariable.trim() !== '' && !variables.includes(newVariable.trim())) {
       onAddVariable(newVariable.trim());
       setNewVariable('');
       setVariableDialogOpen(false);
     }
+  };
+  
+  // Close dialog and save if valid
+  const handleClose = () => {
+    if (newVariable.trim() !== '' && !variables.includes(newVariable.trim())) {
+      onAddVariable(newVariable.trim());
+      setNewVariable('');
+    }
+    setVariableDialogOpen(false);
   };
 
   return (
@@ -120,13 +130,9 @@ const VariablesManager: React.FC<VariablesManagerProps> = ({
           />
         </DialogContent>
         <DialogActions>
-          <CyberButton onClick={() => setVariableDialogOpen(false)}>
-            Cancel
-          </CyberButton>
           <CyberButton 
-            onClick={handleAddVariable}
+            onClick={handleClose}
             variant="contained"
-            disabled={!newVariable.trim() || variables.includes(newVariable.trim())}
             glowIntensity={0.7}
             sx={{ 
               backgroundColor: theme.palette.mode === 'dark' 
@@ -141,16 +147,10 @@ const VariablesManager: React.FC<VariablesManagerProps> = ({
                 boxShadow: theme.palette.mode === 'dark'
                   ? `0 0 12px ${alpha(theme.palette.secondary.main, 0.7)}`
                   : `0 4px 8px ${alpha(theme.palette.primary.main, 0.4)}`
-              },
-              '&.Mui-disabled': {
-                backgroundColor: theme.palette.mode === 'dark'
-                  ? alpha(theme.palette.action.disabled, 0.4)
-                  : alpha(theme.palette.action.disabled, 0.7),
-                color: theme.palette.text.disabled
               }
             }}
           >
-            Add
+            Back
           </CyberButton>
         </DialogActions>
       </Dialog>

@@ -1,6 +1,7 @@
 import React, { ReactNode, createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { CacheProvider } from './CacheContext';
 
 // Define theme mode type
 type ThemeMode = 'system' | 'light' | 'dark';
@@ -285,7 +286,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
       <ThemeContext.Provider value={{ mode, themeAppearance, setTheme }}>
         <MuiThemeProvider theme={theme}>
           <CssBaseline />
-          {children}
+          <CacheProvider>
+            {children}
+          </CacheProvider>
         </MuiThemeProvider>
       </ThemeContext.Provider>
     </SettingsContext.Provider>

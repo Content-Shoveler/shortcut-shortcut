@@ -401,20 +401,49 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     setOwnerIds(selected.map(owner => owner.id.toString()));
   };
 
-  // Handle form submission
-  const handleSave = () => {
-    if (!description.trim()) return;
-
-    onSave({
-      description: description.trim(),
-      complete,
-      owner_ids: ownerIds.length > 0 ? ownerIds : undefined,
-    });
-
-    // Reset form
-    setDescription('');
-    setComplete(false);
-    setOwnerIds([]);
+  // Auto-save whenever form values change
+  useEffect(() => {
+    // Only trigger if we have a valid description
+    if (description.trim()) {
+      const saveTimeout = setTimeout(() => {
+        const updatedTask = {
+          description: description.trim(),
+          complete,
+          owner_ids: ownerIds.length > 0 ? ownerIds : undefined,
+        };
+        
+        // Only save if it's an edit (not a new task)
+        if (isEdit) {
+          onSave(updatedTask);
+        }
+      }, 500); // 500ms debounce
+      
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [description, complete, ownerIds, isEdit, onSave]);
+  
+  // Handle form submission for new tasks or when Back is pressed
+  const handleFinish = () => {
+    if (description.trim()) {
+      // Only call onSave for new tasks or as a final save
+      if (!isEdit) {
+        onSave({
+          description: description.trim(),
+          complete,
+          owner_ids: ownerIds.length > 0 ? ownerIds : undefined,
+        });
+      }
+      
+      // Reset form for new tasks
+      if (!isEdit) {
+        setDescription('');
+        setComplete(false);
+        setOwnerIds([]);
+      }
+    }
+    
+    // Close the form
+    onCancel();
   };
 
   return (
@@ -470,15 +499,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           {/* Form buttons */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <CyberButton onClick={onCancel} sx={{ mr: 1 }}>
-              Cancel
-            </CyberButton>
             <CyberButton
               variant="contained"
-              onClick={handleSave}
+              onClick={handleFinish}
               disabled={!description.trim()}
             >
-              {isEdit ? 'Update Task' : 'Add Task'}
+              Back
             </CyberButton>
           </Box>
         </Stack>
@@ -540,13 +566,13 @@ export const TaskEditDialog: React.FC<{
         Edit Task
       </DialogTitle>
       <DialogContent>
-        <TaskForm
-          task={task}
-          onSave={onSave}
-          onCancel={onClose}
-          members={members}
-          isEdit={true}
-        />
+          <TaskForm
+            task={task}
+            onSave={onSave}
+            onCancel={onClose}
+            members={members}
+            isEdit={true}
+          />
       </DialogContent>
     </Dialog>
   );
@@ -634,6 +660,13 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
   };
 
   // Handle adding a new task
+  // Auto-save tasks as they change
+  useEffect(() => {
+    // No need to do anything here as the parent will re-render
+    // whenever the tasks array is updated, which will trigger
+    // the parent's auto-save functionality
+  }, [tasks, onChange]);
+  
   const handleAddTask = (task: TaskTemplate) => {
     onChange([...tasks, task]);
     setShowAddForm(false);

@@ -9,7 +9,6 @@ import {
   useTheme,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SaveIcon from '@mui/icons-material/Save';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   CyberCard, 
@@ -176,29 +175,35 @@ const TemplateEditor: React.FC = () => {
     }));
   };
 
-  // Save template
-  const handleSaveTemplate = async () => {
-    try {
-      await window.electronAPI.saveTemplate(template);
+  // Auto-save effect
+  useEffect(() => {
+    // Only save if template has required fields
+    if (template.epicDetails.name) {
+      const saveTimeout = setTimeout(async () => {
+        try {
+          await window.electronAPI.saveTemplate(template);
+          
+          // Only show success alert when creating a new template for the first time
+          if (!id && template.id !== id) {
+            setAlert({
+              type: 'success',
+              message: 'Template saved successfully',
+            });
+            
+            // Update the URL to include the ID for future saves
+            navigate(`/editor/${template.id}`, { replace: true });
+          }
+        } catch (error) {
+          setAlert({
+            type: 'error',
+            message: 'Auto-save failed',
+          });
+        }
+      }, 500); // 500ms debounce
       
-      setAlert({
-        type: 'success',
-        message: 'Template saved successfully',
-      });
-      
-      // Navigate back to template list if this is a new template
-      if (!id) {
-        setTimeout(() => {
-          navigate('/');
-        }, 1500);
-      }
-    } catch (error) {
-      setAlert({
-        type: 'error',
-        message: 'Failed to save template',
-      });
+      return () => clearTimeout(saveTimeout);
     }
-  };
+  }, [template, id, navigate]);
 
   return (
     <Box>
@@ -219,18 +224,9 @@ const TemplateEditor: React.FC = () => {
         
         <Stack direction="row" spacing={1}>
           <CyberButton 
-            variant="outlined" 
+            variant="contained"
             startIcon={<CyberIcon icon={ArrowBackIcon} size={20} />}
             onClick={() => navigate('/')}
-            scanlineEffect
-          >
-            Cancel
-          </CyberButton>
-          <CyberButton 
-            variant="contained"
-            startIcon={<CyberIcon icon={SaveIcon} size={20} />}
-            onClick={handleSaveTemplate}
-            disabled={!template.epicDetails.name}
             glowIntensity={0.7}
             sx={{ 
               backgroundColor: theme.palette.mode === 'dark' 
@@ -254,7 +250,7 @@ const TemplateEditor: React.FC = () => {
               }
             }}
           >
-            Save Epic
+            Back
           </CyberButton>
         </Stack>
       </Box>

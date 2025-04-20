@@ -210,11 +210,12 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     }
   };
   
-  const handleSave = () => {
-    if (story) {
+  // Auto-save on dialog close
+  const handleClose = () => {
+    if (story && story.name) {
       onSave(story);
-      onClose();
     }
+    onClose();
   };
   
   if (!story) {
@@ -352,13 +353,9 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <CyberButton onClick={onClose}>
-          Cancel
-        </CyberButton>
         <CyberButton 
-          onClick={handleSave}
+          onClick={handleClose}
           variant="contained"
-          disabled={!story.name}
           glowIntensity={0.7}
           sx={{ 
             backgroundColor: theme.palette.mode === 'dark' 
@@ -373,16 +370,10 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
               boxShadow: theme.palette.mode === 'dark'
                 ? `0 0 12px ${alpha(theme.palette.secondary.main, 0.7)}`
                 : `0 4px 8px ${alpha(theme.palette.primary.main, 0.4)}`
-            },
-            '&.Mui-disabled': {
-              backgroundColor: theme.palette.mode === 'dark'
-                ? alpha(theme.palette.action.disabled, 0.4)
-                : alpha(theme.palette.action.disabled, 0.7),
-              color: theme.palette.text.disabled
             }
           }}
         >
-          Save
+          Back
         </CyberButton>
       </DialogActions>
     </Dialog>

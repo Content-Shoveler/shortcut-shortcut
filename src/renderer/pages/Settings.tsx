@@ -10,9 +10,13 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
-import { Visibility, VisibilityOff, ExpandMore, CheckCircle, Error } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ExpandMore, CheckCircle, Error, Refresh, DeleteSweep } from '@mui/icons-material';
 import { useTheme, useSettings } from '../store/AppProviders';
+import { useCache } from '../store/CacheContext';
 import { 
   CyberCard, 
   CyberTextField, 
@@ -22,6 +26,173 @@ import {
   CyberRadio,
   CyberIcon
 } from '../components/cyberpunk';
+
+// Cache Monitor Panel Component
+const CacheMonitorPanel: React.FC = () => {
+  const { getCacheKeys, getCache, invalidateCache, clearCache } = useCache();
+  const [cacheKeys, setCacheKeys] = useState<string[]>([]);
+  const [refreshCount, setRefreshCount] = useState(0);
+
+  // Update cache keys when component mounts or refresh is triggered
+  useEffect(() => {
+    setCacheKeys(getCacheKeys());
+  }, [getCacheKeys, refreshCount]);
+
+  // Calculate time until expiration
+  const getTimeUntilExpiration = (key: string): string => {
+    const entry = getCache(key);
+    if (!entry || !entry?.timestamp || !entry?.expiresAt) {
+      return 'Unknown';
+    }
+    
+    const now = Date.now();
+    const expiresIn = entry.expiresAt - now;
+    
+    if (expiresIn <= 0) {
+      return 'Expired';
+    }
+    
+    // Format time remaining
+    const seconds = Math.floor((expiresIn / 1000) % 60);
+    const minutes = Math.floor((expiresIn / (1000 * 60)) % 60);
+    const hours = Math.floor(expiresIn / (1000 * 60 * 60));
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setRefreshCount(prev => prev + 1);
+  };
+
+  // Handle clearing all cache
+  const handleClearAll = () => {
+    clearCache();
+    setRefreshCount(prev => prev + 1);
+  };
+
+  // Handle clearing specific cache entry
+  const handleClearEntry = (key: string) => {
+    invalidateCache(key);
+    setRefreshCount(prev => prev + 1);
+  };
+
+  // Get endpoint name from cache key for better display
+  const getEndpointName = (key: string): string => {
+    if (key.includes('projects')) return 'Projects';
+    if (key.includes('workflows')) return 'Workflows';
+    if (key.includes('workflow-states')) return 'Workflow States';
+    if (key.includes('epic-workflow')) return 'Epic Workflow';
+    if (key.includes('members')) return 'Members';
+    if (key.includes('labels')) return 'Labels';
+    if (key.includes('objectives')) return 'Objectives';
+    if (key.includes('iterations')) return 'Iterations';
+    return 'Other';
+  };
+
+  return (
+    <Box>
+      <Typography paragraph>
+        <strong>API Cache Monitor:</strong> View and manage the in-memory API cache to improve performance and reduce API calls.
+      </Typography>
+      
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <CyberButton 
+          onClick={handleRefresh}
+          variant="outlined"
+          startIcon={<CyberIcon icon={Refresh} />}
+          glowIntensity={0.4}
+        >
+          Refresh
+        </CyberButton>
+        
+        <CyberButton 
+          onClick={handleClearAll}
+          variant="outlined"
+          color="error"
+          startIcon={<CyberIcon icon={DeleteSweep} />}
+          glowIntensity={0.4}
+        >
+          Clear All Cache
+        </CyberButton>
+      </Box>
+      
+      <Typography variant="subtitle1" gutterBottom>
+        Cache Entries: {cacheKeys.length}
+      </Typography>
+      
+      {cacheKeys.length === 0 ? (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          No cache entries found. Cache entries will be created as you interact with the application.
+        </Alert>
+      ) : (
+        <List sx={{ 
+          maxHeight: '300px', 
+          overflow: 'auto',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+          p: 0
+        }}>
+          {cacheKeys.map((key) => (
+            <ListItem
+              key={key}
+              divider
+              secondaryAction={
+                <CyberButton 
+                  size="small"
+                  onClick={() => handleClearEntry(key)}
+                  variant="text"
+                  color="error"
+                  startIcon={<CyberIcon icon={DeleteSweep} size={16} />}
+                >
+                  Clear
+                </CyberButton>
+              }
+              sx={{ 
+                bgcolor: (theme) => 
+                  theme.palette.mode === 'dark' 
+                    ? 'rgba(0, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.02)'
+              }}
+            >
+              <ListItemText
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="body2" component="span" fontWeight="bold">
+                      {getEndpointName(key)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                      }}
+                    >
+                      Expires in: {getTimeUntilExpiration(key)}
+                    </Typography>
+                  </Box>
+                }
+                secondary={
+                  <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>
+                    {key}
+                  </Typography>
+                }
+              />
+            </ListItem>
+          ))}
+        </List>
+      )}
+      
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+        Cache entries are automatically invalidated when they expire or when related data is created/updated.
+      </Typography>
+    </Box>
+  );
+};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -603,6 +774,16 @@ const Settings: React.FC = () => {
               <Typography paragraph>
                 <strong>Resetting:</strong> If you're experiencing persistent issues, try clearing your saved templates by exporting them first (as a backup), then deleting them, and finally importing them back.
               </Typography>
+            </AccordionDetails>
+          </Accordion>
+          
+          {/* Cache Monitor Section */}
+          <Accordion>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
+              <Typography variant="h6">Cache Monitor</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <CacheMonitorPanel />
             </AccordionDetails>
           </Accordion>
         </TabPanel>

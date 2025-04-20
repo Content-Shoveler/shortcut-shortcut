@@ -1,8 +1,9 @@
 /**
- * React hook for accessing Shortcut API functions
+ * React hook for accessing Shortcut API functions with caching
  */
 import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import { useSettings } from '../store/SettingsContext';
+import { useCache } from '../store/CacheContext';
 import {
   ShortcutProject,
   ShortcutWorkflow,
@@ -38,8 +39,23 @@ type ShortcutElectronAPI = {
  * Custom hook that provides access to Shortcut API functions
  * with automatic API token handling
  */
+/**
+ * Utility function to create a consistent cache key
+ */
+const createCacheKey = (endpoint: string, apiToken: string, params?: any): string => {
+  // Include apiToken (or a hash of it) to avoid cache collisions between accounts
+  // Just use the first 8 chars of token to avoid storing full token in memory
+  const tokenPart = apiToken.substring(0, 8);
+  
+  // If we have additional params, add them to the key
+  const paramsStr = params ? `-${JSON.stringify(params)}` : '';
+  
+  return `shortcut-api-${endpoint}${paramsStr}-${tokenPart}`;
+};
+
 export function useShortcutApi() {
   const { settings } = useSettings();
+  const { getCache, setCache, invalidateCache } = useCache();
   
   // Get the API token from context or fallback to localStorage if context failed to load it
   const getTokenWithFallback = () => {
@@ -182,14 +198,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('projects', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached projects data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchProjects(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch projects');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   /**
    * Fetch all workflows from Shortcut
@@ -199,14 +229,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('workflows', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached workflows data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchWorkflows(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch workflows');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   /**
    * Fetch workflow states for a specific workflow
@@ -217,6 +261,17 @@ export function useShortcutApi() {
         throw new Error('API token is not set');
       }
       
+      // Create a cache key for this API call
+      const cacheKey = createCacheKey('workflow-states', apiToken, { workflowId });
+      
+      // Check if we have a valid cache entry
+      const cachedData = getCache(cacheKey);
+      if (cachedData) {
+        console.log(`Using cached workflow states for workflow ${workflowId}`);
+        return cachedData;
+      }
+      
+      // If no cache hit, fetch from API
       const api = window.electronAPI as ShortcutElectronAPI;
       const response = await api.shortcutApi.fetchWorkflowStates(
         apiToken, 
@@ -227,9 +282,12 @@ export function useShortcutApi() {
         throw new Error(response.message || 'Failed to fetch workflow states');
       }
       
+      // Store successful response in cache
+      setCache(cacheKey, response.data || []);
+      
       return response.data || [];
     },
-    [apiToken]
+    [apiToken, getCache, setCache]
   );
 
   /**
@@ -240,14 +298,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('epic-workflow', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached epic workflow data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchEpicWorkflow(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch epic workflow');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || null);
+    
     return response.data || null;
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   /**
    * Fetch epic states from Shortcut
@@ -277,8 +349,11 @@ export function useShortcutApi() {
       throw new Error(response.message || 'Failed to create multiple stories');
     }
     
+    // After creating stories, invalidate related caches
+    invalidateCache('stories');
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, invalidateCache]);
 
   /**
    * Create an epic with associated stories
@@ -336,6 +411,9 @@ export function useShortcutApi() {
       if (!epicResponse.success) {
         throw new Error(epicResponse.message || 'Failed to create epic');
       }
+      
+      // After creating an epic, invalidate related caches
+      invalidateCache('epics');
       
       const epic = epicResponse.data;
       
@@ -401,6 +479,9 @@ export function useShortcutApi() {
         throw new Error(storiesResponse.message || 'Failed to create stories');
       }
       
+      // After creating stories, invalidate related caches
+      invalidateCache('stories');
+      
       // Extract the IDs from the response
       const storyIds = storiesResponse.data.map((story: any) => story.id.toString());
       
@@ -409,7 +490,7 @@ export function useShortcutApi() {
         storyIds
       };
     },
-    [apiToken]
+    [apiToken, invalidateCache]
   );
 
   // Explicitly calculate and log hasApiToken to debug
@@ -426,14 +507,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('members', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached members data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchMembers(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch members');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   /**
    * Fetch all labels from Shortcut
@@ -443,14 +538,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('labels', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached labels data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchLabels(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch labels');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   /**
    * Fetch all objectives from Shortcut
@@ -460,14 +569,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('objectives', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached objectives data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchObjectives(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch objectives');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   /**
    * Fetch all iterations from Shortcut
@@ -477,14 +600,28 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('iterations', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached iterations data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
     const api = window.electronAPI as ShortcutElectronAPI;
     const response = await api.shortcutApi.fetchIterations(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch iterations');
     }
     
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
     return response.data || [];
-  }, [apiToken]);
+  }, [apiToken, getCache, setCache]);
 
   return {
     // Check if we have a valid token set
