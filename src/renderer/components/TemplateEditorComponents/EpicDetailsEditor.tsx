@@ -12,7 +12,6 @@ import {
   CyberCard, 
   CyberTextField, 
   CyberSelect,
-  CyberDatePicker,
   CyberMultiSelect,
   MultiSelectOption
 } from '../cyberpunk';
@@ -187,7 +186,7 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
     });
   };
   
-  // Handle date changes
+  // Handle date changes (kept for backwards compatibility)
   const handleDateChange = (name: string, value: string) => {
     onStateChange({
       target: {
@@ -196,7 +195,6 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
       }
     });
   };
-  
   
   // Handle multiple objective selection
   const handleObjectivesChange = (selectedObjectives: MultiSelectOption[]) => {
@@ -301,26 +299,6 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
           </CyberSelect>
         </FormControl>
       )}
-      
-      {/* Date Picker Section - Timeline */}
-      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
-        <CyberDatePicker
-          label="Start Date"
-          value={epicDetails.planned_start_date || ''}
-          onChange={(date) => handleDateChange('planned_start_date', date)}
-          helperText="You can use {{Variable}} syntax here"
-          fullWidth
-          cornerClip
-        />
-        <CyberDatePicker
-          label="End Date (Deadline)"
-          value={epicDetails.deadline || ''}
-          onChange={(date) => handleDateChange('deadline', date)}
-          helperText="You can use {{Variable}} syntax here"
-          fullWidth
-          cornerClip
-        />
-      </Box>
       
       {/* API-based selectors - only show when API token is available */}
       {shortcutApi.hasApiToken && (
