@@ -24,6 +24,7 @@ type ShortcutElectronAPI = {
     fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
+    createMultipleStories: (apiToken: string, storiesData: any[]) => Promise<ShortcutApiResponse>;
   };
   // Include other properties from ElectronAPI
   getTemplates: () => Promise<any[]>;
@@ -262,6 +263,24 @@ export function useShortcutApi() {
   }, [fetchEpicWorkflow]);
 
   /**
+   * Create multiple stories at once using the bulk API
+   */
+  const createMultipleStories = useCallback(async (storiesData: any[]): Promise<any[]> => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.createMultipleStories(apiToken, storiesData);
+    
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to create multiple stories');
+    }
+    
+    return response.data || [];
+  }, [apiToken]);
+
+  /**
    * Create an epic with associated stories
    */
   const createEpicWithStories = useCallback(
@@ -281,6 +300,8 @@ export function useShortcutApi() {
         workflow_state_id?: string;
         estimate?: number;
         labels?: string[];
+        owner_ids?: string[];
+        iteration_id?: number;
       }>
     ): Promise<{ epicId: string; storyIds: string[] }> => {
       if (!apiToken) {
@@ -318,8 +339,7 @@ export function useShortcutApi() {
       
       const epic = epicResponse.data;
       
-      // 2. Create stories
-      const storyIds: string[] = [];
+      // 2. Create stories in bulk
       
       // Only fetch workflow states if any stories need them
       let workflowStates: any[] = [];
@@ -338,7 +358,8 @@ export function useShortcutApi() {
         workflowStates = statesResponse.data || [];
       }
       
-      for (const storyData of stories) {
+      // Prepare all story payloads
+      const storyPayloads = stories.map(storyData => {
         // Use the provided workflow_state_id if available
         let workflowStateId = storyData.workflow_state_id;
         
@@ -355,23 +376,27 @@ export function useShortcutApi() {
           throw new Error(`Cannot determine workflow state ID for story: ${storyData.name}`);
         }
         
-        const storyPayload = {
+        return {
           name: storyData.name,
           description: storyData.description,
           story_type: storyData.type,
           workflow_state_id: workflowStateId,
           epic_id: epic.id,
-          estimate: storyData.estimate
+          ...(storyData.estimate !== undefined && { estimate: storyData.estimate }),
+          ...(storyData.owner_ids && { owner_ids: storyData.owner_ids }),
+          ...(storyData.iteration_id && { iteration_id: storyData.iteration_id })
           // Remove labels property
         };
-        
-        const storyResponse = await api.shortcutApi.createStory(apiToken, storyPayload);
-        if (!storyResponse.success) {
-          throw new Error(storyResponse.message || `Failed to create story: ${storyData.name}`);
-        }
-        
-        storyIds.push(storyResponse.data.id.toString());
+      });
+      
+      // Create all stories in one API call
+      const storiesResponse = await api.shortcutApi.createMultipleStories(apiToken, storyPayloads);
+      if (!storiesResponse.success) {
+        throw new Error(storiesResponse.message || 'Failed to create stories');
       }
+      
+      // Extract the IDs from the response
+      const storyIds = storiesResponse.data.map((story: any) => story.id.toString());
       
       return {
         epicId: epic.id.toString(),
@@ -471,6 +496,7 @@ export function useShortcutApi() {
     fetchLabels,
     fetchObjectives,
     fetchIterations,
+    createMultipleStories,
     createEpicWithStories,
   };
 }

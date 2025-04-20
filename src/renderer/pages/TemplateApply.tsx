@@ -118,16 +118,23 @@ const TemplateApply: React.FC = () => {
       const epicName = replaceVariables(template.epicDetails.name, variableValues);
       const epicDescription = replaceVariables(template.epicDetails.description, variableValues);
       
-      // Build stories with replaced variables - without labels
-      const stories = template.storyTemplates.map(story => ({
-        name: replaceVariables(story.name, variableValues),
-        description: replaceVariables(story.description, variableValues),
-        type: story.type,
-        state: story.state,
-        workflow_id: story.workflow_id,
-        workflow_state_id: story.workflow_state_id,
-        estimate: story.estimate
-      }));
+      // Build stories with replaced variables - making sure we match expected types
+      const stories = template.storyTemplates.map(story => {
+        // Create a properly typed object with exact fields expected by the API
+        const storyPayload = {
+          name: replaceVariables(story.name, variableValues),
+          description: replaceVariables(story.description, variableValues),
+          type: story.type,
+          state: story.state,
+          workflow_state_id: story.workflow_state_id,
+          estimate: story.estimate,
+          owner_ids: story.owner_ids,
+          // Explicitly convert iteration_id to number when it exists
+          iteration_id: story.iteration_id ? Number(story.iteration_id) : undefined
+        };
+        
+        return storyPayload;
+      });
       
       // Find a workflowId from the first story with one, or use a default
       const workflowId = template.storyTemplates.find(s => s.workflow_id)?.workflow_id || '';

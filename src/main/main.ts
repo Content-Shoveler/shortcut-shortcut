@@ -21,6 +21,8 @@ interface Template {
     state: string;
     estimate?: number;
     labels?: string[];
+    owner_ids?: string[];
+    iteration_id?: number;
   }>;
   variables: string[];
 }
@@ -449,6 +451,43 @@ ipcMain.handle('shortcut-createStory', async (_, apiToken: string, storyData: an
     return { success: true, data: response.data };
   } catch (error: any) {
     console.error('Error creating story:', error);
+    
+    // Enhanced error handling with more details
+    if (error.response && error.response.data) {
+      console.error('API error response status:', error.response.status);
+      console.error('API error details:', JSON.stringify(error.response.data, null, 2));
+      
+      // Check for specific field errors
+      if (error.response.data.errors) {
+        const errorFields = Object.keys(error.response.data.errors);
+        console.error('Fields with errors:', errorFields);
+        errorFields.forEach(field => {
+          console.error(`${field} errors:`, error.response.data.errors[field]);
+        });
+      }
+    }
+    
+    return handleApiError(error);
+  }
+});
+
+ipcMain.handle('shortcut-createMultipleStories', async (_, apiToken: string, storiesData: any[]) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    // Log what we're sending to the API for debugging
+    console.log('Creating multiple stories with payload:', JSON.stringify({ stories: storiesData }, null, 2));
+    console.log(`Number of stories to create: ${storiesData.length}`);
+    
+    const client = createShortcutClient(apiToken);
+    const response = await client.post('/stories/bulk', { stories: storiesData });
+    
+    console.log(`Successfully created ${response.data.length} stories`);
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error('Error creating multiple stories:', error);
     
     // Enhanced error handling with more details
     if (error.response && error.response.data) {

@@ -27,8 +27,14 @@ curl -X POST \
 
 ## Request Parameters
 
+Below are the parameters that can be included when creating a story:
+
+### CreateStoryParams
+
 | Name | Type | Description |
 |------|------|-------------|
+| `name` | String (512) | **Required.** The name of the story. |
+| `workflow_state_id` | Integer | **Required.** The ID of the workflow state the story will be in. |
 | `archived` | Boolean | Controls the story's archived state. |
 | `comments` | Array [CreateStoryCommentParams] | An array of comments to add to the story. |
 | `completed_at_override` | Date | A manual override for the time/date the Story was completed. |
@@ -47,7 +53,6 @@ curl -X POST \
 | `labels` | Array [CreateLabelParams] | An array of labels attached to the story. |
 | `linked_file_ids` | Array [Integer] | An array of IDs of linked files attached to the story. |
 | `move_to` | Enum (first, last) | One of "first" or "last". This can be used to move the given story to the first or last position in the workflow state. |
-| `name` | String (512) | Required. The name of the story. |
 | `owner_ids` | Array [UUID] | An array of UUIDs of the owners of this story. |
 | `project_id` | Integer or null | The ID of the project the story belongs to. |
 | `requested_by_id` | UUID | The ID of the member that requested the story. |
@@ -58,9 +63,6 @@ curl -X POST \
 | `story_type` | Enum (bug, chore, feature) | The type of story (feature, bug, chore). |
 | `tasks` | Array [CreateTaskParams] | An array of tasks connected to the story. |
 | `updated_at` | Date | The time/date the Story was updated. |
-| `workflow_state_id` | Integer | Required. The ID of the workflow state the story will be in. |
-
-## Parameter Types
 
 ### CreateStoryCommentParams
 
@@ -73,50 +75,41 @@ curl -X POST \
 | `text` | String or null | The comment text. |
 | `updated_at` | Date | The time/date the comment was updated. |
 
+### CreateTaskParams
+
+| Name | Type | Description |
+|------|------|-------------|
+| `complete` | Boolean | True/false boolean indicating whether the Task is completed. Defaults to false. |
+| `created_at` | Date | Defaults to the time/date the Task is created but can be set to reflect another creation time/date. |
+| `description` | String (2048) | The Task description. |
+| `external_id` | String (128) | This field can be set to another unique ID. In the case that the Task has been imported from another tool, the ID in the other tool can be indicated here. |
+| `owner_ids` | Array [UUID] | An array of UUIDs for any members you want to add as Owners on this new Task. |
+| `updated_at` | Date | Defaults to the time/date the Task is created in Shortcut but can be set to reflect another time/date. |
+
 ### CustomFieldValueParams
 
 | Name | Type | Description |
 |------|------|-------------|
-| `field_id` | UUID | The ID of the CustomField. |
-| `value` | String | The value of the CustomField. |
+| `field_id` | UUID | The unique public ID for the CustomField. |
+| `value` | String | A literal value for the CustomField. Currently ignored. |
 | `value_id` | UUID | The ID of the CustomFieldEnumValue. |
 
 ### CreateLabelParams
 
 | Name | Type | Description |
 |------|------|-------------|
-| `color` | String | The hex color to be displayed with the Label. |
-| `description` | String or null | The description of the Label. |
-| `external_id` | String or null | This field can be set to another unique ID. |
-| `name` | String or null | The name of the Label. |
-
-### CreateTaskParams
-
-| Name | Type | Description |
-|------|------|-------------|
-| `complete` | Boolean | True if the task is completed, false otherwise. |
-| `created_at` | Date | The time/date the Task was created. |
-| `description` | String or null | The description of the Task. |
-| `external_id` | String or null | This field can be set to another unique ID. |
-| `owner_ids` | Array [UUID] | An array of UUIDs for the Task's owners. |
-| `updated_at` | Date | The time/date the Task was updated. |
+| `color` | String | The hex color to be displayed with the Label (for example, "#ff0000"). |
+| `description` | String (1024) | The description of the new Label. |
+| `external_id` | String (128) | This field can be set to another unique ID. In the case that the Label has been imported from another tool, the ID in the other tool can be indicated here. |
+| `name` | String (128) | The name of the new Label. |
 
 ### CreateStoryLinkParams
 
 | Name | Type | Description |
 |------|------|-------------|
-| `object_id` | Integer | The ID of the object Story. |
-| `subject_id` | Integer | The ID of the subject Story. |
-| `verb` | String | The type of link. One of "blocks", "duplicates", "relates to". |
-
-## Response Status Codes
-
-| Code | Description |
-|------|-------------|
-| 201  | Story created successfully |
-| 400  | Schema mismatch |
-| 404  | Resource does not exist |
-| 422  | Unprocessable |
+| `object_id` | Integer | The unique ID of the Story defined as object. |
+| `subject_id` | Integer | The unique ID of the Story defined as subject. |
+| `verb` | Enum (blocks, duplicates, relates to) | How the subject Story acts on the object Story. This can be "blocks", "duplicates", or "relates to". |
 
 ## Response Example
 
@@ -152,6 +145,15 @@ curl -X POST \
 }
 ```
 
+## Response Status Codes
+
+| Code | Description |
+|------|-------------|
+| 201  | Story created successfully |
+| 400  | Schema mismatch |
+| 404  | Resource does not exist |
+| 422  | Unprocessable |
+
 ## Notes for React Implementation
 
 When implementing this API in a React application:
@@ -166,22 +168,58 @@ When implementing this API in a React application:
 These TypeScript interfaces can help with type checking in your React application:
 
 ```typescript
-interface CreateStoryRequest {
-  name: string;                    // Required
+interface CreateStoryParams {
+  name: string;
+  workflow_state_id?: number;
+  project_id?: number;
   description?: string;
   story_type?: 'bug' | 'chore' | 'feature';
-  workflow_state_id?: number;      // Either this or project_id is required
-  project_id?: number;             // Either this or workflow_state_id is required
   estimate?: number | null;
-  // Add other fields as needed for your implementation
+  epic_id?: number | null;
+  labels?: CreateLabelParams[];
+  tasks?: CreateTaskParams[];
+  owner_ids?: string[]; // Array of UUIDs
+  follower_ids?: string[]; // Array of UUIDs
+  iteration_id?: number | null;
+  custom_fields?: CustomFieldValueParams[];
+  story_links?: CreateStoryLinkParams[];
+  // Additional fields as needed
+}
+
+interface CreateLabelParams {
+  name?: string;
+  color?: string;
+  description?: string;
+  external_id?: string;
+}
+
+interface CreateTaskParams {
+  description?: string;
+  complete?: boolean;
+  owner_ids?: string[]; // Array of UUIDs
+  created_at?: string;
+  updated_at?: string;
+  external_id?: string;
+}
+
+interface CustomFieldValueParams {
+  field_id: string; // UUID
+  value?: string;
+  value_id?: string; // UUID
+}
+
+interface CreateStoryLinkParams {
+  object_id: number;
+  subject_id: number;
+  verb: 'blocks' | 'duplicates' | 'relates to';
 }
 
 interface Story {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   story_type: string;
   workflow_state_id: number;
-  // Other fields from the response as needed
+  // Other response fields as needed
 }
 ```

@@ -17,6 +17,8 @@ interface Template {
     state: string;
     estimate?: number;
     labels?: string[];
+    owner_ids?: string[];
+    iteration_id?: number;
   }>;
   variables: string[];
 }
@@ -51,6 +53,7 @@ interface ElectronAPI {
     fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
+    createMultipleStories: (apiToken: string, storiesData: any[]) => Promise<ShortcutApiResponse>;
   };
 }
 
@@ -90,5 +93,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('shortcut-createEpic', apiToken, epicData),
     createStory: (apiToken: string, storyData: any) => 
       ipcRenderer.invoke('shortcut-createStory', apiToken, storyData),
+    createMultipleStories: (apiToken: string, storiesData: any[]) => 
+      ipcRenderer.invoke('shortcut-createMultipleStories', apiToken, storiesData),
   },
 } as ElectronAPI);
