@@ -30,6 +30,7 @@ export interface StoryTemplate {
   estimate?: number;
   owner_ids?: string[];
   iteration_id?: string;
+  group_id?: string;
   tasks?: TaskTemplate[]; // Added tasks array
 }
 

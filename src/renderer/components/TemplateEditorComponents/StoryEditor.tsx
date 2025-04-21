@@ -24,7 +24,7 @@ import {
 import { StoryTemplate, TaskTemplate } from '../../types';
 import { ShortcutWorkflow, ShortcutWorkflowState, ShortcutMember, ShortcutIteration } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
-import { WorkflowAndStateSelector, MemberSelector, IterationSelector, EstimateScaleSelector } from '../ShortcutFields';
+import { WorkflowAndStateSelector, MemberSelector, IterationSelector, EstimateScaleSelector, GroupSelector } from '../ShortcutFields';
 
 // Story state options
 const storyTypeOptions = [
@@ -190,6 +190,88 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     }
   };
   
+  // Handle team (group) change
+  const handleGroupChange = (group: any | null) => {
+    if (story) {
+      setStory({
+        ...story,
+        group_id: group ? group.id.toString() : undefined,
+      });
+    }
+  };
+  
+  // Custom component for group/team selection
+  const GroupSingleSelect: React.FC<{
+    value: string | null | number;
+    onChange: (selectedGroup: any | null) => void;
+    disabled?: boolean;
+    fullWidth?: boolean;
+  }> = ({ value, onChange, disabled, fullWidth }) => {
+    const [groups, setGroups] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    
+    // Load groups from the API
+    useEffect(() => {
+      const fetchGroups = async () => {
+        try {
+          setLoading(true);
+          const groupData = await shortcutApi.fetchGroups();
+          setGroups(groupData);
+        } catch (error) {
+          console.error('Error fetching groups:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      if (shortcutApi.hasApiToken) {
+        fetchGroups();
+      }
+    }, []);
+    
+    // Find the currently selected group if we have a value
+    const selectedGroup = useMemo(() => {
+      if (!value || groups.length === 0) return null;
+      
+      const groupId = typeof value === 'string' ? value : value.toString();
+      return groups.find(group => group.id.toString() === groupId) || null;
+    }, [value, groups]);
+    
+    if (loading) {
+      return <Typography color="text.secondary">Loading teams...</Typography>;
+    }
+    
+    return (
+      <FormControl fullWidth={fullWidth}>
+        <CyberSelect
+          label="Team"
+          value={selectedGroup ? selectedGroup.id.toString() : ''}
+          onChange={(e) => {
+            const id = e.target.value;
+            if (!id) {
+              onChange(null);
+              return;
+            }
+            const group = groups.find(g => g.id.toString() === id);
+            onChange(group || null);
+          }}
+          disabled={disabled}
+          helperText="Assign a team to this story"
+          cornerClip
+        >
+          <MenuItem value="">
+            <em>None</em>
+          </MenuItem>
+          {groups.map((group) => (
+            <MenuItem key={group.id} value={group.id.toString()}>
+              {group.name}
+            </MenuItem>
+          ))}
+        </CyberSelect>
+      </FormControl>
+    );
+  };
+  
   // Handle estimate scale selection
   const handleEstimateChange = (estimateOption: any) => {
     if (story && estimateOption) {
@@ -341,6 +423,16 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
               fullWidth
             />
           </Box>
+        </Box>
+        
+        {/* Team Selector */}
+        <Box sx={{ mt: 2 }}>
+          <GroupSingleSelect
+            value={story.group_id || null}
+            onChange={handleGroupChange}
+            disabled={!shortcutApi.hasApiToken}
+            fullWidth
+          />
         </Box>
         
         {apiTokenAlert && (
