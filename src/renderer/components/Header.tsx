@@ -61,7 +61,7 @@ const Header: React.FC = () => {
   const muiTheme = useMuiTheme();
   const [scrolled, setScrolled] = useState(false);
   
-  const isHomePage = location.pathname === '/';
+  const isHomePage = location.pathname === '/' || location.pathname === '/templates';
   const isSettingsPage = location.pathname === '/settings';
   const isEditorPage = location.pathname.includes('/editor');
   const isApplyPage = location.pathname.includes('/apply');

@@ -13,6 +13,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  alpha
 } from '@mui/material';
 import { Visibility, VisibilityOff, ExpandMore, CheckCircle, Error, Refresh, DeleteSweep } from '@mui/icons-material';
 import { useTheme, useSettings } from '../store/AppProviders';
@@ -574,20 +575,50 @@ const Settings: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Typography paragraph>
-                <strong>Welcome to Shortcut Shortcut!</strong> This application helps you create and manage templates for epics and stories in Shortcut.
+                <strong>Welcome to Shortcut Shortcut!</strong> This application helps you create and manage templates for epics and stories in Shortcut, streamlining your team's workflow and ensuring consistency.
               </Typography>
+              <Typography paragraph>
+                <strong>Application Overview:</strong>
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    <strong>Home Screen:</strong> View and manage all your epic templates
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Template Editor:</strong> Create and edit epic templates with customizable stories and tasks
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Template Application:</strong> Apply templates with variable replacement to create actual epics and stories in Shortcut
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Settings:</strong> Configure API connection, appearance, and application behavior
+                  </Typography>
+                </li>
+              </ul>
               <Typography paragraph>
                 <strong>To get started:</strong>
               </Typography>
               <ol>
                 <li>
                   <Typography paragraph>
-                    Add your Shortcut API token in the General tab of Settings
+                    Add your Shortcut API token in the General tab of Settings (see API Token Management section for details)
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Create your first template using the "New Template" button in the header
+                    Create your first template using the "New Template" button in the application header
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Customize your template with epic details, stories, and variables
                   </Typography>
                 </li>
                 <li>
@@ -596,6 +627,9 @@ const Settings: React.FC = () => {
                   </Typography>
                 </li>
               </ol>
+              <Typography paragraph color="text.secondary">
+                <strong>Pro Tip:</strong> For best results, plan your template structure before creating it. Consider which fields should be standardized and which should use variables for flexibility.
+              </Typography>
             </AccordionDetails>
           </Accordion>
 
@@ -609,30 +643,182 @@ const Settings: React.FC = () => {
                 <strong>Create a Template:</strong> Click the "New Template" button in the application header to start creating a new template.
               </Typography>
               <Typography paragraph>
-                <strong>Template Components:</strong>
+                <strong>Template Structure:</strong>
               </Typography>
               <ul>
                 <li>
                   <Typography paragraph>
-                    <strong>Epic Information:</strong> Basic information like name, description, state, and project for the epic
+                    <strong>Epic Information:</strong> Configure name, description, state, owners, planned dates, and objectives
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    <strong>Variables:</strong> Placeholders that get replaced when applying a template (format: {'{'}{'{'}'variable_name{'}'}{'}'})
+                    <strong>Stories:</strong> Add multiple story templates with customizable fields:
+                    <ul>
+                      <li>Name and description</li>
+                      <li>Story type (feature, bug, chore)</li>
+                      <li>State and workflow state</li>
+                      <li>Estimate points</li>
+                      <li>Owner assignments</li>
+                      <li>Iteration assignment</li>
+                    </ul>
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    <strong>Stories:</strong> Individual story templates that will be created within the epic
+                    <strong>Tasks:</strong> Add tasks to each story with descriptions and completion status
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Variables:</strong> Dynamic placeholders that get replaced when applying a template (format: {'{{variable_name}}'})
                   </Typography>
                 </li>
               </ul>
+              
               <Typography paragraph>
-                <strong>Variables Usage:</strong> Use variables to make templates reusable across different contexts. For example, {'{'}{'{'}'project_name{'}'}{'}'}  could be used in story titles and descriptions.
+                <strong>Template Management:</strong>
               </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    <strong>Auto-save:</strong> Templates are automatically saved as you edit them
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Edit:</strong> From the template list, click the edit icon on any template card to modify it
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Duplicate:</strong> Use the duplicate icon to create a copy of an existing template
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Delete:</strong> Remove templates you no longer need with the delete icon
+                  </Typography>
+                </li>
+              </ul>
+              
               <Typography paragraph>
-                <strong>Edit Templates:</strong> From the template list, click the edit icon on any template card to modify it.
+                <strong>Best Practices:</strong>
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    Create templates for common initiatives or recurring epic types
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Use descriptive names for templates to easily identify their purpose
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Include all necessary story types and tasks to provide a complete framework
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Create a template naming convention for your team
+                  </Typography>
+                </li>
+              </ul>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Variables Section - New Dedicated Section */}
+          <Accordion>
+            <AccordionSummary expandIcon={<CyberIcon icon={ExpandMore} glowIntensity={0.3} />}>
+              <Typography variant="h6">Variable System</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography paragraph>
+                <strong>Understanding Variables:</strong> Variables are dynamic placeholders in your templates that get replaced with specific values when you apply the template.
+              </Typography>
+              
+              <Typography paragraph>
+                <strong>Creating Variables:</strong>
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    Use double curly braces to define variables: <code>{"{{variable_name}}"}</code>
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Insert variables in epic names, descriptions, story names, descriptions, or tasks
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Variables are automatically detected when you save the template
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    You can also manually add variables in the Variables section of the template editor
+                  </Typography>
+                </li>
+              </ul>
+              
+              <Typography paragraph>
+                <strong>Variable Usage Examples:</strong>
+              </Typography>
+              <Box sx={{ 
+                backgroundColor: theme => alpha(theme.palette.background.default, 0.6), 
+                p: 2, 
+                borderLeft: theme => `3px solid ${theme.palette.primary.main}`,
+                mb: 2
+              }}>
+                <Typography paragraph variant="subtitle2">Epic Name:</Typography>
+                <Typography paragraph fontFamily="monospace">
+                  &#123;&#123;Feature&#125;&#125; - Implementation
+                </Typography>
+                
+                <Typography paragraph variant="subtitle2">Story Name:</Typography>
+                <Typography paragraph fontFamily="monospace">
+                  [&#123;&#123;Component&#125;&#125;] Create &#123;&#123;Feature&#125;&#125; functionality
+                </Typography>
+                
+                <Typography paragraph variant="subtitle2">Description:</Typography>
+                <Typography paragraph fontFamily="monospace">
+                  Implement the &#123;&#123;Feature&#125;&#125; for &#123;&#123;Platform&#125;&#125; with &#123;&#123;Technology&#125;&#125;
+                </Typography>
+              </Box>
+              
+              <Typography paragraph>
+                <strong>Best Practices:</strong>
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    Use descriptive variable names that clearly indicate what should be entered
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Keep variable names consistent across templates (e.g., always use "Feature" instead of mixing "Feature" and "FeatureName")
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Use variables for elements that change between instances but keep standard elements fixed
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Consider creating a variable style guide for your team
+                  </Typography>
+                </li>
+              </ul>
+              
+              <Typography paragraph color="text.secondary">
+                <strong>Pro Tip:</strong> When creating templates for similar features across different platforms, use variables like &#123;&#123;Platform&#125;&#125; to easily adapt the same template.
               </Typography>
             </AccordionDetails>
           </Accordion>
@@ -646,33 +832,65 @@ const Settings: React.FC = () => {
               <Typography paragraph>
                 <strong>Apply a Template:</strong> From the template list, click the "Play" icon on any template card.
               </Typography>
+              
               <Typography paragraph>
-                <strong>Workflow:</strong>
+                <strong>Application Process:</strong>
               </Typography>
               <ol>
                 <li>
                   <Typography paragraph>
-                    Enter values for all template variables
+                    <strong>Fill Variables:</strong> Enter values for all template variables (these will replace the placeholders in your template)
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Select the project and workflow for the new epic
+                    <strong>Preview Content:</strong> Review the generated epic and stories with your variable values applied
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Review the generated epic and stories
+                    <strong>Create in Shortcut:</strong> Click "Apply Template" to submit the epic and stories to your Shortcut workspace
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Click "Create in Shortcut" to submit to your Shortcut workspace
+                    <strong>Confirmation:</strong> Upon success, you'll see a confirmation message with the created epic ID and number of stories
                   </Typography>
                 </li>
               </ol>
-              <Typography variant="body2" color="text.secondary">
-                Note: You must have a valid API token set in the Settings page to apply templates.
+              
+              <Typography paragraph>
+                <strong>What Happens Behind the Scenes:</strong>
+              </Typography>
+              <ol>
+                <li>
+                  <Typography paragraph>
+                    The application replaces all variables with your entered values
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    It creates an epic in Shortcut with your specified details
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    It then creates all stories and attaches them to the epic
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Tasks are created and attached to their respective stories
+                  </Typography>
+                </li>
+              </ol>
+              
+              <Typography paragraph color="text.secondary">
+                <strong>Important:</strong> You must have a valid API token set in the Settings page to apply templates. Ensure you have the necessary permissions in your Shortcut workspace to create epics and stories.
+              </Typography>
+              
+              <Typography paragraph color="text.secondary">
+                <strong>Pro Tip:</strong> You can verify the created epic and stories by clicking on the link in the success message or by checking your Shortcut workspace.
               </Typography>
             </AccordionDetails>
           </Accordion>
@@ -684,18 +902,93 @@ const Settings: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Typography paragraph>
-                <strong>Exporting Templates:</strong> Click the "Export" button on the templates list page to save your templates to a JSON file.
-                This file can be shared with team members or used as a backup.
+                <strong>Template Sharing:</strong> Easily share your templates with teammates or across workspaces using the import/export functionality.
               </Typography>
+              
               <Typography paragraph>
-                <strong>Importing Templates:</strong> Click the "Import" button on the templates list page and select a previously exported JSON file.
-                The app will load these templates into your local collection.
+                <strong>Exporting Templates:</strong>
               </Typography>
+              <ol>
+                <li>
+                  <Typography paragraph>
+                    Navigate to the Templates list page
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Click the "Export" button in the upper right corner
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Choose a location to save the JSON file containing all your templates
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Share this file with teammates or save it as a backup
+                  </Typography>
+                </li>
+              </ol>
+              
               <Typography paragraph>
-                <strong>Team Collaboration:</strong> Export your templates and share the JSON file with teammates. They can import the file to have the same templates available.
+                <strong>Importing Templates:</strong>
               </Typography>
+              <ol>
+                <li>
+                  <Typography paragraph>
+                    Navigate to the Templates list page
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Click the "Import" button in the upper right corner
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Select a previously exported JSON file from your file system
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    The application will merge these templates with your existing collection
+                  </Typography>
+                </li>
+              </ol>
+              
+              <Typography paragraph>
+                <strong>Team Collaboration Strategies:</strong>
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    Create a shared repository of template JSON files for your team
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Version your template files with dates or version numbers
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Document the purpose and structure of shared templates
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Consider creating role-specific or project-specific template collections
+                  </Typography>
+                </li>
+              </ul>
+              
               <Typography variant="body2" color="text.secondary">
-                Note: Importing templates with the same ID as existing templates will overwrite them.
+                <strong>Important:</strong> When importing templates, any templates with the same ID as existing templates will overwrite the existing ones. Templates with unique IDs will be added to your collection.
+              </Typography>
+              
+              <Typography variant="body2" color="text.secondary">
+                <strong>Pro Tip:</strong> If you want to share only specific templates, export them all first, then edit the JSON file to remove the templates you don't want to share before distributing it.
               </Typography>
             </AccordionDetails>
           </Accordion>
@@ -707,35 +1000,97 @@ const Settings: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Typography paragraph>
+                <strong>About Shortcut API Tokens:</strong> API tokens provide secure access to your Shortcut workspace. This application requires an API token to create epics and stories on your behalf.
+              </Typography>
+              
+              <Typography paragraph>
                 <strong>Getting a Shortcut API Token:</strong>
               </Typography>
               <ol>
                 <li>
                   <Typography paragraph>
-                    Log in to your Shortcut account
+                    Log in to your Shortcut account in a web browser
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Go to Settings → API Tokens
+                    Navigate to Settings → API Tokens (or go directly to https://app.shortcut.com/[your-organization]/settings/account/api-tokens)
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Create a new API token (or use an existing one)
+                    Click "Generate Token" and provide a description (e.g., "Shortcut Shortcut App")
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    Copy the token and paste it into the API Token field in the General tab of Settings
+                    Copy the generated token (important: you won't be able to see it again)
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Paste the token into the API Token field in the General tab of Settings
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Click "Validate & Save Token" to verify and store your token
                   </Typography>
                 </li>
               </ol>
+              
               <Typography paragraph>
-                <strong>Security:</strong> Your API token is stored locally on your computer and is never shared. It is used only to communicate with the Shortcut API.
+                <strong>Token Security:</strong>
               </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    Your API token is stored securely on your local device only
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    The token is never transmitted to any server other than Shortcut's official API
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    The application communicates with Shortcut using HTTPS encryption
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    You can revoke the token at any time from your Shortcut account settings
+                  </Typography>
+                </li>
+              </ul>
+              
+              <Typography paragraph>
+                <strong>Token Permissions:</strong>
+              </Typography>
+              <Typography paragraph>
+                Shortcut API tokens have full access to your workspace. The application uses this access to:
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    Fetch workspace data (projects, workflows, members, etc.)
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Create new epics and stories
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    Validate authentication
+                  </Typography>
+                </li>
+              </ul>
+              
               <Typography variant="body2" color="text.secondary">
-                Note: Your API token grants access to your Shortcut workspace, so keep it secure.
+                <strong>Important:</strong> Your API token grants access to your Shortcut workspace, so keep it secure and never share it with unauthorized users. If you suspect your token has been compromised, immediately revoke it in your Shortcut account and generate a new one.
               </Typography>
             </AccordionDetails>
           </Accordion>
@@ -747,35 +1102,111 @@ const Settings: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Typography paragraph>
-                <strong>Common Issues:</strong>
+                <strong>Common Issues and Solutions:</strong>
+              </Typography>
+              
+              <Typography paragraph variant="subtitle2" sx={{ fontWeight: 'bold', mt: 2 }}>
+                API and Authentication Issues
               </Typography>
               <ul>
                 <li>
                   <Typography paragraph>
-                    <strong>API Token Invalid:</strong> Ensure your API token is correctly entered and has not expired
+                    <strong>API Token Invalid:</strong> Ensure your token is correctly entered without extra spaces. Try regenerating a new token in Shortcut if problems persist.
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    <strong>Cannot Create Epic:</strong> Check that you have permissions to create epics in the selected project
+                    <strong>API Connection Failed:</strong> Check your internet connection. If you're using a VPN or corporate firewall, ensure it allows connections to the Shortcut API (api.app.shortcut.com).
                   </Typography>
                 </li>
                 <li>
                   <Typography paragraph>
-                    <strong>Template Not Saving:</strong> Ensure all required fields are filled out
-                  </Typography>
-                </li>
-                <li>
-                  <Typography paragraph>
-                    <strong>Import Failing:</strong> Verify that the import file is a valid JSON file exported from this application
+                    <strong>API Rate Limiting:</strong> If you're making many requests in a short time, you might hit rate limits. Wait a few minutes and try again.
                   </Typography>
                 </li>
               </ul>
-              <Typography paragraph>
-                <strong>Resetting:</strong> If you're experiencing persistent issues, try clearing your saved templates by exporting them first (as a backup), then deleting them, and finally importing them back.
+              
+              <Typography paragraph variant="subtitle2" sx={{ fontWeight: 'bold', mt: 2 }}>
+                Template Creation and Management
               </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    <strong>Template Not Saving:</strong> Ensure the epic name field is filled out (it's required). Check that you have sufficient disk space.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Variable Extraction Issues:</strong> Make sure variables use the correct format: &#123;&#123;variable_name&#125;&#125;. Check for typos or mismatched braces.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Missing Templates:</strong> Templates are stored locally. If they've disappeared, check if you've switched computers or user accounts.
+                  </Typography>
+                </li>
+              </ul>
+              
+              <Typography paragraph variant="subtitle2" sx={{ fontWeight: 'bold', mt: 2 }}>
+                Template Application Issues
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    <strong>Cannot Create Epic:</strong> Verify you have sufficient permissions in your Shortcut workspace. Some workspaces restrict who can create epics.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Workflow State Errors:</strong> If you see errors about invalid workflow states, ensure you're selecting the correct workflow. Workflow states are specific to each workflow.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Owner Assignment Failures:</strong> Ensure the members you're trying to assign as owners exist in your workspace and that you're using their correct IDs.
+                  </Typography>
+                </li>
+              </ul>
+              
+              <Typography paragraph variant="subtitle2" sx={{ fontWeight: 'bold', mt: 2 }}>
+                Import/Export Issues
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    <strong>Import Failing:</strong> Verify the import file is a valid JSON file exported from this application. If you've manually edited the file, check for syntax errors.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Export Not Working:</strong> Ensure you have write permissions to the location where you're trying to save the export file.
+                  </Typography>
+                </li>
+              </ul>
+              
+              <Typography paragraph>
+                <strong>Advanced Troubleshooting:</strong>
+              </Typography>
+              <ul>
+                <li>
+                  <Typography paragraph>
+                    <strong>Clear Application Cache:</strong> Use the Cache Monitor panel to clear cached API responses if you're seeing stale data.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Reset Templates:</strong> If experiencing persistent issues, try exporting your templates as a backup, then deleting and reimporting them to reset your local storage.
+                  </Typography>
+                </li>
+                <li>
+                  <Typography paragraph>
+                    <strong>Application Restart:</strong> If all else fails, try restarting the application to resolve any temporary runtime issues.
+                  </Typography>
+                </li>
+              </ul>
             </AccordionDetails>
           </Accordion>
+
           
           {/* Cache Monitor Section */}
           <Accordion>

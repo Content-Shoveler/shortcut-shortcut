@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import Store from 'electron-store';
@@ -33,17 +33,70 @@ interface Template {
 const store = new Store() as any;
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
+
+function createSplashWindow() {
+  // Get primary display dimensions
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  
+  // Create splash window
+  splashWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    transparent: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    center: true,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    }
+  });
+
+  // Position the window in the center of the screen
+  splashWindow.center();
+  
+  // Load the splash screen HTML
+  const splashPath = app.isPackaged 
+    ? path.join(app.getAppPath(), 'dist', 'splash.html')
+    : path.join(app.getAppPath(), 'public', 'splash.html');
+  
+  splashWindow.loadFile(splashPath);
+  
+  splashWindow.once('ready-to-show', () => {
+    splashWindow?.show();
+  });
+  
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+}
 
 function createWindow() {
-  // Create the browser window
+  // Create the browser window but don't show it yet
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false, // Don't show until content is loaded
     webPreferences: {
       contextIsolation: true,
       preload: path.join(__dirname, './preload.js'),
       nodeIntegration: false,
     },
+    backgroundColor: '#121212', // Set background color to match theme
+  });
+
+  // Wait for content to be ready before showing the window
+  mainWindow.once('ready-to-show', () => {
+    // Close splash and show main window
+    if (splashWindow) {
+      splashWindow.close();
+    }
+    mainWindow?.show();
   });
 
   // Load the app
@@ -125,6 +178,9 @@ process.on('uncaughtException', (error) => {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+  // First show splash window
+  createSplashWindow();
+  // Then initialize main window
   createWindow();
   
   // Log app directory information to help with debugging

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { 
   Box,
   Container,
@@ -213,7 +213,8 @@ const App: React.FC = () => {
             transition={{ type: 'spring', stiffness: 60, damping: 12 }}
           >
             <Routes location={location}>
-              <Route path="/" element={<TemplateList />} />
+              <Route path="/" element={<Navigate replace to="/templates" />} />
+              <Route path="/templates" element={<TemplateList />} />
               <Route path="/editor" element={<TemplateEditor />} />
               <Route path="/editor/:id" element={<TemplateEditor />} />
               <Route path="/apply/:id" element={<TemplateApply />} />
