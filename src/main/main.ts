@@ -288,6 +288,43 @@ ipcMain.handle('importTemplates', async () => {
   return null;
 });
 
+// Fetch groups
+ipcMain.handle('shortcut-fetchGroups', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/groups');
+    
+    // Enhanced logging to expose the full groups response structure
+    console.log('Groups API response count:', response.data.length);
+    console.log('FULL GROUPS API RESPONSE:', JSON.stringify(response.data, null, 2));
+    
+    // Log the first group's structure as an example if available
+    if (response.data && response.data.length > 0) {
+      console.log('EXAMPLE GROUP STRUCTURE:', JSON.stringify(response.data[0], null, 2));
+    }
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+    
+    // Enhanced error logging to expose error details
+    if (error.response) {
+      console.error('Groups API error status:', error.response.status);
+      console.error('Groups API error data:', JSON.stringify(error.response.data, null, 2));
+    } else if (error.request) {
+      console.error('Groups API no response received, request:', error.request);
+    } else {
+      console.error('Groups API error message:', error.message);
+    }
+    
+    return handleApiError(error);
+  }
+});
+
 // Shortcut API handlers
 
 // Validate API token

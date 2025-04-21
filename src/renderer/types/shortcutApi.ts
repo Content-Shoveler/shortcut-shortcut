@@ -111,6 +111,22 @@ export interface ShortcutEpicWorkflow extends ShortcutEntity {
   epic_states: ShortcutEpicState[];
 }
 
+export interface ShortcutGroup extends ShortcutEntity {
+  name: string;
+  description: string;
+  mention_name: string;
+  color: string;
+  color_key: string;
+  archived: boolean;
+  member_ids: string[];
+  display_icon?: {
+    id: string;
+    url: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
 export interface ShortcutApiError {
   message: string;
   code?: string;

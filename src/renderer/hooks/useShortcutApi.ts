@@ -21,6 +21,7 @@ type ShortcutElectronAPI = {
     fetchEpicWorkflow: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchGroups: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkspaceInfo: (apiToken: string) => Promise<ShortcutApiResponse>;
@@ -400,7 +401,8 @@ export function useShortcutApi() {
         
         // Handle arrays properly
         ...(epicData.objective_ids && { objective_ids: epicData.objective_ids }),
-        ...(epicData.owner_ids && { owner_ids: epicData.owner_ids })
+        ...(epicData.owner_ids && { owner_ids: epicData.owner_ids }),
+        ...(epicData.group_ids && { group_ids: epicData.group_ids })
         
         // Remove all label-related properties
       };
@@ -655,6 +657,37 @@ export function useShortcutApi() {
     return response.data || null;
   }, [apiToken, getCache, setCache]);
 
+  /**
+   * Fetch all groups from Shortcut
+   */
+  const fetchGroups = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('groups', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached groups data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchGroups(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch groups');
+    }
+    
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
+    return response.data || [];
+  }, [apiToken, getCache, setCache]);
+
   return {
     // Check if we have a valid token set
     hasApiToken,
@@ -669,6 +702,7 @@ export function useShortcutApi() {
     fetchEpicStates,
     fetchMembers,
     fetchLabels,
+    fetchGroups,
     fetchObjectives,
     fetchIterations,
     fetchWorkspaceInfo,
