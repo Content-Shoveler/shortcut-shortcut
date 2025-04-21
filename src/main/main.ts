@@ -1,4 +1,3 @@
-
 import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import path from 'path';
 import fs from 'fs';
@@ -141,18 +140,17 @@ const createShortcutClient = (apiToken: string) => {
 };
 
 // Helper function to handle API errors
-const handleApiError = (error: unknown) => {
-  if (error && typeof error === 'object' && 'response' in error && error.response) {
+const handleApiError = (error: any) => {
+  if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    const response = error.response as any;
     return {
       success: false,
-      status: response.status,
-      message: response.data?.message || `API Error: ${response.status}`,
-      data: response.data
+      status: error.response.status,
+      message: error.response.data?.message || `API Error: ${error.response.status}`,
+      data: error.response.data
     };
-  } else if (error && typeof error === 'object' && 'request' in error) {
+  } else if (error.request) {
     // The request was made but no response was received
     return {
       success: false,
@@ -160,13 +158,9 @@ const handleApiError = (error: unknown) => {
     };
   } else {
     // Something happened in setting up the request
-    const errorMessage = error && typeof error === 'object' && 'message' in error 
-      ? String(error.message) 
-      : 'Unknown error occurred';
-    
     return {
       success: false,
-      message: errorMessage,
+      message: error.message || 'Unknown error occurred',
     };
   }
 };
@@ -318,14 +312,12 @@ ipcMain.handle('shortcut-fetchGroups', async (_, apiToken: string) => {
     console.error('Error fetching groups:', error);
     
     // Enhanced error logging to expose error details
-    if (error && typeof error === 'object' && 'response' in error && error.response) {
-      const response = error.response as any;
-      console.error('Groups API error status:', response.status);
-      console.error('Groups API error data:', JSON.stringify(response.data, null, 2));
-    } else if (error && typeof error === 'object' && 'request' in error) {
-      const request = error.request;
-      console.error('Groups API no response received, request:', request);
-    } else if (error && typeof error === 'object' && 'message' in error) {
+    if (error.response) {
+      console.error('Groups API error status:', error.response.status);
+      console.error('Groups API error data:', JSON.stringify(error.response.data, null, 2));
+    } else if (error.request) {
+      console.error('Groups API no response received, request:', error.request);
+    } else {
       console.error('Groups API error message:', error.message);
     }
     
@@ -568,22 +560,20 @@ ipcMain.handle('shortcut-createEpic', async (_, apiToken: string, epicData: any)
     
     console.log('Epic created successfully:', response.data);
     return { success: true, data: response.data };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error creating epic:', error);
     
     // Enhanced error handling with more details
-    if (error && typeof error === 'object' && 'response' in error && error.response) {
-      const response = error.response as any;
-      console.error('API error response status:', response.status);
-      console.error('API error details:', JSON.stringify(response.data, null, 2));
+    if (error.response && error.response.data) {
+      console.error('API error response status:', error.response.status);
+      console.error('API error details:', JSON.stringify(error.response.data, null, 2));
       
       // Check for specific field errors
-      if (response.data && typeof response.data === 'object' && 'errors' in response.data) {
-        const errors = response.data.errors as Record<string, unknown>;
-        const errorFields = Object.keys(errors);
+      if (error.response.data.errors) {
+        const errorFields = Object.keys(error.response.data.errors);
         console.error('Fields with errors:', errorFields);
         errorFields.forEach(field => {
-          console.error(`${field} errors:`, errors[field]);
+          console.error(`${field} errors:`, error.response.data.errors[field]);
         });
       }
     }
@@ -615,22 +605,20 @@ ipcMain.handle('shortcut-createStory', async (_, apiToken: string, storyData: an
     
     console.log('Story created successfully:', response.data);
     return { success: true, data: response.data };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error creating story:', error);
     
     // Enhanced error handling with more details
-    if (error && typeof error === 'object' && 'response' in error && error.response) {
-      const response = error.response as any;
-      console.error('API error response status:', response.status);
-      console.error('API error details:', JSON.stringify(response.data, null, 2));
+    if (error.response && error.response.data) {
+      console.error('API error response status:', error.response.status);
+      console.error('API error details:', JSON.stringify(error.response.data, null, 2));
       
       // Check for specific field errors
-      if (response.data && typeof response.data === 'object' && 'errors' in response.data) {
-        const errors = response.data.errors as Record<string, unknown>;
-        const errorFields = Object.keys(errors);
+      if (error.response.data.errors) {
+        const errorFields = Object.keys(error.response.data.errors);
         console.error('Fields with errors:', errorFields);
         errorFields.forEach(field => {
-          console.error(`${field} errors:`, errors[field]);
+          console.error(`${field} errors:`, error.response.data.errors[field]);
         });
       }
     }
@@ -654,22 +642,20 @@ ipcMain.handle('shortcut-createMultipleStories', async (_, apiToken: string, sto
     
     console.log(`Successfully created ${response.data.length} stories`);
     return { success: true, data: response.data };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error creating multiple stories:', error);
     
     // Enhanced error handling with more details
-    if (error && typeof error === 'object' && 'response' in error && error.response) {
-      const response = error.response as any;
-      console.error('API error response status:', response.status);
-      console.error('API error details:', JSON.stringify(response.data, null, 2));
+    if (error.response && error.response.data) {
+      console.error('API error response status:', error.response.status);
+      console.error('API error details:', JSON.stringify(error.response.data, null, 2));
       
       // Check for specific field errors
-      if (response.data && typeof response.data === 'object' && 'errors' in response.data) {
-        const errors = response.data.errors as Record<string, unknown>;
-        const errorFields = Object.keys(errors);
+      if (error.response.data.errors) {
+        const errorFields = Object.keys(error.response.data.errors);
         console.error('Fields with errors:', errorFields);
         errorFields.forEach(field => {
-          console.error(`${field} errors:`, errors[field]);
+          console.error(`${field} errors:`, error.response.data.errors[field]);
         });
       }
     }
