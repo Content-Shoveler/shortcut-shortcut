@@ -677,8 +677,8 @@ export const TaskManager: React.FC<TaskManagerProps> = ({
     const newTasks = [...tasks];
     newTasks[index] = updatedTask;
     onChange(newTasks);
-    setEditDialogOpen(false);
-    setEditingTask(null);
+    // Dialog will remain open to allow multiple edits
+    // User can close manually via Back button or by clicking outside
   };
 
   // Handle deleting a task
