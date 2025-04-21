@@ -1,31 +1,41 @@
-# Electron App Size Optimization Guide
+# Electron App Size Optimization Guide 🚀
 
 ## Problem Statement
 
-The Shortcut Shortcut app was found to be 2.22GB when packaged for macOS, which is significantly larger than expected for an Electron application. For comparison:
+The Shortcut Shortcut app was initially found to be 2.22GB when packaged for macOS, which is significantly larger than expected for an Electron application. For comparison:
 
 - VS Code (Electron-based): ~200MB
 - Slack (Electron-based): ~300MB
 - Discord (Electron-based): ~100MB
 
-## Implemented Optimizations
+## Optimization Journey
 
-The following optimizations have been implemented to reduce the app size:
+Our optimization efforts have progressed through multiple stages:
+- Initial size: **2.22GB**
+- After first round of optimizations: **1.07GB**
+- Target size: **200-300MB**
+
+## Core Optimizations Implemented
 
 ### 1. Dependency Management
 
 - Moved TypeScript type definitions (`@types/*`) to `devDependencies` instead of `dependencies`
 - Moved TypeScript itself to `devDependencies`
 - These types are only needed during development, not at runtime
+- Reviewed and optimized package.json to ensure proper categorization of dependencies
 
 ### 2. Webpack Optimizations
 
-- Added TerserPlugin for advanced minification
-- Configured code splitting with optimized chunk strategy (vendors, React, MUI)
+- Added TerserPlugin for advanced minification with multiple compression passes
+- Configured code splitting with optimized chunk strategy:
+  - React, Router, MUI, Emotion, Framer Motion, Rive, DnD Kit
 - Enabled bundle hashing for better cache management
 - Added BundleAnalyzer for size monitoring
 - Configured advanced HTML minification
 - Dropped console logs in production
+- Added deterministic IDs for better caching
+- Implemented performance budgets for better size monitoring
+- Added tree-shaking improvements with mainFields configuration
 
 ### 3. Electron-Builder Configuration
 
@@ -36,28 +46,38 @@ The following optimizations have been implemented to reduce the app size:
   - Documentation, test files, examples
   - Node module metadata (READMEs, etc.)
   - Duplicate ESM modules when CJS is sufficient
+- Maximum compression setting for macOS builds
+- Removal of unnecessary build targets (keeping only DMG)
+- Disabled npmRebuild and buildDependenciesFromSource flags
+- Optimized DMG configuration for better presentation
 
-### 4. Post-Build Cleanup Scripts
+### 4. Enhanced Cleanup Scripts
 
-- Created `afterPack.js` script that runs after packaging to remove:
-  - Development files
-  - Unnecessary node_modules content
-  - Documentation and test files
-  - Empty directories
+#### afterPack.js:
+- **More aggressive pattern matching** for removing unnecessary files
+- **Targeted cleanup for large packages**:
+  - @mui, @emotion, framer-motion, @rive-app, electron, etc.
+- **Language file cleanup** (keeping only English)
+- **Development tooling removal**:
+  - TypeScript, Babel, Webpack, test frameworks
+- **Source directory removal** when dist directories exist
+- **Multiple cleanup passes** to ensure thorough file removal
 
-- Created `afterSign.js` script for final verification and cleanup
+#### afterSign.js:
+- Final verification and cleanup
+- Removal of any remaining unnecessary files
 
-## Expected Results
+## Size Contributors Analysis
 
-These optimizations should reduce the app size from 2.22GB to a more reasonable size (likely under 300MB) by addressing several key issues:
+From our analysis, the primary size contributors were:
 
-1. **Removal of Development Files**: Source maps, TypeScript files, and type definitions are not needed in production.
+| Package | Size |
+|---------|------|
+| electron | 257MB |
+| app-builder-bin | 207MB |
+| @mui | 192MB |
 
-2. **Smaller Bundle Size**: Code splitting, tree-shaking, and better minification reduce the JavaScript bundle size.
-
-3. **Optimized Dependencies**: Properly categorizing dependencies and removing duplicate code.
-
-4. **Efficient Packaging**: Using ASAR and removing unnecessary files creates a more compact distribution.
+Most of these are development dependencies that should now be properly excluded from the final build.
 
 ## How to Monitor App Size
 
@@ -74,6 +94,9 @@ To check the final app size after building:
 
 ```bash
 # For macOS builds
+yarn build:mac && du -sh release/mac/*.dmg
+
+# For specific app directory size
 du -sh release/mac/*.app
 
 # For Windows builds
@@ -82,6 +105,17 @@ du -sh release/win-unpacked/
 # For Linux builds
 du -sh release/linux-unpacked/
 ```
+
+## Further Size Reduction Suggestions
+
+If the build is still too large after these changes, consider:
+
+1. **Analyze bundle size** with `yarn analyze` to identify remaining large modules
+2. **Lazy-load non-critical components** using dynamic imports
+3. **Review Rive animations** and optimize or lazy-load them
+4. **Consider lighter alternatives** to heavy dependencies
+5. **Move more dependencies to devDependencies** if they're not needed at runtime
+6. **Electron native module optimization** - ensure only necessary Electron modules are included
 
 ## Best Practices for Maintaining Small App Size
 

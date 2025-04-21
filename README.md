@@ -84,3 +84,9 @@ These variables will be replaceable when applying the template.
 - Material UI for component library
 - TypeScript for type safety
 - Electron Store for local data persistence
+
+## Documentation
+
+Additional documentation can be found in the `docs` directory:
+
+- [Electron Optimization Guide](docs/electron-optimization-guide.md) - Strategies for reducing app size
