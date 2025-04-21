@@ -43,7 +43,7 @@ import {
   CyberDialog
 } from '../cyberpunk';
 import { StoryTemplate, TaskTemplate } from '../../types';
-import { memberField, iterationField } from '../ShortcutFields/fieldDefinitions';
+import { memberField, iterationField, groupField } from '../ShortcutFields/fieldDefinitions';
 import { useField } from '../ShortcutFields/hooks';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 import { useSettings } from '../../store/AppProviders';
@@ -91,6 +91,8 @@ interface StoryPreviewProps {
   onDuplicate: () => void;
   getMemberName: (id: string) => string;
   getIterationName: (id: string) => string;
+  getTeamName: (id: string) => string;
+  getTeamInfo: (id: string) => { name: string; color: string };
 }
 
 const StoryPreview: React.FC<StoryPreviewProps> = ({ 
@@ -99,7 +101,9 @@ const StoryPreview: React.FC<StoryPreviewProps> = ({
   onDelete,
   onDuplicate,
   getMemberName,
-  getIterationName 
+  getIterationName,
+  getTeamName,
+  getTeamInfo
 }) => {
   const theme = useTheme();
   
@@ -392,6 +396,31 @@ const StoryPreview: React.FC<StoryPreviewProps> = ({
               />
             )}
             
+            {/* Team badge with team-specific color */}
+            {story.group_id && (
+              (() => {
+                const teamInfo = getTeamInfo(story.group_id);
+                const teamColor = teamInfo.color;
+                return (
+                  <Chip 
+                    icon={<CyberIcon icon={GroupIcon} size={16} />}
+                    label={teamInfo.name}
+                    size="small"
+                    sx={{ 
+                      backgroundColor: alpha(teamColor, 0.1),
+                      border: `1px solid ${alpha(teamColor, 0.3)}`,
+                      borderRadius: '4px',
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontWeight: 500,
+                      '& .MuiChip-icon': {
+                        color: teamColor
+                      }
+                    }}
+                  />
+                );
+              })()
+            )}
+            
             {/* Owner badges - one per owner ID */}
             {ownerIds.map((ownerId, index) => (
               <Chip 
@@ -457,7 +486,9 @@ const CardView: React.FC<{
   onDuplicate: (index: number) => void;
   getMemberName: (id: string) => string;
   getIterationName: (id: string) => string;
-}> = ({ stories, onEdit, onDelete, onDuplicate, getMemberName, getIterationName }) => {
+  getTeamName: (id: string) => string;
+  getTeamInfo: (id: string) => { name: string; color: string };
+}> = ({ stories, onEdit, onDelete, onDuplicate, getMemberName, getIterationName, getTeamName, getTeamInfo }) => {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', margin: -1 }}>
       {stories.map((story, index) => (
@@ -469,6 +500,8 @@ const CardView: React.FC<{
             onDuplicate={() => onDuplicate(index)}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
+            getTeamName={getTeamName}
+            getTeamInfo={getTeamInfo}
           />
         </Box>
       ))}
@@ -484,7 +517,9 @@ const ListView: React.FC<{
   onDuplicate: (index: number) => void;
   getMemberName: (id: string) => string;
   getIterationName: (id: string) => string;
-}> = ({ stories, onEdit, onDelete, onDuplicate, getMemberName, getIterationName }) => {
+  getTeamName: (id: string) => string;
+  getTeamInfo: (id: string) => { name: string; color: string };
+}> = ({ stories, onEdit, onDelete, onDuplicate, getMemberName, getIterationName, getTeamName, getTeamInfo }) => {
   const theme = useTheme();
   
   return (
@@ -735,6 +770,29 @@ const ListView: React.FC<{
                         }}
                       />
                     )}
+                    
+                    {/* Team badge in list view with team-specific color */}
+                    {story.group_id && (
+                      (() => {
+                        const teamInfo = getTeamInfo(story.group_id);
+                        const teamColor = teamInfo.color;
+                        return (
+                          <Chip 
+                            icon={<CyberIcon icon={GroupIcon} size={14} color={teamColor} />}
+                            label={teamInfo.name}
+                            size="small"
+                            sx={{ 
+                              height: '20px',
+                              fontSize: '0.7rem',
+                              backgroundColor: alpha(teamColor, 0.1),
+                              border: `1px solid ${alpha(teamColor, 0.3)}`,
+                              borderRadius: '4px',
+                              color: teamColor
+                            }}
+                          />
+                        );
+                      })()
+                    )}
                   </Box>
                 </TableCell>
                 <TableCell>
@@ -837,15 +895,17 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingStoryIndex, setDeletingStoryIndex] = useState<number | null>(null);
   
-  // Use field hooks for members and iterations
+  // Use field hooks for members, iterations, and teams
   const memberFieldHandler = useField(memberField);
   const iterationFieldHandler = useField(iterationField);
+  const groupFieldHandler = useField(groupField);
   
-  // Load members and iterations when component mounts
+  // Load members, iterations, and teams when component mounts
   useEffect(() => {
     if (shortcutApi.hasApiToken) {
       memberFieldHandler.refresh();
       iterationFieldHandler.refresh();
+      groupFieldHandler.refresh();
     }
   }, [shortcutApi.hasApiToken]);
   
@@ -861,6 +921,20 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
   const getIterationName = (iterationId: string) => {
     const iteration = iterationFieldHandler.options.find(i => i.id.toString() === iterationId);
     return iteration?.name || iterationId; // Return name or ID as fallback
+  };
+  
+  // Helper functions to get team information (name and color)
+  const getTeamInfo = (groupId: string) => {
+    const team = groupFieldHandler.options.find(g => g.id.toString() === groupId);
+    return {
+      name: team?.name || groupId, // Return name or ID as fallback
+      color: team?.color || '#6c757d' // Return color or default gray
+    };
+  };
+  
+  // For backward compatibility
+  const getTeamName = (groupId: string) => {
+    return getTeamInfo(groupId).name;
   };
 
   const openNewStoryDialog = () => {
@@ -952,7 +1026,7 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
           No stories added yet. Click "Add Story" to create your first story template.
         </Typography>
       ) : (
-        viewMode === 'card' ? (
+            viewMode === 'card' ? (
           <CardView 
             stories={stories}
             onEdit={openEditStoryDialog}
@@ -960,6 +1034,8 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
             onDuplicate={handleDuplicateStory}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
+            getTeamName={getTeamName}
+            getTeamInfo={getTeamInfo}
           />
         ) : (
           <ListView 
@@ -969,6 +1045,8 @@ const StoryTemplatesList: React.FC<StoryTemplatesListProps> = ({
             onDuplicate={handleDuplicateStory}
             getMemberName={getMemberName}
             getIterationName={getIterationName}
+            getTeamName={getTeamName}
+            getTeamInfo={getTeamInfo}
           />
         )
       )}
