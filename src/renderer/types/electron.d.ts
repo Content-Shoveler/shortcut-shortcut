@@ -21,8 +21,16 @@ export interface ElectronAPI {
     fetchProjects: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflows: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkflowStates: (apiToken: string, workflowId: string) => Promise<ShortcutApiResponse>;
+    fetchEpicWorkflow: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchGroups: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchWorkspaceInfo: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
+    createMultipleStories: (apiToken: string, storiesData: any[]) => Promise<ShortcutApiResponse>;
   };
 }
 
