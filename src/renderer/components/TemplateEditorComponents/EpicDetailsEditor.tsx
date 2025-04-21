@@ -351,20 +351,29 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
         cornerClip
       />
       
-      {/* Epic State Selector */}
+      {/* Epic State and Teams Selectors */}
       {shortcutApi.hasApiToken ? (
-        <Box sx={{ mt: 2 }}>
-          <EpicStateSelector
-            value={epicDetails.epic_state_id || null}
-            onChange={handleEpicStateChange}
-            fullWidth
-          />
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <EpicStateSelector
+              value={epicDetails.epic_state_id || null}
+              onChange={handleEpicStateChange}
+              fullWidth
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <GroupMultiSelect
+              value={epicDetails.group_ids || []}
+              onChange={handleGroupsChange}
+              shortcutApi={shortcutApi}
+            />
+          </Box>
         </Box>
       ) : (
         // Fallback to current dropdown when API token isn't available
         <FormControl fullWidth margin="normal">
           <CyberSelect
-            label="Default Epic State"
+            label="Default State"
             name="state"
             value={epicDetails.state}
             onChange={onStateChange}
@@ -379,31 +388,22 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
       
       {/* API-based selectors - only show when API token is available */}
       {shortcutApi.hasApiToken && (
-        <>
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <MemberMultiSelect
-                value={epicDetails.owner_ids || []}
-                onChange={handleOwnersChange}
-                shortcutApi={shortcutApi}
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <ObjectiveMultiSelect
-                value={epicDetails.objective_ids || []}
-                onChange={handleObjectivesChange}
-                shortcutApi={shortcutApi}
-              />
-            </Box>
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <GroupMultiSelect
-              value={epicDetails.group_ids || []}
-              onChange={handleGroupsChange}
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <MemberMultiSelect
+              value={epicDetails.owner_ids || []}
+              onChange={handleOwnersChange}
               shortcutApi={shortcutApi}
             />
           </Box>
-        </>
+          <Box sx={{ flex: 1 }}>
+            <ObjectiveMultiSelect
+              value={epicDetails.objective_ids || []}
+              onChange={handleObjectivesChange}
+              shortcutApi={shortcutApi}
+            />
+          </Box>
+        </Box>
       )}
       
       {apiTokenAlert && (

@@ -226,7 +226,7 @@ export const groupField: FieldDefinition<any> = {
 export const epicStateField: FieldDefinition<ShortcutEpicState> = {
   id: 'epicState',
   type: 'single',
-  label: 'Epic State',
+  label: 'State',
   helperText: 'Select an epic state',
   
   async fetch(api) {
