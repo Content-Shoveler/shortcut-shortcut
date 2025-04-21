@@ -17,7 +17,6 @@ export interface EpicDetails {
   planned_start_date?: string;
   deadline?: string;
   objective_ids?: number[];
-  group_ids?: string[];
 }
 
 export interface StoryTemplate {

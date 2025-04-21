@@ -21,7 +21,7 @@ import {
   MemberSelector, 
   ObjectiveSelector
 } from '../ShortcutFields';
-import { ShortcutEpicState, ShortcutGroup } from '../../types/shortcutApi';
+import { ShortcutEpicState } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 
 // Helper components for the multi-select fields
@@ -153,70 +153,6 @@ const ObjectiveMultiSelect: React.FC<ObjectiveMultiSelectProps> = ({ value, onCh
   );
 };
 
-interface GroupMultiSelectProps {
-  value: any[];
-  onChange: (selectedGroups: MultiSelectOption[]) => void;
-  shortcutApi: ReturnType<typeof useShortcutApi>;
-}
-
-const GroupMultiSelect: React.FC<GroupMultiSelectProps> = ({ value, onChange, shortcutApi }) => {
-  const [groups, setGroups] = useState<MultiSelectOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Load groups from the API
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setLoading(true);
-        const groupData = await shortcutApi.fetchGroups();
-        // Convert to MultiSelectOption format
-        const options = groupData.map((group: ShortcutGroup) => ({
-          id: group.id,
-          name: group.name,
-          color: group.color
-        }));
-        setGroups(options);
-      } catch (error) {
-        console.error('Error fetching groups:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (shortcutApi.hasApiToken) {
-      fetchGroups();
-    }
-  }, [shortcutApi]);
-  
-  // Convert current value to MultiSelectOption format
-  const selectedGroups = useMemo(() => {
-    if (!value || !Array.isArray(value) || value.length === 0) return [];
-    
-    return value
-      .map((id: string) => {
-        const group = groups.find(grp => grp.id === id);
-        return group ? group : null;
-      })
-      .filter((grp): grp is MultiSelectOption => grp !== null);
-  }, [value, groups]);
-  
-  if (loading) {
-    return <Typography color="text.secondary">Loading teams...</Typography>;
-  }
-  
-  return (
-    <CyberMultiSelect
-      options={groups}
-      value={selectedGroups}
-      onChange={onChange}
-      placeholder="Select teams..."
-      helperText="Assign to one or more teams"
-      cornerClip
-      fullWidth
-    />
-  );
-};
-
 interface EpicDetailsEditorProps {
   epicDetails: EpicDetails;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -269,19 +205,6 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
       target: {
         name: 'objective_ids',
         value: objectiveIds
-      }
-    });
-  };
-  
-  // Handle multiple group selection
-  const handleGroupsChange = (selectedGroups: MultiSelectOption[]) => {
-    // Extract IDs from the selected groups
-    const groupIds = selectedGroups.map(group => group.id);
-    
-    onStateChange({
-      target: {
-        name: 'group_ids',
-        value: groupIds
       }
     });
   };
@@ -379,32 +302,22 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
       
       {/* API-based selectors - only show when API token is available */}
       {shortcutApi.hasApiToken && (
-        <>
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <MemberMultiSelect
-                value={epicDetails.owner_ids || []}
-                onChange={handleOwnersChange}
-                shortcutApi={shortcutApi}
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <ObjectiveMultiSelect
-                value={epicDetails.objective_ids || []}
-                onChange={handleObjectivesChange}
-                shortcutApi={shortcutApi}
-              />
-            </Box>
-          </Box>
-          
-          <Box sx={{ mt: 2 }}>
-            <GroupMultiSelect
-              value={epicDetails.group_ids || []}
-              onChange={handleGroupsChange}
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <MemberMultiSelect
+              value={epicDetails.owner_ids || []}
+              onChange={handleOwnersChange}
               shortcutApi={shortcutApi}
             />
           </Box>
-        </>
+          <Box sx={{ flex: 1 }}>
+            <ObjectiveMultiSelect
+              value={epicDetails.objective_ids || []}
+              onChange={handleObjectivesChange}
+              shortcutApi={shortcutApi}
+            />
+          </Box>
+        </Box>
       )}
       
       {apiTokenAlert && (
