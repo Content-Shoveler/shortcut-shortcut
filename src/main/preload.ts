@@ -50,6 +50,7 @@ interface ElectronAPI {
     fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchGroups: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkspaceInfo: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
@@ -88,6 +89,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('shortcut-fetchLabels', apiToken),
     fetchObjectives: (apiToken: string) =>
       ipcRenderer.invoke('shortcut-fetchObjectives', apiToken),
+    fetchGroups: (apiToken: string) =>
+      ipcRenderer.invoke('shortcut-fetchGroups', apiToken),
     fetchIterations: (apiToken: string) =>
       ipcRenderer.invoke('shortcut-fetchIterations', apiToken),
     fetchWorkspaceInfo: (apiToken: string) =>

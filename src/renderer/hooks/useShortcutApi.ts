@@ -22,6 +22,7 @@ type ShortcutElectronAPI = {
     fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchGroups: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchWorkspaceInfo: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
@@ -594,6 +595,37 @@ export function useShortcutApi() {
   }, [apiToken, getCache, setCache]);
 
   /**
+   * Fetch all groups (teams) from Shortcut
+   */
+  const fetchGroups = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('groups', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached groups data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchGroups(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch groups');
+    }
+    
+    // Store successful response in cache
+    setCache(cacheKey, response.data || []);
+    
+    return response.data || [];
+  }, [apiToken, getCache, setCache]);
+
+  /**
    * Fetch all iterations from Shortcut
    */
   const fetchIterations = useCallback(async () => {
@@ -670,6 +702,7 @@ export function useShortcutApi() {
     fetchMembers,
     fetchLabels,
     fetchObjectives,
+    fetchGroups,
     fetchIterations,
     fetchWorkspaceInfo,
     createMultipleStories,

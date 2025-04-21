@@ -372,6 +372,22 @@ ipcMain.handle('shortcut-fetchObjectives', async (_, apiToken: string) => {
   }
 });
 
+// Fetch Groups
+ipcMain.handle('shortcut-fetchGroups', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/groups');
+    console.log('Groups API response count:', response.data.length);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+    return handleApiError(error);
+  }
+});
+
 // Fetch iterations
 ipcMain.handle('shortcut-fetchIterations', async (_, apiToken: string) => {
   if (!apiToken) {

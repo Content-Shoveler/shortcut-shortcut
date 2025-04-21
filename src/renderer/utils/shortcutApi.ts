@@ -181,6 +181,11 @@ export async function createEpicWithStories(
         return id;
       });
     }
+    
+    // Format group_ids to ensure it's an array of strings
+    if (epicData.group_ids && Array.isArray(epicData.group_ids)) {
+      epicPayload.group_ids = epicData.group_ids.map(id => id.toString());
+    }
 
     // Remove any properties that shouldn't be sent to the API
     delete epicPayload.workflowId;

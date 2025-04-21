@@ -190,6 +190,37 @@ export const objectiveField: FieldDefinition<any> = {
 };
 
 /**
+ * Group Field Definition
+ */
+export const groupField: FieldDefinition<any> = {
+  id: 'group',
+  type: 'single',
+  label: 'Team',
+  helperText: 'Select a team',
+  
+  async fetch(api) {
+    return api.fetchGroups();
+  },
+  
+  getOptionLabel(group) {
+    return group.name;
+  },
+  
+  getOptionValue(group) {
+    return group.id.toString();
+  },
+  
+  // ID-based lookup methods
+  getIdFromValue(group) {
+    return group.id;
+  },
+  
+  findOptionById(options, id) {
+    return options.find(option => option.id.toString() === id?.toString()) || null;
+  }
+};
+
+/**
  * Epic State Field Definition
  */
 export const epicStateField: FieldDefinition<ShortcutEpicState> = {
@@ -340,6 +371,7 @@ export const fieldDefinitions = {
   member: memberField,
   label: labelField,
   objective: objectiveField,
+  group: groupField,
   epicState: epicStateField,
   iteration: iterationField,
   estimateScale: estimateScaleField,
