@@ -1,16 +1,35 @@
 {
   "name": "shortcut-shortcut",
   "version": "1.0.0",
-  "main": "dist/main.js",
+  "main": "main.js",
   "description": "Desktop application for creating and managing epic templates for Shortcut",
   "author": "Rowan Findlay <rowan@squarekicker.com>",
   "license": "MIT",
   "build": {
     "appId": "com.squarekicker.shortcut-shortcut",
     "productName": "Shortcut Shortcut",
+    "asar": true,
+    "asarUnpack": [],
     "files": [
-      "dist/**/*"
+      "dist/**/*",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "!**/*.map",
+      "!**/*.ts",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
+      "!**/node_modules/.bin",
+      "!**/node_modules/.cache",
+      "!**/node_modules/@types",
+      "!**/node_modules/.yarn",
+      "!**/node_modules/**/*.{ts,tsx}",
+      "!**/node_modules/**/src",
+      "!**/node_modules/**/docs",
+      "!**/node_modules/**/{demo,demos,example,examples,test,tests,__tests__,coverage,benchmark,fixtures}",
+      "!**/node_modules/**/*.{md,markdown,yml,yaml,txt,log,d.ts}",
+      "!**/node_modules/**/{CHANGELOG,README,LICENSE,CONTRIBUTING,AUTHORS,HISTORY}"
     ],
+    "extraResources": [],
     "directories": {
       "output": "release",
       "buildResources": "public",
@@ -19,22 +38,51 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
-        "zip",
         "dmg"
-      ]
-    }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "darkModeSupport": true,
+      "compression": "maximum"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      }
+    },
+    "afterPack": "./scripts/afterPack.js",
+    "afterSign": "./scripts/afterSign.js",
+    "electronCompile": false,
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false
   },
   "scripts": {
-    "start": "electron dist/main.js",
-    "dev": "concurrently \"webpack serve --env WEBPACK_SERVE=true\" \"webpack --watch --env WEBPACK_TARGET=main\" \"wait-on http://localhost:9000 && electron dist/main.js\"",
+    "start": "electron main.js",
+    "dev": "concurrently \"webpack serve --env WEBPACK_SERVE=true\" \"webpack --watch --env WEBPACK_TARGET=main\" \"wait-on http://localhost:9000 && electron main.js\"",
     "dev:renderer": "webpack serve --env WEBPACK_SERVE=true",
     "dev:main": "webpack --watch --env WEBPACK_TARGET=main",
-    "dev:electron": "wait-on http://localhost:9000 && electron dist/main.js",
-    "build": "webpack --env NODE_ENV=production && electron-builder",
-    "build:win": "webpack --env NODE_ENV=production && electron-builder --win",
-    "build:mac": "webpack --env NODE_ENV=production && electron-builder --mac",
-    "build:mac-old": "webpack --env NODE_ENV=production && electron-builder --mac --x64",
-    "build:linux": "webpack --env NODE_ENV=production && electron-builder --linux"
+    "dev:electron": "wait-on http://localhost:9000 && electron main.js",
+    "copy-main": "node copy-main.js",
+    "analyze": "webpack --env NODE_ENV=production --env ANALYZE=true",
+    "build": "webpack --env NODE_ENV=production && npm run copy-main && electron-builder --publish=never",
+    "build:win": "webpack --env NODE_ENV=production && npm run copy-main && electron-builder --win --publish=never",
+    "build:mac": "webpack --env NODE_ENV=production && npm run copy-main && electron-builder --mac --publish=never",
+    "build:mac-old": "webpack --env NODE_ENV=production && npm run copy-main && electron-builder --mac --x64 --publish=never",
+    "build:mac-arm": "webpack --env NODE_ENV=production && npm run copy-main && electron-builder --mac --arm64 --publish=never",
+    "build:linux": "webpack --env NODE_ENV=production && npm run copy-main && electron-builder --linux --publish=never"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -45,10 +93,6 @@
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
     "@rive-app/react-canvas": "^4.18.8",
-    "@types/node": "^22.14.1",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@types/uuid": "^10.0.0",
     "axios": "^1.8.4",
     "clubhouse-lib": "^0.13.0",
     "electron-store": "^10.0.1",
@@ -56,7 +100,6 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.5.0",
-    "typescript": "^5.8.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
@@ -65,15 +108,22 @@
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.27.0",
     "@types/electron": "^1.6.12",
+    "@types/node": "^22.14.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/uuid": "^10.0.0",
     "concurrently": "^9.1.2",
     "css-loader": "^7.1.2",
     "electron": "^35.1.5",
     "electron-builder": "^26.0.12",
     "html-webpack-plugin": "^5.6.3",
     "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
     "wait-on": "^8.0.3",
     "webpack": "^5.99.5",
+    "webpack-bundle-analyzer": "^4.10.1",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.1"
   }

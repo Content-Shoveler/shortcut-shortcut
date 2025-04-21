@@ -54,7 +54,16 @@ function createWindow() {
     // Open DevTools only in development mode
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'index.html'));
+    // In production, we need to look in the correct location for index.html
+    const appPath = app.getAppPath();
+    const indexPath = path.join(appPath, 'dist', 'index.html');
+    console.log(`Loading app from: ${indexPath}`);
+    mainWindow.loadFile(indexPath);
+    
+    // Add error handling for loading failures
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      console.error('Failed to load application:', errorCode, errorDescription);
+    });
   }
 
   // Emitted when the window is closed
@@ -103,9 +112,27 @@ const handleApiError = (error: any) => {
   }
 };
 
+// Set up global error handlers for the main process
+app.on('render-process-gone', (event, webContents, details) => {
+  console.error('Renderer process gone:', details.reason, details.exitCode);
+  console.error('Renderer process details:', details);
+});
+
+// Error handler for unhandled exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception in main process:', error);
+});
+
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   createWindow();
+  
+  // Log app directory information to help with debugging
+  if (app.isPackaged) {
+    console.log('App is running in packaged mode');
+    console.log('App path:', app.getAppPath());
+    console.log('__dirname:', __dirname);
+  }
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
@@ -114,6 +141,8 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+}).catch(error => {
+  console.error('Failed to initialize application:', error);
 });
 
 // Quit when all windows are closed, except on macOS

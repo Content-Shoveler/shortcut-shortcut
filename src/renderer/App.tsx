@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 // Components
 import Header from './components/Header';
 import { CyberSpinner } from './components/cyberpunk';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import TemplateList from './pages/TemplateList';
@@ -225,4 +226,11 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+// Wrap the App component with ErrorBoundary to catch and display any runtime errors
+const AppWithErrorBoundary: React.FC = () => (
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);
+
+export default AppWithErrorBoundary;
