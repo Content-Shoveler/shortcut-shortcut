@@ -24,7 +24,7 @@ import {
 import { StoryTemplate, TaskTemplate } from '../../types';
 import { ShortcutWorkflow, ShortcutWorkflowState, ShortcutMember, ShortcutIteration } from '../../types/shortcutApi';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
-import { WorkflowAndStateSelector, MemberSelector, IterationSelector } from '../ShortcutFields';
+import { WorkflowAndStateSelector, MemberSelector, IterationSelector, EstimateScaleSelector } from '../ShortcutFields';
 
 // Story state options
 const storyTypeOptions = [
@@ -190,12 +190,18 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
     }
   };
   
-  const handleStoryEstimateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (story && !isNaN(value)) {
+  // Handle estimate scale selection
+  const handleEstimateChange = (estimateOption: any) => {
+    if (story && estimateOption) {
       setStory({
         ...story,
-        estimate: value,
+        estimate: estimateOption.value,
+      });
+    } else if (story) {
+      // Handle when estimate is cleared
+      setStory({
+        ...story,
+        estimate: undefined,
       });
     }
   };
@@ -278,36 +284,34 @@ const StoryEditor: React.FC<StoryEditorProps> = ({
           cornerClip
         />
         
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-          <CyberSelect
-            fullWidth
-            label="Story Type"
-            name="type"
-            value={story.type}
-            onChange={handleStoryChange}
-            cornerClip
-            sx={{ mt: 2, mb: 1 }}
-          >
-            {storyTypeOptions.map(option => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </CyberSelect>
-          
-          <CyberTextField
-            fullWidth
-            margin="normal"
-            label="Estimate (Points)"
-            type="number"
-            value={story.estimate || 0}
-            onChange={handleStoryEstimateChange}
-            inputProps={{ min: 0, max: 100 }}
-            cornerClip
-          />
+        {/* Story Type and Estimate Selectors */}
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <CyberSelect
+              fullWidth
+              label="Story Type"
+              name="type"
+              value={story.type}
+              onChange={handleStoryChange}
+              cornerClip
+            >
+              {storyTypeOptions.map(option => (
+                <MenuItem key={option} value={option}>{option}</MenuItem>
+              ))}
+            </CyberSelect>
+            
+            <EstimateScaleSelector
+              value={story.estimate !== undefined ? Number(story.estimate) : null}
+              onChange={handleEstimateChange}
+              disabled={!shortcutApi.hasApiToken}
+              fullWidth
+            />
+          </Box>
         </Box>
         
         {/* Workflow and State Selectors */}
         <Box sx={{ mt: 2, mb: 2 }}>
-          <WorkflowAndStateSelector 
+          <WorkflowAndStateSelector
             // Just pass the IDs - the component will resolve them
             parentValue={story.workflow_id ? Number(story.workflow_id) : null}
             childValue={story.workflow_state_id ? Number(story.workflow_state_id) : null}

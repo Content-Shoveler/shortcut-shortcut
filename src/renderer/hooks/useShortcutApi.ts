@@ -23,6 +23,7 @@ type ShortcutElectronAPI = {
     fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
     fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
+    fetchWorkspaceInfo: (apiToken: string) => Promise<ShortcutApiResponse>;
     createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
     createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
     createMultipleStories: (apiToken: string, storiesData: any[]) => Promise<ShortcutApiResponse>;
@@ -623,6 +624,37 @@ export function useShortcutApi() {
     return response.data || [];
   }, [apiToken, getCache, setCache]);
 
+  /**
+   * Fetch workspace info containing estimate scale from Shortcut
+   */
+  const fetchWorkspaceInfo = useCallback(async () => {
+    if (!apiToken) {
+      throw new Error('API token is not set');
+    }
+    
+    // Create a cache key for this API call
+    const cacheKey = createCacheKey('workspace-info', apiToken);
+    
+    // Check if we have a valid cache entry
+    const cachedData = getCache(cacheKey);
+    if (cachedData) {
+      console.log('Using cached workspace info data');
+      return cachedData;
+    }
+    
+    // If no cache hit, fetch from API
+    const api = window.electronAPI as ShortcutElectronAPI;
+    const response = await api.shortcutApi.fetchWorkspaceInfo(apiToken);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch workspace info');
+    }
+    
+    // Store successful response in cache
+    setCache(cacheKey, response.data || null);
+    
+    return response.data || null;
+  }, [apiToken, getCache, setCache]);
+
   return {
     // Check if we have a valid token set
     hasApiToken,
@@ -639,6 +671,7 @@ export function useShortcutApi() {
     fetchLabels,
     fetchObjectives,
     fetchIterations,
+    fetchWorkspaceInfo,
     createMultipleStories,
     createEpicWithStories,
   };

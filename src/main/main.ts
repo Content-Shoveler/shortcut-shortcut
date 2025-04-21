@@ -299,6 +299,14 @@ ipcMain.handle('shortcut-validateToken', async (_, apiToken: string) => {
   try {
     const client = createShortcutClient(apiToken);
     const response = await client.get('/member');
+    
+    // Log the response to check for workspace2 field
+    console.log('MEMBER API RESPONSE:', JSON.stringify(response.data, null, 2));
+    console.log('WORKSPACE2 FIELD:', response.data.workspace2 ? 'EXISTS' : 'MISSING');
+    if (response.data.workspace2) {
+      console.log('ESTIMATE_SCALE:', response.data.workspace2.estimate_scale);
+    }
+    
     return { success: true, data: response.data };
   } catch (error) {
     return handleApiError(error);
@@ -379,6 +387,32 @@ ipcMain.handle('shortcut-fetchIterations', async (_, apiToken: string) => {
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Error fetching iterations:', error);
+    return handleApiError(error);
+  }
+});
+
+// Fetch workspace info (for estimate scale)
+ipcMain.handle('shortcut-fetchWorkspaceInfo', async (_, apiToken: string) => {
+  if (!apiToken) {
+    return { success: false, message: 'API token is required' };
+  }
+  
+  try {
+    const client = createShortcutClient(apiToken);
+    const response = await client.get('/member');
+    
+    console.log('Workspace info from member API:', JSON.stringify(response.data, null, 2));
+    console.log('Workspace2 field present:', response.data.workspace2 ? 'YES' : 'NO');
+    
+    if (response.data.workspace2 && response.data.workspace2.estimate_scale) {
+      console.log('Estimate scale:', response.data.workspace2.estimate_scale);
+    } else {
+      console.log('No estimate scale found in workspace info');
+    }
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error fetching workspace info:', error);
     return handleApiError(error);
   }
 });

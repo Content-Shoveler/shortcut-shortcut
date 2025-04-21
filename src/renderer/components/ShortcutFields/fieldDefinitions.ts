@@ -254,6 +254,84 @@ export const iterationField: FieldDefinition<ShortcutIteration> = {
 };
 
 /**
+ * Interface for estimate scale option
+ */
+interface EstimateScaleOption {
+  id: number;
+  value: number;
+  name: string;
+}
+
+/**
+ * Estimate Scale Field Definition
+ */
+export const estimateScaleField: FieldDefinition<EstimateScaleOption> = {
+  id: 'estimateScale',
+  type: 'single',
+  label: 'Estimate',
+  helperText: 'Select story points',
+  
+  async fetch(api) {
+    try {
+      // Fetch workspace info which contains estimate_scale
+      const memberInfo = await api.fetchWorkspaceInfo();
+      
+      // Extract estimate scale from the response
+      if (memberInfo && memberInfo.workspace2 && memberInfo.workspace2.estimate_scale && 
+          Array.isArray(memberInfo.workspace2.estimate_scale) && 
+          memberInfo.workspace2.estimate_scale.length > 0) {
+            
+        // Log the estimate scale we got from the API
+        console.log('Using estimate scale from API:', memberInfo.workspace2.estimate_scale);
+        
+        // Convert each number to an object with id and name
+        return memberInfo.workspace2.estimate_scale.map((value: number) => ({
+          id: value,
+          value,
+          name: value.toString()
+        }));
+      }
+      
+      // If no valid estimate scale was found or it's empty, use the default
+      console.log('Using default estimate scale:', DEFAULT_ESTIMATE_SCALE);
+      return DEFAULT_ESTIMATE_SCALE.map(value => ({
+        id: value,
+        value,
+        name: value.toString()
+      }));
+    } catch (error) {
+      console.error('Error fetching estimate scale:', error);
+      
+      // On error, fall back to default scale
+      console.log('Error occurred, using default estimate scale');
+      return DEFAULT_ESTIMATE_SCALE.map(value => ({
+        id: value,
+        value,
+        name: value.toString()
+      }));
+    }
+  },
+  
+  getOptionLabel(estimate) {
+    return estimate.name;
+  },
+  
+  getOptionValue(estimate) {
+    return estimate.value.toString();
+  },
+  
+  // ID-based lookup methods
+  getIdFromValue(estimate) {
+    return estimate.id;
+  },
+  
+  findOptionById(options, id) {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    return options.find(option => option.id === numericId) || null;
+  }
+};
+
+/**
  * Map of all field definitions
  */
 export const fieldDefinitions = {
@@ -264,4 +342,8 @@ export const fieldDefinitions = {
   objective: objectiveField,
   epicState: epicStateField,
   iteration: iterationField,
+  estimateScale: estimateScaleField,
 };
+
+// Default Fibonacci sequence to use if API doesn't return estimate_scale
+export const DEFAULT_ESTIMATE_SCALE = [0, 1, 2, 3, 5, 8, 13, 21];

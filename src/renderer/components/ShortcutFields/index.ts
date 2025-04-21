@@ -33,6 +33,7 @@ export {
   labelField,
   objectiveField,
   epicStateField,
+  estimateScaleField,
   fieldDefinitions
 } from './fieldDefinitions';
 
@@ -45,7 +46,8 @@ import {
   memberField,
   labelField,
   objectiveField,
-  iterationField
+  iterationField,
+  estimateScaleField
 } from './fieldDefinitions';
 
 export const WorkflowSelector = createFieldComponent(workflowField);
@@ -55,6 +57,7 @@ export const MemberSelector = createFieldComponent(memberField);
 export const LabelSelector = createFieldComponent(labelField);
 export const ObjectiveSelector = createFieldComponent(objectiveField);
 export const IterationSelector = createFieldComponent(iterationField);
+export const EstimateScaleSelector = createFieldComponent(estimateScaleField);
 export const WorkflowAndStateSelector = createDependentFieldComponent(
   workflowField,
   workflowStateField

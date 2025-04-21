@@ -132,3 +132,16 @@ export interface CreateStoryPayload {
   deadline?: string;
   estimate?: number;
 }
+
+// Workspace information interfaces
+export interface BasicWorkspaceInfo {
+  estimate_scale: number[];
+  url_slug: string;
+  utc_offset: string;
+}
+
+export interface MemberInfo extends ShortcutEntity {
+  mention_name: string;
+  name: string;
+  workspace2: BasicWorkspaceInfo;
+}
