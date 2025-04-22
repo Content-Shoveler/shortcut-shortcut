@@ -34,7 +34,21 @@ mkdir -p "${APP_DIR}/Contents/MacOS"
 echo "📝 Copying Electron framework..."
 cp -r "${ELECTRON_DIR}/Contents/Frameworks" "${APP_DIR}/Contents/"
 cp -r "${ELECTRON_DIR}/Contents/MacOS" "${APP_DIR}/Contents/"
+
+# Copy app icon
+echo "🚀 Copying app icon..."
+# We'll use the standard Electron icon as a fallback
 cp -r "${ELECTRON_DIR}/Contents/Resources/electron.icns" "${APP_DIR}/Contents/Resources/"
+
+# If we have a custom icon in buildResources, use it instead
+if [ -f "buildResources/icon.icns" ]; then
+  echo "🎨 Using custom icon from buildResources/icon.icns"
+  cp -f "buildResources/icon.icns" "${APP_DIR}/Contents/Resources/electron.icns"
+fi
+
+# Rename to app name for proper display
+mv "${APP_DIR}/Contents/Resources/electron.icns" "${APP_DIR}/Contents/Resources/${APP_NAME}.icns"
+
 cp "${ELECTRON_DIR}/Contents/Info.plist" "${APP_DIR}/Contents/"
 
 # Copy app files

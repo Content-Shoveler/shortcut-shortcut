@@ -10,6 +10,7 @@
     "productName": "Shortcut Shortcut",
     "asar": true,
     "asarUnpack": [],
+    "icon": "buildResources/icon.png",
     "files": [
       "dist/**/*",
       "main.js",
@@ -32,7 +33,7 @@
     "extraResources": [],
     "directories": {
       "output": "release",
-      "buildResources": "public",
+      "buildResources": "buildResources",
       "app": "."
     },
     "mac": {

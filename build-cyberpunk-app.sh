@@ -19,5 +19,10 @@ fi
 echo "🔧 Building application..."
 yarn build
 
+# Add rocket emoji as app icon
+echo "🚀 Setting rocket emoji as app icon..."
+# The electron-builder will automatically use the icon.png from buildResources
+# which is configured in package.json
+
 echo "✨ Build complete! Your cyberpunk-styled application is ready in the release directory."
 echo "🚀 To run the application, find the executable in the release folder."
