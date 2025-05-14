@@ -3,11 +3,21 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
+// Define constants for build targets
+const TARGET = {
+  RENDERER: 'renderer',
+  MAIN: 'main',
+  WEB: 'web'
+};
+
 module.exports = (env) => {
   const isProduction = env.NODE_ENV === 'production';
   const isServing = env.WEBPACK_SERVE === 'true';
-  const target = env.WEBPACK_TARGET || 'renderer';
+  const target = env.WEBPACK_TARGET || TARGET.RENDERER;
   const analyzeBundle = env.ANALYZE === 'true';
+
+  // Determine if we're building for the web
+  const isWeb = target === TARGET.WEB;
 
   const baseConfig = {
     mode: isProduction ? 'production' : 'development',
@@ -114,6 +124,12 @@ module.exports = (env) => {
             chunks: 'all', 
             priority: 14,
           },
+          dexie: {
+            test: /[\\/]node_modules[\\/]dexie[\\/]/,
+            name: 'dexie-vendor',
+            chunks: 'all',
+            priority: 13,
+          },
         },
       },
       moduleIds: 'deterministic',
@@ -125,6 +141,74 @@ module.exports = (env) => {
       usedExports: true,
       concatenateModules: true,
     } : undefined,
+  };
+
+  // Configuration for the web app
+  const webConfig = {
+    ...baseConfig,
+    target: 'web',
+    entry: ['./src/web/index.tsx'],
+    output: {
+      path: path.resolve(__dirname, 'dist-web'),
+      filename: isProduction ? '[name].[contenthash:8].js' : '[name].js',
+      chunkFilename: isProduction ? '[name].[contenthash:8].chunk.js' : '[name].chunk.js',
+      globalObject: 'this',
+      // Set publicPath based on environment
+      publicPath: isProduction ? './' : '/',
+      pathinfo: !isProduction,
+      // Clean the output directory before emit
+      clean: true,
+    },
+    plugins: [
+      new HtmlWebpackPlugin({
+        template: path.resolve(__dirname, 'public/index.html'),
+        inject: true,
+        filename: 'index.html',
+        // Make sure scripts use relative paths in production
+        scriptLoading: 'defer',
+        minify: isProduction ? {
+          removeComments: true,
+          collapseWhitespace: true,
+          removeRedundantAttributes: true,
+          useShortDoctype: true,
+          removeEmptyAttributes: true,
+          removeStyleLinkTypeAttributes: true,
+          keepClosingSlash: true,
+          minifyJS: true,
+          minifyCSS: true,
+          minifyURLs: true,
+        } : false,
+      }),
+      ...(isProduction && analyzeBundle ? [new BundleAnalyzerPlugin({
+        analyzerMode: 'static',
+        reportFilename: 'web-bundle-report.html',
+        openAnalyzer: true,
+        generateStatsFile: true,
+        statsFilename: 'web-bundle-stats.json',
+      })] : []),
+    ],
+    performance: {
+      maxEntrypointSize: 512000,
+      maxAssetSize: 512000,
+      hints: isProduction ? 'warning' : false,
+    },
+    devServer: isServing
+      ? {
+          static: {
+            directory: path.join(__dirname, 'dist-web'),
+            publicPath: '/',
+          },
+          port: 9001, // Different port from the Electron dev server
+          hot: true,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+          },
+          devMiddleware: {
+            writeToDisk: true,
+          },
+          historyApiFallback: true,
+        }
+      : undefined,
   };
 
   // Configuration for the renderer process
@@ -253,5 +337,12 @@ module.exports = (env) => {
     } : undefined,
   };
 
-  return target === 'main' ? mainConfig : rendererConfig;
+  // Determine which config to return based on target
+  if (target === TARGET.MAIN) {
+    return mainConfig;
+  } else if (target === TARGET.WEB) {
+    return webConfig;
+  } else {
+    return rendererConfig;
+  }
 };
