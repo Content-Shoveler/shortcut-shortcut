@@ -36,7 +36,6 @@ export function useShortcutApi() {
   // Get the API token from settings context
   const apiToken = settings.apiToken || '';
   
-  
   // State to track if token has been validated - initialize based on token existence
   const [tokenValidated, setTokenValidated] = useState<boolean | null>(() => {
     // If there's no token, we know it's false right away
@@ -54,12 +53,20 @@ export function useShortcutApi() {
   const isMounted = useRef(true);
   // Use this to debounce validation calls
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
 
+  // When the API token changes, update it in the API client
+  useEffect(() => {
+    if (apiToken) {
+      shortcutApi.setApiToken(apiToken);
+    }
+  }, [apiToken]);
+  
   // On first mount, validate the token if it exists - but only once
   useEffect(() => {
     const validateOnMount = async () => {
@@ -161,7 +168,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchProjects(apiToken);
+    const response = await shortcutApi.fetchProjects();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch projects');
     }
@@ -191,7 +198,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchWorkflows(apiToken);
+    const response = await shortcutApi.fetchWorkflows();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch workflows');
     }
@@ -222,10 +229,7 @@ export function useShortcutApi() {
       }
       
       // If no cache hit, fetch from API
-      const response = await shortcutApi.fetchWorkflowStates(
-        apiToken, 
-        workflowId.toString()
-      );
+      const response = await shortcutApi.fetchWorkflowStates(workflowId.toString());
       
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch workflow states');
@@ -242,13 +246,13 @@ export function useShortcutApi() {
   /**
    * Fetch epic workflow containing all epic states from Shortcut
    */
-  const fetchEpicWorkflow = useCallback(async () => {
+  const fetchEpicWorkflow = useCallback(async (epicId: string) => {
     if (!apiToken) {
       throw new Error('API token is not set');
     }
     
     // Create a cache key for this API call
-    const cacheKey = createCacheKey('epic-workflow', apiToken);
+    const cacheKey = createCacheKey('epic-workflow', apiToken, { epicId });
     
     // Check if we have a valid cache entry
     const cachedData = getCache(cacheKey);
@@ -258,7 +262,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchEpicWorkflow(apiToken);
+    const response = await shortcutApi.fetchEpicWorkflow(epicId);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch epic workflow');
     }
@@ -272,9 +276,9 @@ export function useShortcutApi() {
   /**
    * Fetch epic states from Shortcut
    */
-  const fetchEpicStates = useCallback(async () => {
+  const fetchEpicStates = useCallback(async (epicId: string) => {
     try {
-      const workflow = await fetchEpicWorkflow();
+      const workflow = await fetchEpicWorkflow(epicId);
       return workflow.epic_states || [];
     } catch (error) {
       console.error('Failed to fetch epic states:', error);
@@ -290,7 +294,7 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
-    const response = await shortcutApi.createMultipleStories(apiToken, storiesData);
+    const response = await shortcutApi.createMultipleStories(storiesData);
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to create multiple stories');
@@ -353,7 +357,7 @@ export function useShortcutApi() {
       
       console.log('Full epic payload being sent:', epicPayload);
       
-      const epicResponse = await shortcutApi.createEpic(apiToken, epicPayload);
+      const epicResponse = await shortcutApi.createEpic(epicPayload);
       if (!epicResponse.success) {
         throw new Error(epicResponse.message || 'Failed to create epic');
       }
@@ -370,10 +374,7 @@ export function useShortcutApi() {
       const needWorkflowStates = stories.some(story => !story.workflow_state_id);
       
       if (needWorkflowStates) {
-        const statesResponse = await shortcutApi.fetchWorkflowStates(
-          apiToken, 
-          workflowId
-        );
+        const statesResponse = await shortcutApi.fetchWorkflowStates(workflowId);
         
         if (!statesResponse.success) {
           throw new Error(statesResponse.message || 'Failed to fetch workflow states');
@@ -420,7 +421,7 @@ export function useShortcutApi() {
       });
       
       // Create all stories in one API call
-      const storiesResponse = await shortcutApi.createMultipleStories(apiToken, storyPayloads);
+      const storiesResponse = await shortcutApi.createMultipleStories(storyPayloads);
       if (!storiesResponse.success) {
         throw new Error(storiesResponse.message || 'Failed to create stories');
       }
@@ -439,10 +440,7 @@ export function useShortcutApi() {
     [apiToken, invalidateCache]
   );
 
-  // Explicitly calculate and log hasApiToken to debug
-  
   // Simplify the hasApiToken calculation to ensure it works correctly
-  // We're removing the memoization temporarily to make sure it's not causing issues
   const hasApiToken = !!apiToken && tokenValidated === true;
   
   /**
@@ -464,7 +462,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchMembers(apiToken);
+    const response = await shortcutApi.fetchMembers();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch members');
     }
@@ -494,7 +492,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchLabels(apiToken);
+    const response = await shortcutApi.fetchLabels();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch labels');
     }
@@ -524,7 +522,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchObjectives(apiToken);
+    const response = await shortcutApi.fetchObjectives();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch objectives');
     }
@@ -554,7 +552,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchGroups(apiToken);
+    const response = await shortcutApi.fetchGroups();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch groups');
     }
@@ -584,7 +582,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchIterations(apiToken);
+    const response = await shortcutApi.fetchIterations();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch iterations');
     }
@@ -614,7 +612,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchWorkspaceInfo(apiToken);
+    const response = await shortcutApi.fetchWorkspaceInfo();
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch workspace info');
     }

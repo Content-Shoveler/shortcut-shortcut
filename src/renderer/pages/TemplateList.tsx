@@ -30,6 +30,7 @@ import {
   useTheme,
   alpha,
   Theme,
+  ButtonGroup,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -703,207 +704,154 @@ const TemplateList: React.FC = () => {
               clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)',
             }}
           >
-            {/* Elegant cyberpunk-styled top edge */}
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '5px',
-                zIndex: 2,
-              }}
-            >
-              {/* Tech geometry elements - left notch */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: '0%',
-                  width: '15px',
-                  height: '5px',
-                  clipPath: 'polygon(0 0, 100% 0, 80% 100%, 0% 100%)',
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.9),
-                  borderRight: `1px solid ${alpha(theme.palette.common.white, 0.4)}`,
-                }}
-              />
-              
-              {/* Left angled line */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: '15px',
-                  width: '60px',
-                  height: '1px',
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.7),
-                }}
-              />
-              
-              {/* Center section with circuit pattern */}
-              <MotionBox
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 'calc(15px + 60px)',
-                  width: 'calc(100% - 30px - 60px - 60px - 15px)', // Adjust to leave space for right section
-                  height: '5px',
-                  background: 'transparent',
-                  overflow: 'hidden',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    backgroundImage: `
-                      linear-gradient(90deg, transparent, ${alpha(theme.palette.secondary.main, 0.2)} 30%, transparent),
-                      linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.1)} 10%, transparent),
-                      linear-gradient(90deg, transparent, ${alpha(theme.palette.secondary.main, 0.2)} 70%, transparent)
-                    `,
-                    clipPath: 'polygon(0 0, 100% 0, 97% 100%, 3% 100%)',
-                  }
-                }}
-              />
-              
-              {/* Digital circuit lines - animated */}
-              <MotionBox
-                sx={{
-                  position: 'absolute',
-                  top: '1px',
-                  left: 'calc(15px + 60px + 10px)',
-                  right: 'calc(60px + 15px + 10px)',
-                  height: '3px',
-                  background: 'transparent',
-                  zIndex: 3,
-                }}
-              >
-                {/* Circuit dots row 1 */}
-                {[10, 25, 45, 70, 95, 125, 160, 200, 245, 300, 350, 410, 480, 560, 650].map((pos, index) => (
-                  <MotionBox
-                    key={index}
-                    sx={{
-                      position: 'absolute',
-                      top: '1px',
-                      left: `${pos}px`,
-                      width: '1px',
-                      height: '1px',
-                      backgroundColor: theme.palette.secondary.main,
-                      opacity: 0.8,
-                    }}
-                    animate={{
-                      opacity: [0.4, 0.9, 0.4],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      delay: index * 0.05,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                ))}
-                
-                {/* Circuit line */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '1px',
-                    left: '10px',
-                    width: 'calc(100% - 20px)',
-                    height: '1px',
-                    backgroundColor: alpha(theme.palette.secondary.main, 0.3),
-                    clipPath: 'polygon(0 0, 30% 0, 32% 100%, 60% 100%, 62% 0, 100% 0, 100% 100%, 0 100%)',
-                  }}
-                />
-                
-                {/* Data pulse effect */}
-                <MotionBox
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '40px',
-                    height: '1px',
-                    background: `linear-gradient(90deg, 
-                      transparent 0%, 
-                      ${alpha(theme.palette.secondary.main, 0.8)} 50%, 
-                      transparent 100%
-                    )`,
-                  }}
-                  animate={{
-                    x: ['-100%', '100%'],
-                    opacity: [0.5, 0.8, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                />
-              </MotionBox>
-              
-              {/* Right angled line */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  right: '15px',
-                  width: '60px',
-                  height: '1px',
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.7),
-                }}
-              />
-              
-              {/* Right terminal cap */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '15px',
-                  height: '5px',
-                  clipPath: 'polygon(20% 100%, 100% 100%, 100% 0, 0 0)',
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.9),
-                  borderLeft: `1px solid ${alpha(theme.palette.common.white, 0.4)}`,
-                }}
-              />
-              
-              {/* Accent notches */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: '30%',
-                  width: '5px',
-                  height: '3px',
-                  clipPath: 'polygon(0 0, 100% 0, 80% 100%, 20% 100%)',
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.9),
-                }}
-              />
-              
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  right: '40%',
-                  width: '5px',
-                  height: '3px',
-                  clipPath: 'polygon(20% 0, 100% 0, 80% 100%, 0 100%)',
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.9),
-                }}
-              />
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell width="40%">Epic Name</TableCell>
+                    <TableCell width="20%">Variables</TableCell>
+                    <TableCell width="15%">Stories</TableCell>
+                    <TableCell width="25%">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {templates.map((template) => (
+                    <MotionTableRow 
+                      key={template.id}
+                      variants={listItemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Typography variant="body1" fontWeight="bold">
+                          {template.epicDetails.name || template.name || '(Unnamed Epic)'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {template.variables.length > 0 ? (
+                            template.variables.map((variable, index) => (
+                              index < 3 ? (
+                                <Chip 
+                                  key={variable}
+                                  label={variable}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ 
+                                    height: '20px',
+                                    fontSize: '0.7rem',
+                                  }}
+                                />
+                              ) : index === 3 ? (
+                                <Chip 
+                                  key="more"
+                                  label={`+${template.variables.length - 3} more`}
+                                  size="small"
+                                  sx={{ 
+                                    height: '20px',
+                                    fontSize: '0.7rem',
+                                  }}
+                                />
+                              ) : null
+                            ))
+                          ) : (
+                            <Typography variant="caption" color="text.secondary">
+                              None
+                            </Typography>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          icon={<CodeIcon fontSize="small" />}
+                          label={template.storyTemplates.length}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <ButtonGroup>
+                          <MotionIconButton 
+                            size="small"
+                            onClick={() => navigate(`/apply/${template.id}`)}
+                            variants={buttonVariants}
+                            whileHover="hover"
+                            title="Apply Template"
+                            sx={{ color: theme.palette.success.main }}
+                          >
+                            <PlayArrowIcon fontSize="small" />
+                          </MotionIconButton>
+                          <MotionIconButton 
+                            size="small"
+                            onClick={() => navigate(`/editor/${template.id}`)}
+                            variants={buttonVariants}
+                            whileHover="hover"
+                            title="Edit Template"
+                            sx={{ color: theme.palette.primary.main }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </MotionIconButton>
+                          <MotionIconButton 
+                            size="small"
+                            onClick={() => handleDuplicateTemplate(template.id)}
+                            variants={buttonVariants}
+                            whileHover="hover"
+                            title="Duplicate Template"
+                            sx={{ color: theme.palette.info.main }}
+                          >
+                            <ContentCopyIcon fontSize="small" />
+                          </MotionIconButton>
+                          <MotionIconButton 
+                            size="small"
+                            onClick={() => handleDeleteClick(template.id)}
+                            variants={buttonVariants}
+                            whileHover="hover"
+                            title="Delete Template"
+                            sx={{ color: theme.palette.error.main }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </MotionIconButton>
+                        </ButtonGroup>
+                      </TableCell>
+                    </MotionTableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </MotionPaper>
+        )}
+      </AnimatePresence>
+      
+      {/* Confirmation dialog for deleting templates */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{
+          style: { borderRadius: 8, overflow: 'hidden' }
+        }}
+      >
+        <DialogTitle>Delete Template</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this template? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
 
-              {/* Mini data nodes - with subtle pulse */}
-              {[20, 45, 70, 83].map((pos, index) => (
-                <MotionBox
-                  key={`node-${index}`}
-                  sx={{
-                    position: 'absolute',
-                    top: '2px',
-                    right: `${pos}%`,
-                    width: '1px',
-                    height: '1px',
-                    backgroundColor: theme.palette.secondary.main,
-                  }}
-                  animate={{
+export default TemplateList;

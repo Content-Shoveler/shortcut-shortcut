@@ -35,8 +35,14 @@ import {
   CyberIcon 
 } from '../components/cyberpunk';
 
-import { Template, VariableMapping } from '../types';
+import { Template } from '../services/dexieService';
+import * as templatesService from '../services/templatesService';
 import { useShortcutApi } from '../hooks/useShortcutApi';
+
+// Define type for variable mapping
+interface VariableMapping {
+  [key: string]: string;
+}
 
 // Animation variants for the preview cards
 const previewCardVariants = {
@@ -464,7 +470,7 @@ const TemplateApply: React.FC = () => {
       if (!id) return;
       
       try {
-        const templates = await window.electronAPI.getTemplates();
+        const templates = await templatesService.getAllTemplates();
         const foundTemplate = templates.find((t: Template) => t.id === id);
         
         if (foundTemplate) {

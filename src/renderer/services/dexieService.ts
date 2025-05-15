@@ -9,16 +9,25 @@ export interface Template {
     name: string;
     description: string;
     state: string;
+    [key: string]: any; // Allow for additional epic fields
   };
   storyTemplates: Array<{
     name: string;
     description: string;
     type: string;
     state: string;
+    workflow_id?: string;
+    workflow_state_id?: string;
     estimate?: number;
     labels?: string[];
     owner_ids?: string[];
     iteration_id?: number;
+    tasks?: Array<{
+      description: string;
+      complete: boolean;
+      [key: string]: any;
+    }>;
+    [key: string]: any; // Allow for additional story fields
   }>;
   variables: string[];
 }
