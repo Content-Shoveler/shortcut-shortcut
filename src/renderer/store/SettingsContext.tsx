@@ -1,20 +1,6 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { ElectronAPI, ShortcutApiResponse } from '../types/electron';
-
-// Define the settings structure
-interface AppSettings {
-  apiToken: string;
-  startupPage: 'home' | 'last-viewed';
-  confirmDialogs: {
-    deleteTemplate: boolean;
-    applyTemplate: boolean;
-  };
-  appearance: {
-    density: 'comfortable' | 'compact';
-    fontSize: 'small' | 'medium' | 'large';
-    viewMode: 'card' | 'list';
-  };
-}
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
+import { createShortcutApiService } from '../services/api/ShortcutApiService';
+import { settingsStorage, AppSettings, defaultSettings } from '../services/storage/SettingsStorage';
 
 // Define the context type
 interface SettingsContextType {
@@ -22,22 +8,8 @@ interface SettingsContextType {
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   updateApiToken: (token: string) => void;
   validateApiToken: (token: string) => Promise<boolean>;
+  isLoading: boolean;
 }
-
-// Default settings
-const defaultSettings: AppSettings = {
-  apiToken: '',
-  startupPage: 'home',
-  confirmDialogs: {
-    deleteTemplate: true,
-    applyTemplate: true,
-  },
-  appearance: {
-    density: 'comfortable',
-    fontSize: 'medium',
-    viewMode: 'card', // Setting card view as default
-  },
-};
 
 // Create context with default values
 const SettingsContext = createContext<SettingsContextType>({
@@ -45,6 +17,7 @@ const SettingsContext = createContext<SettingsContextType>({
   updateSettings: () => {},
   updateApiToken: () => {},
   validateApiToken: async () => false,
+  isLoading: true,
 });
 
 // Custom hook for using the settings context
@@ -56,59 +29,81 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
-  // Initialize settings from localStorage or use defaults
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const savedSettings = localStorage.getItem('appSettings');
-    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-  });
-
+  // State for settings and loading status
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Initialize settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const loadedSettings = await settingsStorage.getSettings();
+        setSettings(loadedSettings);
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadSettings();
+  }, []);
+  
   // Update settings
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings((prevSettings) => {
+  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
+    // Update local state immediately for responsive UI
+    setSettings(prevSettings => {
+      // Create a shallow copy of the settings and merge with the new settings
       const updatedSettings = {
         ...prevSettings,
         ...newSettings,
+        // Handle nested objects specially
+        ...(newSettings.confirmDialogs && {
+          confirmDialogs: {
+            ...prevSettings.confirmDialogs,
+            ...newSettings.confirmDialogs,
+          }
+        }),
+        ...(newSettings.appearance && {
+          appearance: {
+            ...prevSettings.appearance,
+            ...newSettings.appearance,
+          }
+        }),
       };
+      
+      // Update persistent storage asynchronously
+      settingsStorage.updateSettings(updatedSettings)
+        .catch(error => console.error('Failed to update settings in storage:', error));
+      
       return updatedSettings;
     });
-  };
-
+  }, []);
+  
   // Update API token
-  const updateApiToken = (token: string) => {
-    setSettings((prevSettings) => {
-      const newSettings = {
-        ...prevSettings,
-        apiToken: token,
-      };
-      return newSettings;
-    });
-  };
-
-  // Validate API token using the main process IPC method
-  const validateApiToken = async (token: string): Promise<boolean> => {
+  const updateApiToken = useCallback((token: string) => {
+    // Update local state immediately
+    setSettings(prevSettings => ({
+      ...prevSettings,
+      apiToken: token,
+    }));
+    
+    // Update persistent storage asynchronously
+    settingsStorage.updateApiToken(token)
+      .catch(error => console.error('Failed to update API token in storage:', error));
+  }, []);
+  
+  // Validate API token using the appropriate API service
+  const validateApiToken = useCallback(async (token: string): Promise<boolean> => {
     try {
-      // Using the IPC method which handles API calls in the main process (bypassing CORS)
-      // Use type assertion to tell TypeScript about the shortcutApi property
-      type APIWithShortcut = typeof window.electronAPI & {
-        shortcutApi: {
-          validateToken: (token: string) => Promise<ShortcutApiResponse>;
-        }
-      };
-      
-      const api = window.electronAPI as APIWithShortcut;
-      const response = await api.shortcutApi.validateToken(token);
-      
-      return response.success;
+      const apiService = createShortcutApiService();
+      return await apiService.validateToken(token);
     } catch (error) {
+      console.error('Error validating API token:', error);
       return false;
     }
-  };
-
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-  }, [settings]);
-
+  }, []);
+  
   return (
     <SettingsContext.Provider
       value={{
@@ -116,6 +111,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         updateSettings,
         updateApiToken,
         validateApiToken,
+        isLoading,
       }}
     >
       {children}
