@@ -1,7 +1,6 @@
 import React, { ReactNode, createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { CacheProvider } from './CacheContext';
 
 // Define theme mode type
 type ThemeMode = 'system' | 'light' | 'dark';
@@ -144,153 +143,18 @@ interface AppProvidersProps {
   children: ReactNode;
 }
 
+import { SettingsProvider } from './SettingsContext';
+import { ThemeProvider } from './ThemeContext';
+import { CacheProvider } from './CacheContext';
+
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
-  // === SETTINGS PROVIDER LOGIC ===
-  
-  // Initialize settings from localStorage or use defaults
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const savedSettings = localStorage.getItem('appSettings');
-    
-    try {
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        
-        // Ensure we have all required fields by merging with defaults
-        return { ...defaultSettings, ...parsedSettings };
-      }
-    } catch (error) {
-      // Error parsing settings
-    }
-    
-    return defaultSettings;
-  });
-
-  // Update settings
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings((prevSettings) => {
-      const updatedSettings = {
-        ...prevSettings,
-        ...newSettings,
-      };
-      return updatedSettings;
-    });
-  };
-
-  // Update API token
-  const updateApiToken = (token: string) => {
-    // First update the context state
-    setSettings((prevSettings) => {
-      const newSettings = {
-        ...prevSettings,
-        apiToken: token,
-      };
-      return newSettings;
-    });
-    
-    // Also directly update localStorage to ensure synchronization
-    try {
-      const savedSettings = localStorage.getItem('appSettings');
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        parsedSettings.apiToken = token;
-        localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
-      }
-    } catch (error) {
-      // Error updating localStorage
-    }
-  };
-
-  // Validate API token
-  const validateApiToken = async (token: string): Promise<boolean> => {
-    try {
-      return await validateToken(token);
-    } catch (error) {
-      return false;
-    }
-  };
-
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-  }, [settings]);
-
-  // === THEME PROVIDER LOGIC ===
-  
-  // Check for system preference
-  const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const defaultAppearance = prefersDarkMode ? 'dark' : 'light';
-  
-  // Try to get saved theme mode from localStorage, default to 'system'
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    const savedMode = localStorage.getItem('themeMode');
-    return (savedMode as ThemeMode) || 'system';
-  });
-  
-  // Track the actual theme appearance (light/dark)
-  const [themeAppearance, setThemeAppearance] = useState<'light' | 'dark'>(
-    mode === 'system' ? defaultAppearance : mode as 'light' | 'dark'
-  );
-
-  // Handler for setting theme
-  const setTheme = (newMode: ThemeMode) => {
-    setMode(newMode);
-  };
-
-  // Listen for system theme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (mode === 'system') {
-        setThemeAppearance(e.matches ? 'dark' : 'light');
-      }
-    };
-    
-    // Modern browsers
-    mediaQuery.addEventListener('change', handleChange);
-    
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, [mode]);
-  
-  // Update themeAppearance when mode changes
-  useEffect(() => {
-    if (mode === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeAppearance(prefersDark ? 'dark' : 'light');
-    } else {
-      setThemeAppearance(mode as 'light' | 'dark');
-    }
-    
-    // Save mode to localStorage
-    localStorage.setItem('themeMode', mode);
-  }, [mode]);
-
-  // Get current density and font size from settings
-  const { density, fontSize } = settings.appearance;
-
-  // Create the theme based on appearance and settings
-  const theme = createAppTheme(themeAppearance, density, fontSize);
-
-  // Combine both providers
   return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        updateSettings,
-        updateApiToken,
-        validateApiToken,
-      }}
-    >
-      <ThemeContext.Provider value={{ mode, themeAppearance, setTheme }}>
-        <MuiThemeProvider theme={theme}>
-          <CssBaseline />
-          <CacheProvider>
-            {children}
-          </CacheProvider>
-        </MuiThemeProvider>
-      </ThemeContext.Provider>
-    </SettingsContext.Provider>
+    <SettingsProvider>
+      <ThemeProvider>
+        <CacheProvider>
+          {children}
+        </CacheProvider>
+      </ThemeProvider>
+    </SettingsProvider>
   );
 };

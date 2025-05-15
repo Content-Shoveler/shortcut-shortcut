@@ -42,16 +42,29 @@ const CyberToggleButton: React.FC<CyberToggleButtonProps> = ({
     ? `0 0 8px ${alpha(buttonAccentColor, 0.7)}`
     : 'none';
 
+  // Enhanced click handler with debugging
+  const handleClick = (event: React.MouseEvent) => {
+    console.log(`CyberToggleButton clicked: variant=${variant}, currentState=${currentState}`);
+    
+    // Stop propagation to prevent any parent elements from catching the event
+    event.stopPropagation();
+    
+    // Call the provided onClick handler
+    onClick();
+  };
+  
   return (
     <Tooltip title={tooltip}>
       <Box sx={{ position: 'relative' }}>
         <MotionBox
-          onClick={onClick}
+          onClick={handleClick}
           whileHover="hover"
           whileTap="click"
           initial="initial"
           animate={currentState}
           variants={buttonGlowVariants}
+          role="button"
+          tabIndex={0}
           sx={{
             position: 'relative',
             overflow: 'hidden',

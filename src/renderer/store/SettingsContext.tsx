@@ -9,6 +9,11 @@ interface SettingsContextType {
   updateApiToken: (token: string) => void;
   validateApiToken: (token: string) => Promise<boolean>;
   isLoading: boolean;
+  operationState: {
+    operation: string | null;
+    isProcessing: boolean;
+    error: Error | null;
+  };
 }
 
 // Create context with default values
@@ -18,6 +23,11 @@ const SettingsContext = createContext<SettingsContextType>({
   updateApiToken: () => {},
   validateApiToken: async () => false,
   isLoading: true,
+  operationState: {
+    operation: null,
+    isProcessing: false,
+    error: null
+  }
 });
 
 // Custom hook for using the settings context
@@ -33,6 +43,17 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Add operation state tracking
+  const [operationState, setOperationState] = useState<{
+    operation: string | null;
+    isProcessing: boolean;
+    error: Error | null;
+  }>({
+    operation: null,
+    isProcessing: false,
+    error: null
+  });
+
   // Initialize settings on component mount
   useEffect(() => {
     const loadSettings = async () => {
@@ -51,6 +72,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   
   // Update settings
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
+    // Track the operation
+    setOperationState({
+      operation: 'updateSettings',
+      isProcessing: true,
+      error: null
+    });
+
     // Update local state immediately for responsive UI
     setSettings(prevSettings => {
       // Create a shallow copy of the settings and merge with the new settings
@@ -72,9 +100,25 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         }),
       };
       
-      // Update persistent storage asynchronously
+      // Update persistent storage with proper feedback
       settingsStorage.updateSettings(updatedSettings)
-        .catch(error => console.error('Failed to update settings in storage:', error));
+        .then(() => {
+          setOperationState({
+            operation: 'updateSettings',
+            isProcessing: false, 
+            error: null
+          });
+          console.log('Settings updated successfully in storage');
+        })
+        .catch(error => {
+          console.error('Failed to update settings in storage:', error);
+          setOperationState({
+            operation: 'updateSettings',
+            isProcessing: false,
+            error
+          });
+          // Could add toast notification here
+        });
       
       return updatedSettings;
     });
@@ -112,6 +156,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         updateApiToken,
         validateApiToken,
         isLoading,
+        operationState // Add this to the context value
       }}
     >
       {children}

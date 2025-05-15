@@ -17,7 +17,8 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import ComputerIcon from '@mui/icons-material/Computer';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import { useTheme, useSettings } from '../store/AppProviders';
+import { useTheme } from '../store/ThemeContext';
+import { useSettings } from '../store/SettingsContext';
 import { motion } from 'framer-motion';
 import { 
   dataFlowVariants, 

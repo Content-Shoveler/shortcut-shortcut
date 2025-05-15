@@ -456,11 +456,26 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const defaultAppearance = prefersDarkMode ? 'dark' : 'light';
   
-  // Try to get saved theme mode from localStorage, default to 'dark'
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    const savedMode = localStorage.getItem('themeMode');
-    return (savedMode as ThemeMode) || 'dark';
-  });
+  // Try to get saved theme mode from localStorage or settingsContext, default to 'dark'
+  const [mode, setMode] = useState<ThemeMode>('dark');
+  
+  // Load theme from settings on mount
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        // First try to get from localStorage as immediate fallback
+        const savedMode = localStorage.getItem('themeMode');
+        if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
+          console.log('Loaded theme from localStorage:', savedMode);
+          setMode(savedMode as ThemeMode);
+        }
+      } catch (error) {
+        console.error('Error loading theme from localStorage:', error);
+      }
+    };
+    
+    loadTheme();
+  }, []);
   
   // Track the actual theme appearance (light/dark)
   const [themeAppearance, setThemeAppearance] = useState<'light' | 'dark'>(
@@ -469,7 +484,30 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Handler for setting theme
   const setTheme = (newMode: ThemeMode) => {
-    setMode(newMode);
+    console.log('ThemeContext: Setting theme to:', newMode, '(previous was:', mode, ')');
+    
+    // Update component state directly
+    setMode(prevMode => {
+      console.log('ThemeContext: Updating state from', prevMode, 'to', newMode);
+      return newMode;
+    });
+    
+    // Save to localStorage for immediate feedback and as fallback
+    try {
+      localStorage.setItem('themeMode', newMode);
+      console.log('ThemeContext: Theme saved to localStorage');
+      
+      // Double-check the localStorage was updated correctly
+      const savedMode = localStorage.getItem('themeMode');
+      console.log('ThemeContext: Verified localStorage value:', savedMode);
+    } catch (storageError) {
+      console.error('ThemeContext: Failed to save theme to localStorage:', storageError);
+    }
+    
+    // Force a UI update if needed
+    setTimeout(() => {
+      console.log('ThemeContext: Current theme mode after update:', mode);
+    }, 0);
   };
 
   // Listen for system theme changes
@@ -492,16 +530,28 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   // Update themeAppearance when mode changes
   useEffect(() => {
+    console.log('Theme mode changed to:', mode);
+    
     if (mode === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      console.log('System preference is:', prefersDark ? 'dark' : 'light');
       setThemeAppearance(prefersDark ? 'dark' : 'light');
     } else {
       setThemeAppearance(mode as 'light' | 'dark');
     }
     
-    // Save mode to localStorage
-    localStorage.setItem('themeMode', mode);
-  }, [mode]);
+    // Save mode to localStorage for immediate feedback
+    try {
+      localStorage.setItem('themeMode', mode);
+      console.log('Theme saved to localStorage in effect');
+    } catch (storageError) {
+      console.error('Failed to save theme to localStorage in effect:', storageError);
+    }
+    
+    // We only save theme to localStorage since the settings model
+    // doesn't include theme in the appearance object
+    console.log('Theme storage is handled via localStorage only');
+  }, [mode, settingsContext]);
 
   // Get density and font size from settings
   const { density, fontSize } = settingsContext.settings.appearance;

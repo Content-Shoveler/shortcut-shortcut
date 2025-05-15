@@ -1,4 +1,5 @@
-import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useCallback, useEffect } from 'react';
+import { cacheStorage } from '../services/storage/CacheStorage';
 
 // Define the shape of a cache entry
 interface CacheEntry {
@@ -60,25 +61,63 @@ interface CacheProviderProps {
 }
 
 export const CacheProvider: React.FC<CacheProviderProps> = ({ children }) => {
-  // Initialize an empty Map to store cache entries
-  const [cache] = useState<Map<string, CacheEntry>>(new Map());
+  // Add initialization and loading state
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [memoryCache] = useState<Map<string, CacheEntry>>(new Map());
+  
+  // Load cache from storage on mount
+  useEffect(() => {
+    const initializeCache = async () => {
+      try {
+        // Load cached items from persistent storage
+        // Get all cache keys and retrieve each cache entry individually
+        const cacheKeys = cacheStorage.getCacheKeys();
+        const storedCache = new Map<string, CacheEntry>();
+        
+        // Get each cache entry individually
+        for (const key of cacheKeys) {
+          const entry = await cacheStorage.getCache(key);
+          if (entry) {
+            storedCache.set(key, {
+              data: entry,
+              timestamp: Date.now(),
+              expiresAt: Date.now() + getTtlForKey(key)
+            });
+          }
+        }
+        
+        // Populate memory cache with stored items
+        storedCache.forEach((entry, key) => {
+          memoryCache.set(key, entry);
+        });
+        
+        console.log('Cache initialized with', memoryCache.size, 'entries');
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Error initializing cache:', error);
+        setIsInitialized(true); // Continue anyway
+      }
+    };
+    
+    initializeCache();
+  }, [memoryCache]);
   
   // Get data from cache if it exists and hasn't expired
   const getCache = useCallback((key: string): any | null => {
     if (!key) return null;
 
-    const entry = cache.get(key);
+    const entry = memoryCache.get(key);
     if (!entry) return null;
 
     // Check if the cache entry has expired
     if (Date.now() > entry.expiresAt) {
       // Remove expired entry
-      cache.delete(key);
+      memoryCache.delete(key);
       return null;
     }
 
     return entry.data;
-  }, [cache]);
+  }, [memoryCache]);
 
   // Store data in the cache with a TTL
   const setCache = useCallback((key: string, data: any, customTtl?: number): void => {
@@ -93,30 +132,40 @@ export const CacheProvider: React.FC<CacheProviderProps> = ({ children }) => {
       expiresAt: Date.now() + ttl
     };
 
-    cache.set(key, entry);
-  }, [cache]);
+    // Update memory cache
+    memoryCache.set(key, entry);
+    
+    // Update persistent cache asynchronously
+    cacheStorage.setCache(key, entry, ttl)
+      .catch((error: Error) => console.error('Failed to persist cache entry:', error));
+  }, [memoryCache]);
 
   // Invalidate cache entries that match a key pattern
   const invalidateCache = useCallback((keyPattern?: string): void => {
     if (!keyPattern) return; // If no pattern provided, do nothing
     
     // Delete all keys that include the pattern
-    for (const key of cache.keys()) {
+    for (const key of memoryCache.keys()) {
       if (key.includes(keyPattern)) {
-        cache.delete(key);
+        memoryCache.delete(key);
       }
     }
-  }, [cache]);
+  }, [memoryCache]);
 
   // Clear the entire cache
   const clearCache = useCallback((): void => {
-    cache.clear();
-  }, [cache]);
+    memoryCache.clear();
+  }, [memoryCache]);
 
   // Get all current cache keys (useful for debugging)
   const getCacheKeys = useCallback((): string[] => {
-    return Array.from(cache.keys());
-  }, [cache]);
+    return Array.from(memoryCache.keys());
+  }, [memoryCache]);
+
+  // Don't render children until initialization completes
+  if (!isInitialized) {
+    return <div>Initializing cache...</div>; // Or a better loading indicator
+  }
 
   return (
     <CacheContext.Provider 
