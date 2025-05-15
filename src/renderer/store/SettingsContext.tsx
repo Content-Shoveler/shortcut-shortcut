@@ -119,7 +119,6 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         // If we fail to load from IndexedDB, check if API token exists in shortcutApiClient storage
         const currentToken = shortcutApi.getApiToken();
         if (currentToken) {
-          console.log('Recovered API token from persistence layer');
           setSettings(prev => ({
             ...prev,
             apiToken: currentToken
@@ -155,8 +154,6 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       };
       return newSettings;
     });
-    
-    console.log('API token updated in settings context');
   };
 
   // Validate API token using direct API client

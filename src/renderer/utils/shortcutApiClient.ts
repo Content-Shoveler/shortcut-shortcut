@@ -172,7 +172,6 @@ class ShortcutApiClient {
     // Create a client with the token if available, otherwise use a placeholder
     if (this.apiToken) {
       this.axiosInstance = createShortcutClient(this.apiToken);
-      console.log('Initialized Shortcut API client with token from storage');
     } else {
       this.axiosInstance = axios.create({
         baseURL: SHORTCUT_API_URL,
@@ -180,17 +179,14 @@ class ShortcutApiClient {
           'Content-Type': 'application/json',
         },
       });
-      console.log('Initialized Shortcut API client with empty token');
     }
   }
 
   // Set API token and persist it
   setApiToken(token: string): void {
     if (!token) {
-      console.warn('Attempting to set empty API token - this is likely a mistake');
       // Only proceed with empty token if explicitly intending to clear it
       if (this.apiToken && !window.confirm('Are you sure you want to clear the API token?')) {
-        console.log('Empty token setting cancelled - keeping existing token');
         return;
       }
     }
@@ -204,8 +200,6 @@ class ShortcutApiClient {
       
       // Create a new client with the token and interceptors
       this.axiosInstance = createShortcutClient(token);
-      
-      console.log('API token updated and saved to storage:', token ? '[REDACTED TOKEN]' : 'EMPTY');
     }
   }
 

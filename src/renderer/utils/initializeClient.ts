@@ -17,20 +17,16 @@ export function initializeApiClient(): void {
     // Check if we already have a token in memory
     const currentToken = getApiToken();
     if (currentToken) {
-      console.log('[initializeClient] API client already has token');
       return;
     }
     
     // Try to get token from localStorage
     const storedToken = localStorage.getItem(API_TOKEN_STORAGE_KEY);
     if (storedToken) {
-      console.log('[initializeClient] Initializing API client with token from localStorage');
       shortcutApiClient.setApiToken(storedToken);
-    } else {
-      console.log('[initializeClient] No API token found in localStorage');
     }
   } catch (error) {
-    console.error('[initializeClient] Error initializing API client:', error);
+    console.error('Error initializing API client:', error);
   }
 }
 
