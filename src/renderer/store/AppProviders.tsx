@@ -3,6 +3,7 @@ import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/st
 import CssBaseline from '@mui/material/CssBaseline';
 import { CacheProvider } from './CacheContext';
 import { SettingsProvider, useSettings } from './SettingsContext';
+export { useSettings };
 import { AppSettings } from '../services/dexieService';
 
 // Define theme mode type

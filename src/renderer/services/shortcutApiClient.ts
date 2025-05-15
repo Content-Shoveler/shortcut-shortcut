@@ -180,7 +180,8 @@ class ShortcutApiClient {
   }
 
   // Fetch iterations
-  async fetchIterations(): Promise<ShortcutApiResponse> {
+  // Optional params parameter added for web app compatibility
+  async fetchIterations(params: any = {}): Promise<ShortcutApiResponse> {
     return this.request('get', '/iterations');
   }
 
@@ -266,8 +267,8 @@ export const fetchMembers = (): Promise<ShortcutApiResponse> => {
   return shortcutApiClient.fetchMembers();
 };
 
-export const fetchIterations = (): Promise<ShortcutApiResponse> => {
-  return shortcutApiClient.fetchIterations();
+export const fetchIterations = (params: any = {}): Promise<ShortcutApiResponse> => {
+  return shortcutApiClient.fetchIterations(params);
 };
 
 export const fetchLabels = (): Promise<ShortcutApiResponse> => {

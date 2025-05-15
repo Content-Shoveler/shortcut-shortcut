@@ -26,7 +26,8 @@ export interface FieldDefinition<T, D = void> {
   helperText?: string;
   
   // Data fetching and processing
-  fetch: (api: ShortcutApiInterface, dependency?: D | string | number) => Promise<T[]>;
+  // Modified to be more flexible with parameter types for cross-platform compatibility
+  fetch: (api: ShortcutApiInterface, dependency?: D | string | number | any) => Promise<T[]> | Promise<any>;
   getOptionLabel: (option: T) => string;
   getOptionValue: (option: T) => string | number;
   

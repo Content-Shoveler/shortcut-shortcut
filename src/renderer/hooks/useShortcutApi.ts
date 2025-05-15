@@ -565,8 +565,9 @@ export function useShortcutApi() {
 
   /**
    * Fetch all iterations from Shortcut
+   * @param params Optional parameters for web app compatibility
    */
-  const fetchIterations = useCallback(async () => {
+  const fetchIterations = useCallback(async (params: any = {}) => {
     if (!apiToken) {
       throw new Error('API token is not set');
     }
@@ -582,7 +583,8 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchIterations();
+    // Pass empty params object for web app compatibility
+    const response = await shortcutApi.fetchIterations(params);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch iterations');
     }
