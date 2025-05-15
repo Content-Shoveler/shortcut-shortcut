@@ -5,4 +5,5 @@
  */
 
 // Shortcut API base URL
-export const SHORTCUT_API_URL = 'https://api.app.shortcut.com/api/v3';
+const PROXY_URL = 'https://cors-anywhere-slga.onrender.com/';
+export const SHORTCUT_API_URL = PROXY_URL + 'https://api.app.shortcut.com/api/v3';
