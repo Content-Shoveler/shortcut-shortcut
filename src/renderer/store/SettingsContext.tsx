@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { ShortcutApiResponse } from '../utils/shortcutApiClient';
 import * as shortcutApi from '../utils/shortcutApiClient';
+import { API_TOKEN_STORAGE_KEY } from '../utils/shortcutApiClient';
 import { AppSettings as DexieAppSettings, getSetting, saveSetting } from '../services/dexieService';
 
 // Define the settings structure
@@ -25,9 +26,20 @@ interface SettingsContextType {
   validateApiToken: (token: string) => Promise<boolean>;
 }
 
-// Default settings
+// Get token from localStorage if available
+const getInitialToken = (): string => {
+  try {
+    // Try to get from localStorage first for immediate access
+    return localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
+  } catch (error) {
+    console.error('Failed to get token from localStorage', error);
+    return '';
+  }
+};
+
+// Default settings with token from localStorage if available
 const defaultSettings: AppSettings = {
-  apiToken: '',
+  apiToken: getInitialToken(),
   theme: 'system',
   cyberpunkMode: true,
   startupPage: 'home',
@@ -66,7 +78,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   useEffect(() => {
     const loadSettingsFromDexie = async () => {
       try {
-        // Try to get from localStorage for migration
+        // Try to get from localStorage for migration of old settings format
         const savedSettings = localStorage.getItem('appSettings');
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings);
@@ -79,19 +91,40 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
             ...defaultSettings,
             ...parsedSettings
           });
+          
+          // Ensure API token is set in the API client
+          if (parsedSettings.apiToken) {
+            shortcutApi.setApiToken(parsedSettings.apiToken);
+          }
+          
           return;
         }
         
-        // If no localStorage, try Dexie
+        // If no localStorage old format, try Dexie
         const dexieSettings = await getSetting<AppSettings>();
         if (dexieSettings) {
           setSettings({
             ...defaultSettings, // Ensure all properties exist
             ...dexieSettings
           });
+          
+          // Ensure API token is set in the API client
+          if (dexieSettings.apiToken) {
+            shortcutApi.setApiToken(dexieSettings.apiToken);
+          }
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
+        
+        // If we fail to load from IndexedDB, check if API token exists in shortcutApiClient storage
+        const currentToken = shortcutApi.getApiToken();
+        if (currentToken) {
+          console.log('Recovered API token from persistence layer');
+          setSettings(prev => ({
+            ...prev,
+            apiToken: currentToken
+          }));
+        }
       }
     };
     
@@ -109,8 +142,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     });
   };
 
-  // Update API token
+  // Update API token and ensure it's propagated to the API client
   const updateApiToken = (token: string) => {
+    // Update the token in the API client first
+    shortcutApi.setApiToken(token);
+    
+    // Then update in our settings state
     setSettings((prevSettings) => {
       const newSettings = {
         ...prevSettings,
@@ -118,6 +155,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       };
       return newSettings;
     });
+    
+    console.log('API token updated in settings context');
   };
 
   // Validate API token using direct API client

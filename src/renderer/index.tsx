@@ -5,6 +5,9 @@ import { AppProviders } from './store/AppProviders';
 import App from './App';
 import './assets/cyberpunkStyles.css';
 
+// Initialize the API client first to ensure token is loaded
+import './utils/initializeClient';
+
 // Initialize the database connection
 import './services/dexieService';
 

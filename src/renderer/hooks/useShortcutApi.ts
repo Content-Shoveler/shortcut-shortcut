@@ -11,6 +11,7 @@ import {
 } from '../types/shortcutApi';
 import { ShortcutApiResponse } from '../utils/shortcutApiClient';
 import * as shortcutApi from '../utils/shortcutApiClient';
+import { API_TOKEN_STORAGE_KEY } from '../utils/shortcutApiClient';
 
 /**
  * Custom hook that provides access to Shortcut API functions
@@ -30,7 +31,7 @@ const createCacheKey = (endpoint: string, apiToken: string, params?: any): strin
 };
 
 export function useShortcutApi() {
-  const { settings } = useSettings();
+  const { settings, updateApiToken } = useSettings();
   const { getCache, setCache, invalidateCache } = useCache();
   
   // Get the API token from settings context
@@ -60,12 +61,38 @@ export function useShortcutApi() {
     };
   }, []);
 
+  // Debug logging for token tracking
+  useEffect(() => {
+    console.log('Current API token in useShortcutApi:', apiToken ? 'exists' : 'empty');
+    console.log('Client API token:', shortcutApi.getApiToken() ? 'exists' : 'empty');
+    console.log('localStorage token:', localStorage.getItem(API_TOKEN_STORAGE_KEY) ? 'exists' : 'empty');
+  }, [apiToken]);
+
   // When the API token changes, update it in the API client
   useEffect(() => {
+    // Get existing tokens from all sources
+    const currentClientToken = shortcutApi.getApiToken();
+    const currentStorageToken = localStorage.getItem(API_TOKEN_STORAGE_KEY);
+    
+    // Priority: settings token > localStorage token > no token
     if (apiToken) {
-      shortcutApi.setApiToken(apiToken);
+      // Settings token exists, make sure client has it
+      if (currentClientToken !== apiToken) {
+        console.log('Updating API token in shortcutApiClient from settings', apiToken ? '[exists]' : '[empty]');
+        shortcutApi.setApiToken(apiToken);
+      }
+    } else if (currentStorageToken) {
+      // No settings token but localStorage has one - use that
+      console.log('Using persisted API token from localStorage');
+      updateApiToken(currentStorageToken);
+    } else if (currentClientToken) {
+      // No settings or localStorage token but client has one - sync it back
+      console.log('Syncing API token from client to settings');
+      updateApiToken(currentClientToken);
+    } else {
+      console.log('No API token available in any storage location');
     }
-  }, [apiToken]);
+  }, [apiToken, updateApiToken]);
   
   // On first mount, validate the token if it exists - but only once
   useEffect(() => {

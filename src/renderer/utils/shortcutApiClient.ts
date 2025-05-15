@@ -6,10 +6,32 @@
  * - Comprehensive error handling
  * - Pagination support for list endpoints
  * - Standardized response format
+ * - Token persistence across page refreshes
  */
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ShortcutApiError } from '../types/shortcutApi';
 import { SHORTCUT_API_URL } from '../constants/api';
+
+// Local storage key for API token - must match key in initializeClient.ts and SettingsContext.tsx
+export const API_TOKEN_STORAGE_KEY = 'shortcut_api_token';
+
+// Helper functions for token persistence
+const saveTokenToStorage = (token: string): void => {
+  try {
+    localStorage.setItem(API_TOKEN_STORAGE_KEY, token);
+  } catch (error) {
+    console.warn('Failed to save API token to localStorage:', error);
+  }
+};
+
+const getTokenFromStorage = (): string => {
+  try {
+    return localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
+  } catch (error) {
+    console.warn('Failed to get API token from localStorage:', error);
+    return '';
+  }
+};
 
 // Response type for API calls
 export interface ShortcutApiResponse {
@@ -144,20 +166,47 @@ class ShortcutApiClient {
   private axiosInstance: AxiosInstance;
 
   constructor() {
-    // Initialize with a placeholder client that will be replaced when token is set
-    this.axiosInstance = axios.create({
-      baseURL: SHORTCUT_API_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Initialize with token from localStorage if available
+    this.apiToken = getTokenFromStorage();
+    
+    // Create a client with the token if available, otherwise use a placeholder
+    if (this.apiToken) {
+      this.axiosInstance = createShortcutClient(this.apiToken);
+      console.log('Initialized Shortcut API client with token from storage');
+    } else {
+      this.axiosInstance = axios.create({
+        baseURL: SHORTCUT_API_URL,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Initialized Shortcut API client with empty token');
+    }
   }
 
-  // Set API token
+  // Set API token and persist it
   setApiToken(token: string): void {
-    this.apiToken = token;
-    // Create a new client with the token and interceptors
-    this.axiosInstance = createShortcutClient(token);
+    if (!token) {
+      console.warn('Attempting to set empty API token - this is likely a mistake');
+      // Only proceed with empty token if explicitly intending to clear it
+      if (this.apiToken && !window.confirm('Are you sure you want to clear the API token?')) {
+        console.log('Empty token setting cancelled - keeping existing token');
+        return;
+      }
+    }
+    
+    // Only update if token has changed
+    if (this.apiToken !== token) {
+      this.apiToken = token;
+      
+      // Save to localStorage for persistence across page refreshes
+      saveTokenToStorage(token);
+      
+      // Create a new client with the token and interceptors
+      this.axiosInstance = createShortcutClient(token);
+      
+      console.log('API token updated and saved to storage:', token ? '[REDACTED TOKEN]' : 'EMPTY');
+    }
   }
 
   // Get API token
