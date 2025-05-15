@@ -2,27 +2,23 @@
  * Shortcut API Utilities
  *
  * This file contains utilities for interacting with the Shortcut API
- * using the Electron IPC bridge. All requests are handled in the main
- * process to avoid CORS issues.
+ * using the consolidated web-based API client.
  */
 import { 
   ShortcutProject, 
   ShortcutWorkflow, 
   ShortcutWorkflowState,
 } from '../types/shortcutApi';
-import { ShortcutApiResponse } from '../types/electron';
-
-// Helper type for the Electron API with shortcutApi
-type APIWithShortcut = typeof window.electronAPI & {
-  shortcutApi: {
-    validateToken: (token: string) => Promise<ShortcutApiResponse>;
-    fetchProjects: (token: string) => Promise<ShortcutApiResponse>;
-    fetchWorkflows: (token: string) => Promise<ShortcutApiResponse>;
-    fetchWorkflowStates: (token: string, workflowId: string) => Promise<ShortcutApiResponse>;
-    createEpic: (token: string, epicData: any) => Promise<ShortcutApiResponse>;
-    createStory: (token: string, storyData: any) => Promise<ShortcutApiResponse>;
-  }
-};
+import { 
+  ShortcutApiResponse, 
+  validateToken, 
+  setApiToken, 
+  fetchProjects as clientFetchProjects,
+  fetchWorkflows as clientFetchWorkflows,
+  fetchWorkflowStates as clientFetchWorkflowStates,
+  createEpic as clientCreateEpic,
+  createStory as clientCreateStory 
+} from '../utils/shortcutApiClient';
 
 /**
  * Fetches all projects from Shortcut
@@ -33,8 +29,11 @@ export async function fetchProjects(apiToken: string): Promise<ShortcutProject[]
   }
 
   try {
-    const api = window.electronAPI as APIWithShortcut;
-    const response = await api.shortcutApi.fetchProjects(apiToken);
+    // Set the API token before making the request
+    setApiToken(apiToken);
+    
+    // Use the consolidated client
+    const response = await clientFetchProjects();
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch projects');
@@ -55,8 +54,11 @@ export async function fetchWorkflows(apiToken: string): Promise<ShortcutWorkflow
   }
 
   try {
-    const api = window.electronAPI as APIWithShortcut;
-    const response = await api.shortcutApi.fetchWorkflows(apiToken);
+    // Set the API token before making the request
+    setApiToken(apiToken);
+    
+    // Use the consolidated client
+    const response = await clientFetchWorkflows();
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch workflows');
@@ -86,11 +88,11 @@ export async function fetchWorkflowStates(
 
   try {
     console.log(`Fetching workflow states for workflow ID: ${workflowId}`);
-    const api = window.electronAPI as APIWithShortcut;
-    const response = await api.shortcutApi.fetchWorkflowStates(
-      apiToken, 
-      workflowId.toString()
-    );
+    // Set the API token before making the request
+    setApiToken(apiToken);
+    
+    // Use the consolidated client
+    const response = await clientFetchWorkflowStates(workflowId.toString());
     
     if (!response.success) {
       console.error('Failed to fetch workflow states:', response.message, response);
@@ -149,7 +151,8 @@ export async function createEpicWithStories(
   }
   
   try {
-    const api = window.electronAPI as APIWithShortcut;
+    // Set the API token before making requests
+    setApiToken(apiToken);
     
     // 1. Create the epic with all fields from epicData
     // with proper format transformations for Shortcut API
@@ -191,7 +194,7 @@ export async function createEpicWithStories(
     delete epicPayload.workflowId;
 
     console.log('Sending epic payload:', JSON.stringify(epicPayload, null, 2));
-    const epicResponse = await api.shortcutApi.createEpic(apiToken, epicPayload);
+    const epicResponse = await clientCreateEpic(epicPayload);
     
     if (!epicResponse.success) {
       // Log detailed error information for debugging
@@ -259,7 +262,7 @@ export async function createEpicWithStories(
       
       console.log('Sending story payload:', JSON.stringify(storyPayload));
       
-      const storyResponse = await api.shortcutApi.createStory(apiToken, storyPayload);
+      const storyResponse = await clientCreateStory(storyPayload);
       
       if (!storyResponse.success) {
         // Log detailed error information for debugging
@@ -292,8 +295,7 @@ export async function validateApiToken(apiToken: string): Promise<boolean> {
   }
   
   try {
-    const api = window.electronAPI as APIWithShortcut;
-    const response = await api.shortcutApi.validateToken(apiToken);
+    const response = await validateToken(apiToken);
     return response.success;
   } catch (error) {
     return false;

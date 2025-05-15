@@ -1,3 +1,7 @@
+/**
+ * Core application types
+ */
+
 // Template interfaces
 export interface Template {
   id: string;
@@ -31,10 +35,10 @@ export interface StoryTemplate {
   owner_ids?: string[];
   iteration_id?: string;
   group_id?: string;
-  tasks?: TaskTemplate[]; // Added tasks array
+  tasks?: TaskTemplate[];
 }
 
-// New interface for task templates
+// Task template interface
 export interface TaskTemplate {
   description: string;
   complete: boolean;
@@ -49,20 +53,4 @@ export interface VariableMapping {
 // For Shortcut API integration
 export interface ShortcutCredentials {
   apiToken: string;
-}
-
-// Electron API interface
-export interface ElectronAPI {
-  getTemplates: () => Promise<Template[]>;
-  saveTemplate: (template: Template) => Promise<Template>;
-  deleteTemplate: (templateId: string) => Promise<string>;
-  exportTemplates: () => Promise<boolean>;
-  importTemplates: () => Promise<Template[] | null>;
-}
-
-// Declare global window interface
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI;
-  }
 }

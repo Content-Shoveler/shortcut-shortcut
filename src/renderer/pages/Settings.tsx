@@ -276,14 +276,6 @@ const Settings: React.FC = () => {
         // Update token in context
         updateApiToken(apiToken);
         
-        // Force API verification in the main process
-        try {
-          const api = window.electronAPI as any;
-          await api.shortcutApi.validateToken(apiToken);
-        } catch (e) {
-          // Error in token validation verification
-        }
-        
         // Set a flag in sessionStorage that we're returning from Settings with a valid token
         // This will help TemplateApply detect that it should refresh its token state
         sessionStorage.setItem('returnToTemplateApply', 'true');

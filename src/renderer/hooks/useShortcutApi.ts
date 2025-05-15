@@ -9,8 +9,8 @@ import {
   ShortcutWorkflow,
   ShortcutWorkflowState,
 } from '../types/shortcutApi';
-import { ShortcutApiResponse } from '../services/shortcutApiClient';
-import * as shortcutApi from '../services/shortcutApiClient';
+import { ShortcutApiResponse } from '../utils/shortcutApiClient';
+import * as shortcutApi from '../utils/shortcutApiClient';
 
 /**
  * Custom hook that provides access to Shortcut API functions

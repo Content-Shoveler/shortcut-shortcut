@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { ShortcutApiResponse } from '../services/shortcutApiClient';
-import * as shortcutApi from '../services/shortcutApiClient';
+import { ShortcutApiResponse } from '../utils/shortcutApiClient';
+import * as shortcutApi from '../utils/shortcutApiClient';
 import { AppSettings as DexieAppSettings, getSetting, saveSetting } from '../services/dexieService';
 
 // Define the settings structure
