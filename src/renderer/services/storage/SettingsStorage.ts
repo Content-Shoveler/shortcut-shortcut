@@ -11,6 +11,13 @@ import { StorageService, createStorageService } from './StorageService';
 export type ThemeMode = 'system' | 'light' | 'dark';
 
 // Define the settings structure
+export interface AppearanceSettings {
+  density: 'comfortable' | 'compact';
+  fontSize: 'small' | 'medium' | 'large';
+  viewMode: 'card' | 'list';
+  theme: ThemeMode; // Added theme setting
+}
+
 export interface AppSettings {
   apiToken: string;
   startupPage: 'home' | 'last-viewed';
@@ -18,12 +25,12 @@ export interface AppSettings {
     deleteTemplate: boolean;
     applyTemplate: boolean;
   };
-  appearance: {
-    density: 'comfortable' | 'compact';
-    fontSize: 'small' | 'medium' | 'large';
-    viewMode: 'card' | 'list';
-    theme: ThemeMode; // Added theme setting
-  };
+  appearance: AppearanceSettings;
+}
+
+// Type guard to check if object has theme property
+export function hasTheme(obj: any): obj is { theme: ThemeMode } {
+  return obj && typeof obj.theme !== 'undefined';
 }
 
 // Default settings

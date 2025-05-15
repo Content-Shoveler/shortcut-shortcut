@@ -457,8 +457,13 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Use both state and ref to track the theme mode
   // This ensures we can both trigger re-renders (with state) and
   // access the current value inside closures (with ref)
-  const [mode, setModeState] = useState<ThemeMode>('dark');
-  const modeRef = React.useRef<ThemeMode>('dark');
+  const [mode, setModeState] = useState<ThemeMode>(
+    // Try to get initial mode from settings if available
+    settingsContext?.settings?.appearance?.theme || 'dark'
+  );
+  const modeRef = React.useRef<ThemeMode>(
+    settingsContext?.settings?.appearance?.theme || 'dark'
+  );
   
   // Function to update both state and ref
   const setMode = (newMode: ThemeMode) => {

@@ -18,6 +18,7 @@ import {
 import { Visibility, VisibilityOff, ExpandMore, CheckCircle, Error, Refresh, DeleteSweep } from '@mui/icons-material';
 import { useTheme, useSettings } from '../store/AppProviders';
 import { useCache } from '../store/CacheContext';
+import { AppearanceSettings } from '../services/storage/SettingsStorage';
 import { 
   CyberCard, 
   CyberTextField, 
@@ -227,6 +228,11 @@ const Settings: React.FC = () => {
   const { mode, themeAppearance, setTheme } = theme;
   const { settings, updateSettings, updateApiToken, validateApiToken } = useSettings();
   
+  // For debugging the actual theme mode values
+  console.log('Settings component - Current theme mode:', mode);
+  console.log('Settings component - Settings appearance theme:', 
+    settings?.appearance ? (settings.appearance as AppearanceSettings).theme : 'waiting for settings to load');
+  
   const [tabValue, setTabValue] = useState(0);
   const [apiToken, setApiToken] = useState(settings.apiToken);
   const [showApiToken, setShowApiToken] = useState(false);
@@ -234,6 +240,24 @@ const Settings: React.FC = () => {
   const [tokenStatus, setTokenStatus] = useState<{ valid: boolean | null }>({
     valid: null,
   });
+  
+  // Local state to track theme mode for the radio buttons
+  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(mode);
+
+  // Initialize theme mode on component mount and when settings load
+  useEffect(() => {
+    console.log('Settings initial mode setup - Mode:', mode);
+    console.log('Settings initial mode setup - Settings theme:', 
+      settings?.appearance 
+        ? (settings.appearance as AppearanceSettings).theme 
+        : 'waiting for settings');
+    
+    // Always prioritize the theme context over raw settings
+    // But only set if we have a valid mode
+    if (mode) {
+      setThemeMode(mode);
+    }
+  }, [mode, settings]);
 
   // Validate token on initial load if one exists
   useEffect(() => {
@@ -295,9 +319,18 @@ const Settings: React.FC = () => {
     }
   };
 
+  // Update local state when theme context changes
+  useEffect(() => {
+    console.log('Settings useEffect - Theme mode changed to:', mode);
+    setThemeMode(mode);
+  }, [mode]);
+
   // Handle theme mode change
   const handleThemeModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTheme(event.target.value as 'system' | 'light' | 'dark');
+    const newMode = event.target.value as 'system' | 'light' | 'dark';
+    console.log('Settings handleThemeModeChange - Setting theme to:', newMode);
+    setThemeMode(newMode); // Update local state immediately for responsive UI
+    setTheme(newMode); // Update global theme
   };
 
   // Handle density change
@@ -434,7 +467,7 @@ const Settings: React.FC = () => {
           </Typography>
           <CyberRadio.Group
             label="Theme Mode"
-            value={mode}
+            value={themeMode} // Use local state instead of context directly
             onChange={handleThemeModeChange}
             name="theme-mode-group"
           >
