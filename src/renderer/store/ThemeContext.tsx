@@ -2,9 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { ThemeProvider as MuiThemeProvider, createTheme, Theme, alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useSettings } from './SettingsContext';
-
-// Define theme mode type
-type ThemeMode = 'system' | 'light' | 'dark';
+import { settingsStorage, ThemeMode } from '../services/storage/SettingsStorage';
 
 // Define context type
 interface ThemeContextType {
@@ -472,17 +470,19 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     const loadTheme = async () => {
       try {
-        // First try to get from localStorage as immediate fallback
-        const savedMode = localStorage.getItem('themeMode');
-        if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
-          console.log('Loaded theme from localStorage:', savedMode);
+        // Load settings from IndexedDB
+        const settings = await settingsStorage.getSettings();
+        const savedTheme = settings.appearance.theme;
+        
+        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+          console.log('Loaded theme from settings:', savedTheme);
           
           // Update both ref and state
-          modeRef.current = savedMode as ThemeMode;
-          setModeState(savedMode as ThemeMode);
+          modeRef.current = savedTheme;
+          setModeState(savedTheme);
         }
       } catch (error) {
-        console.error('Error loading theme from localStorage:', error);
+        console.error('Error loading theme from settings:', error);
       }
     };
     
@@ -507,16 +507,33 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     
     console.log('ThemeContext: Updated ref value to:', modeRef.current);
     
-    // Save to localStorage for immediate feedback and as fallback
+    // Save to IndexedDB through settings storage
     try {
-      localStorage.setItem('themeMode', newMode);
-      console.log('ThemeContext: Theme saved to localStorage');
+      const currentSettings = settingsContext?.settings;
       
-      // Double-check the localStorage was updated correctly
-      const savedMode = localStorage.getItem('themeMode');
-      console.log('ThemeContext: Verified localStorage value:', savedMode);
-    } catch (storageError) {
-      console.error('ThemeContext: Failed to save theme to localStorage:', storageError);
+      // Only update if we have valid settings
+      if (currentSettings && currentSettings.appearance) {
+        settingsStorage.updateSettings({
+          appearance: {
+            ...currentSettings.appearance, // Keep existing appearance settings
+            theme: newMode              // Update only the theme
+          }
+        });
+        console.log('ThemeContext: Theme saved to settings storage');
+      } else {
+        // If we don't have access to current settings, just save the theme directly
+        settingsStorage.updateSettings({
+          appearance: {
+            density: 'comfortable',
+            fontSize: 'medium',
+            viewMode: 'card',
+            theme: newMode
+          }
+        });
+        console.log('ThemeContext: Theme saved to settings storage (with defaults)');
+      }
+    } catch (storageError: unknown) {
+      console.error('ThemeContext: Failed to save theme to settings storage:', storageError);
     }
     
     // Force an immediate theme appearance update based on the new mode
@@ -569,18 +586,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       modeRef.current = mode;
     }
     
-    // Save mode to localStorage for immediate feedback
-    try {
-      localStorage.setItem('themeMode', mode);
-      console.log('Theme saved to localStorage in effect');
-    } catch (storageError) {
-      console.error('Failed to save theme to localStorage in effect:', storageError);
-    }
-    
-    // We only save theme to localStorage since the settings model
-    // doesn't include theme in the appearance object
-    console.log('Theme storage is handled via localStorage only');
-  }, [mode, settingsContext]);
+    // NOTE: Settings are saved directly in the setTheme function
+    // This prevents circular dependency between theme changes and settings updates
+  }, [mode]); // Removed settingsContext from dependencies
 
   // Get density and font size from settings
   const { density, fontSize } = settingsContext.settings.appearance;

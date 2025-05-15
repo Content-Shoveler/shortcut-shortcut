@@ -7,6 +7,9 @@
 
 import { StorageService, createStorageService } from './StorageService';
 
+// Define theme mode type
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 // Define the settings structure
 export interface AppSettings {
   apiToken: string;
@@ -19,6 +22,7 @@ export interface AppSettings {
     density: 'comfortable' | 'compact';
     fontSize: 'small' | 'medium' | 'large';
     viewMode: 'card' | 'list';
+    theme: ThemeMode; // Added theme setting
   };
 }
 
@@ -34,6 +38,7 @@ export const defaultSettings: AppSettings = {
     density: 'comfortable',
     fontSize: 'medium',
     viewMode: 'card',
+    theme: 'dark', // Default theme
   },
 };
 
