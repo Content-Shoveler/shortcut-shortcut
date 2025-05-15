@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { ElectronAPI, ShortcutApiResponse } from '../types/electron';
+import { ShortcutApiResponse } from '../services/shortcutApiClient';
+import * as shortcutApi from '../services/shortcutApiClient';
+import { AppSettings as DexieAppSettings, getSetting, saveSetting } from '../services/dexieService';
 
 // Define the settings structure
-interface AppSettings {
-  apiToken: string;
+interface AppSettings extends DexieAppSettings {
   startupPage: 'home' | 'last-viewed';
   confirmDialogs: {
     deleteTemplate: boolean;
@@ -27,6 +28,8 @@ interface SettingsContextType {
 // Default settings
 const defaultSettings: AppSettings = {
   apiToken: '',
+  theme: 'system',
+  cyberpunkMode: true,
   startupPage: 'home',
   confirmDialogs: {
     deleteTemplate: true,
@@ -56,11 +59,44 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
-  // Initialize settings from localStorage or use defaults
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const savedSettings = localStorage.getItem('appSettings');
-    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-  });
+  // Initialize settings from Dexie or fallback to localStorage for migration
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  
+  // Load settings from Dexie on mount
+  useEffect(() => {
+    const loadSettingsFromDexie = async () => {
+      try {
+        // Try to get from localStorage for migration
+        const savedSettings = localStorage.getItem('appSettings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          // Migrate to Dexie
+          await saveSetting(parsedSettings);
+          // Remove from localStorage after migration
+          localStorage.removeItem('appSettings');
+          
+          setSettings({
+            ...defaultSettings,
+            ...parsedSettings
+          });
+          return;
+        }
+        
+        // If no localStorage, try Dexie
+        const dexieSettings = await getSetting<AppSettings>();
+        if (dexieSettings) {
+          setSettings({
+            ...defaultSettings, // Ensure all properties exist
+            ...dexieSettings
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    };
+    
+    loadSettingsFromDexie();
+  }, []);
 
   // Update settings
   const updateSettings = (newSettings: Partial<AppSettings>) => {
@@ -84,29 +120,23 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     });
   };
 
-  // Validate API token using the main process IPC method
+  // Validate API token using direct API client
   const validateApiToken = async (token: string): Promise<boolean> => {
     try {
-      // Using the IPC method which handles API calls in the main process (bypassing CORS)
-      // Use type assertion to tell TypeScript about the shortcutApi property
-      type APIWithShortcut = typeof window.electronAPI & {
-        shortcutApi: {
-          validateToken: (token: string) => Promise<ShortcutApiResponse>;
-        }
-      };
-      
-      const api = window.electronAPI as APIWithShortcut;
-      const response = await api.shortcutApi.validateToken(token);
-      
+      const response = await shortcutApi.validateToken(token);
       return response.success;
     } catch (error) {
       return false;
     }
   };
 
-  // Save settings to localStorage when they change
+  // Save settings to Dexie when they change
   useEffect(() => {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
+    saveSetting(settings).catch(error => {
+      console.error('Failed to save settings to Dexie:', error);
+      // Fallback to localStorage if Dexie fails
+      localStorage.setItem('appSettings', JSON.stringify(settings));
+    });
   }, [settings]);
 
   return (

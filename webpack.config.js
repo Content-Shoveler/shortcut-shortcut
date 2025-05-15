@@ -6,13 +6,26 @@ const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 module.exports = (env) => {
   const isProduction = env.NODE_ENV === 'production';
   const isServing = env.WEBPACK_SERVE === 'true';
-  const target = env.WEBPACK_TARGET || 'renderer';
   const analyzeBundle = env.ANALYZE === 'true';
 
-  const baseConfig = {
+  // Configuration for web app
+  return {
     mode: isProduction ? 'production' : 'development',
     devtool: isProduction ? false : 'source-map',
     stats: 'errors-warnings',
+    target: 'web',
+    entry: ['./src/renderer/index.tsx'],
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: isProduction ? '[name].[contenthash:8].js' : '[name].js',
+      chunkFilename: isProduction ? '[name].[contenthash:8].chunk.js' : '[name].chunk.js',
+      globalObject: 'this',
+      // Set publicPath based on environment - using '/' for production as we'll host at root path on Render
+      publicPath: isProduction ? '/' : 'http://localhost:9000/', 
+      pathinfo: !isProduction,
+      // Clean the output directory before emit
+      clean: true,
+    },
     module: {
       rules: [
         {
@@ -114,6 +127,12 @@ module.exports = (env) => {
             chunks: 'all', 
             priority: 14,
           },
+          dexie: {
+            test: /[\\/]node_modules[\\/]dexie[\\/]/,
+            name: 'dexie-vendor',
+            chunks: 'all',
+            priority: 13,
+          },
         },
       },
       moduleIds: 'deterministic',
@@ -125,24 +144,6 @@ module.exports = (env) => {
       usedExports: true,
       concatenateModules: true,
     } : undefined,
-  };
-
-  // Configuration for the renderer process
-  const rendererConfig = {
-    ...baseConfig,
-    target: 'web',
-    entry: ['./src/renderer/index.tsx'],
-    output: {
-      path: path.resolve(__dirname, 'dist'),
-      filename: isProduction ? '[name].[contenthash:8].js' : '[name].js',
-      chunkFilename: isProduction ? '[name].[contenthash:8].chunk.js' : '[name].chunk.js',
-      globalObject: 'this',
-      // Set publicPath based on environment
-      publicPath: isProduction ? './' : 'http://localhost:9000/',
-      pathinfo: !isProduction,
-      // Clean the output directory before emit
-      clean: true,
-    },
     plugins: [
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, 'public/index.html'),
@@ -194,64 +195,4 @@ module.exports = (env) => {
         }
       : undefined,
   };
-
-  // Configuration for the main process
-  const mainConfig = {
-    mode: isProduction ? 'production' : 'development',
-    devtool: isProduction ? false : 'source-map',
-    stats: 'errors-warnings',
-    target: 'electron-main',
-    entry: {
-      main: './src/main/main.ts',
-      preload: './src/main/preload.ts',
-    },
-    module: {
-      rules: [
-        {
-          test: /\.tsx?$/,
-          use: 'ts-loader',
-          exclude: /node_modules/,
-        },
-      ],
-    },
-    resolve: {
-      extensions: ['.tsx', '.ts', '.js', '.jsx'],
-      mainFields: ['main'],
-    },
-    output: {
-      path: path.resolve(__dirname, 'dist'),
-      filename: '[name].js',
-      publicPath: './',
-    },
-    node: {
-      __dirname: false,
-      __filename: false,
-    },
-    // For main process, we don't want any code splitting or chunk loading
-    optimization: isProduction ? {
-      minimize: true,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            ecma: 2020,
-            compress: {
-              passes: 2,
-              drop_console: true,
-              drop_debugger: true,
-            },
-            output: {
-              comments: false,
-              ascii_only: true,
-            },
-          },
-          extractComments: false,
-          parallel: true,
-        }),
-      ],
-      // No code splitting for main process
-      splitChunks: false,
-    } : undefined,
-  };
-
-  return target === 'main' ? mainConfig : rendererConfig;
 };

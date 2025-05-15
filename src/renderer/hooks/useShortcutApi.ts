@@ -1,7 +1,7 @@
 /**
  * React hook for accessing Shortcut API functions with caching
  */
-import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useSettings } from '../store/SettingsContext';
 import { useCache } from '../store/CacheContext';
 import {
@@ -9,39 +9,13 @@ import {
   ShortcutWorkflow,
   ShortcutWorkflowState,
 } from '../types/shortcutApi';
-import { ShortcutApiResponse } from '../types/electron';
-
-// Define a type that includes the shortcutApi property for TypeScript
-type ShortcutElectronAPI = {
-  shortcutApi: {
-    validateToken: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchProjects: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchWorkflows: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchWorkflowStates: (apiToken: string, workflowId: string) => Promise<ShortcutApiResponse>;
-    fetchEpicWorkflow: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchMembers: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchLabels: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchObjectives: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchGroups: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchIterations: (apiToken: string) => Promise<ShortcutApiResponse>;
-    fetchWorkspaceInfo: (apiToken: string) => Promise<ShortcutApiResponse>;
-    createEpic: (apiToken: string, epicData: any) => Promise<ShortcutApiResponse>;
-    createStory: (apiToken: string, storyData: any) => Promise<ShortcutApiResponse>;
-    createMultipleStories: (apiToken: string, storiesData: any[]) => Promise<ShortcutApiResponse>;
-  };
-  // Include other properties from ElectronAPI
-  getTemplates: () => Promise<any[]>;
-  saveTemplate: (template: any) => Promise<any>;
-  deleteTemplate: (templateId: string) => Promise<string>;
-  exportTemplates: () => Promise<boolean>;
-  importTemplates: () => Promise<any[] | null>;
-};
+import { ShortcutApiResponse } from '../services/shortcutApiClient';
+import * as shortcutApi from '../services/shortcutApiClient';
 
 /**
  * Custom hook that provides access to Shortcut API functions
  * with automatic API token handling
- */
-/**
+ * 
  * Utility function to create a consistent cache key
  */
 const createCacheKey = (endpoint: string, apiToken: string, params?: any): string => {
@@ -59,30 +33,8 @@ export function useShortcutApi() {
   const { settings } = useSettings();
   const { getCache, setCache, invalidateCache } = useCache();
   
-  // Get the API token from context or fallback to localStorage if context failed to load it
-  const getTokenWithFallback = () => {
-    // First try to get from context
-    if (settings.apiToken) {
-      return settings.apiToken;
-    }
-    
-    // Fallback to localStorage if context doesn't have it
-    try {
-      const savedSettings = localStorage.getItem('appSettings');
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-        if (parsed.apiToken) {
-          return parsed.apiToken;
-        }
-      }
-    } catch (error) {
-      // Error reading from localStorage
-    }
-    
-    return '';
-  };
-  
-  const apiToken = getTokenWithFallback();
+  // Get the API token from settings context
+  const apiToken = settings.apiToken || '';
   
   
   // State to track if token has been validated - initialize based on token existence
@@ -176,14 +128,12 @@ export function useShortcutApi() {
    * Validate if the current API token is valid
    */
   const validateApiToken = useCallback(async (): Promise<boolean> => {
-    
     if (!apiToken) {
       return false;
     }
     
     try {
-      const api = window.electronAPI as ShortcutElectronAPI;
-      const response = await api.shortcutApi.validateToken(apiToken);
+      const response = await shortcutApi.validateToken(apiToken);
       setTokenValidated(response.success);
       return response.success;
     } catch (error) {
@@ -211,8 +161,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchProjects(apiToken);
+    const response = await shortcutApi.fetchProjects(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch projects');
     }
@@ -242,8 +191,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchWorkflows(apiToken);
+    const response = await shortcutApi.fetchWorkflows(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch workflows');
     }
@@ -274,8 +222,7 @@ export function useShortcutApi() {
       }
       
       // If no cache hit, fetch from API
-      const api = window.electronAPI as ShortcutElectronAPI;
-      const response = await api.shortcutApi.fetchWorkflowStates(
+      const response = await shortcutApi.fetchWorkflowStates(
         apiToken, 
         workflowId.toString()
       );
@@ -311,8 +258,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchEpicWorkflow(apiToken);
+    const response = await shortcutApi.fetchEpicWorkflow(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch epic workflow');
     }
@@ -344,8 +290,7 @@ export function useShortcutApi() {
       throw new Error('API token is not set');
     }
     
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.createMultipleStories(apiToken, storiesData);
+    const response = await shortcutApi.createMultipleStories(apiToken, storiesData);
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to create multiple stories');
@@ -408,8 +353,7 @@ export function useShortcutApi() {
       
       console.log('Full epic payload being sent:', epicPayload);
       
-      const api = window.electronAPI as ShortcutElectronAPI;
-      const epicResponse = await api.shortcutApi.createEpic(apiToken, epicPayload);
+      const epicResponse = await shortcutApi.createEpic(apiToken, epicPayload);
       if (!epicResponse.success) {
         throw new Error(epicResponse.message || 'Failed to create epic');
       }
@@ -426,7 +370,7 @@ export function useShortcutApi() {
       const needWorkflowStates = stories.some(story => !story.workflow_state_id);
       
       if (needWorkflowStates) {
-        const statesResponse = await api.shortcutApi.fetchWorkflowStates(
+        const statesResponse = await shortcutApi.fetchWorkflowStates(
           apiToken, 
           workflowId
         );
@@ -476,7 +420,7 @@ export function useShortcutApi() {
       });
       
       // Create all stories in one API call
-      const storiesResponse = await api.shortcutApi.createMultipleStories(apiToken, storyPayloads);
+      const storiesResponse = await shortcutApi.createMultipleStories(apiToken, storyPayloads);
       if (!storiesResponse.success) {
         throw new Error(storiesResponse.message || 'Failed to create stories');
       }
@@ -520,8 +464,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchMembers(apiToken);
+    const response = await shortcutApi.fetchMembers(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch members');
     }
@@ -551,8 +494,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchLabels(apiToken);
+    const response = await shortcutApi.fetchLabels(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch labels');
     }
@@ -582,8 +524,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchObjectives(apiToken);
+    const response = await shortcutApi.fetchObjectives(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch objectives');
     }
@@ -613,8 +554,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchGroups(apiToken);
+    const response = await shortcutApi.fetchGroups(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch groups');
     }
@@ -644,8 +584,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchIterations(apiToken);
+    const response = await shortcutApi.fetchIterations(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch iterations');
     }
@@ -675,8 +614,7 @@ export function useShortcutApi() {
     }
     
     // If no cache hit, fetch from API
-    const api = window.electronAPI as ShortcutElectronAPI;
-    const response = await api.shortcutApi.fetchWorkspaceInfo(apiToken);
+    const response = await shortcutApi.fetchWorkspaceInfo(apiToken);
     if (!response.success) {
       throw new Error(response.message || 'Failed to fetch workspace info');
     }

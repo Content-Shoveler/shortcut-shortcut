@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSettings } from '../store/AppProviders';
+import { useSettings } from '../store/SettingsContext';
 import {
   Box,
   Typography,
@@ -42,7 +42,8 @@ import MemoryIcon from '@mui/icons-material/Memory';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CyberButton, CyberCard, CyberIcon } from '../components/cyberpunk';
 
-import { Template } from '../types';
+import { Template } from '../services/dexieService';
+import * as webUtils from '../utils/webUtils';
 import { 
   containerVariants, 
   listItemVariants, 
@@ -390,7 +391,7 @@ const TemplateList: React.FC = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const fetchedTemplates = await window.electronAPI.getTemplates();
+        const fetchedTemplates = await webUtils.getTemplates();
         setTemplates(fetchedTemplates);
       } catch (error) {
         setAlert({
@@ -426,7 +427,7 @@ const TemplateList: React.FC = () => {
       setTemplates([...templates, duplicatedTemplate]);
       
       // Save the duplicate to storage
-      window.electronAPI.saveTemplate(duplicatedTemplate)
+      webUtils.saveTemplate(duplicatedTemplate)
         .then(() => {
           setAlert({
             type: 'success',
@@ -445,7 +446,7 @@ const TemplateList: React.FC = () => {
   const confirmDelete = async () => {
     if (templateToDelete) {
       try {
-        await window.electronAPI.deleteTemplate(templateToDelete);
+        await webUtils.deleteTemplate(templateToDelete);
         setTemplates(templates.filter(t => t.id !== templateToDelete));
         setAlert({
           type: 'success',
@@ -465,7 +466,7 @@ const TemplateList: React.FC = () => {
   // Handle template export
   const handleExport = async () => {
     try {
-      const result = await window.electronAPI.exportTemplates();
+      const result = await webUtils.exportTemplates();
       if (result) {
         setAlert({
           type: 'success',
@@ -483,7 +484,7 @@ const TemplateList: React.FC = () => {
   // Handle template import
   const handleImport = async () => {
     try {
-      const importedTemplates = await window.electronAPI.importTemplates();
+      const importedTemplates = await webUtils.importTemplates();
       if (importedTemplates) {
         setTemplates(importedTemplates);
         setAlert({
@@ -906,311 +907,3 @@ const TemplateList: React.FC = () => {
                     backgroundColor: theme.palette.secondary.main,
                   }}
                   animate={{
-                    opacity: [0.3, 0.8, 0.3],
-                    boxShadow: [
-                      `0 0 0px ${alpha(theme.palette.secondary.main, 0)}`,
-                      `0 0 2px ${alpha(theme.palette.secondary.main, 0.6)}`,
-                      `0 0 0px ${alpha(theme.palette.secondary.main, 0)}`
-                    ],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    delay: index * 0.3,
-                    ease: 'easeInOut',
-                  }}
-                />
-              ))}
-            </Box>
-            
-            <TableContainer 
-              sx={{ 
-                position: 'relative',
-                zIndex: 1,
-              }}
-            >
-              <Table sx={{ minWidth: 650 }}>
-                <TableHead>
-                  <TableRow sx={{ 
-                    background: alpha(theme.palette.primary.main, 0.05),
-                    '& th': {
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
-                      borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                      fontFamily: "'Rajdhani', sans-serif",
-                      letterSpacing: '0.02em',
-                    }
-                  }}>
-                    <TableCell width="60px" align="center" sx={{ fontSize: '0.8rem' }}></TableCell>
-                    <TableCell>Name</TableCell>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Stories</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {templates.map((template, index) => (
-                    <MotionTableRow 
-                      key={template.id} 
-                      hover
-                      variants={listItemVariants}
-                      custom={index}
-                      whileHover={{ 
-                        backgroundColor: alpha(theme.palette.primary.main, 0.05)
-                      }}
-                      sx={{ 
-                        overflow: 'hidden',
-                        position: 'relative',
-                        cursor: 'pointer',
-                        // Cyber style outline that only appears on hover
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          border: `1px solid transparent`,
-                          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
-                          transition: 'all 0.2s ease',
-                          pointerEvents: 'none',
-                          opacity: 0,
-                        },
-                        '&:hover': {
-                          '&::before': {
-                            borderColor: alpha(theme.palette.primary.main, 0.3),
-                            opacity: 1,
-                          },
-                        },
-                        '& td': {
-                          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                          fontFamily: "'Rajdhani', sans-serif",
-                        },
-                        '&:hover .data-flow': {
-                          opacity: 0.1,
-                          transform: 'translateX(100%)',
-                        }
-                      }}
-                      onClick={() => navigate(`/editor/${template.id}`)}
-                    >
-
-                      <TableCell component="th" scope="row">
-                        <Typography 
-                          variant="subtitle1"
-                          sx={{ 
-                            fontWeight: 600, 
-                            textShadow: `0 0 5px ${alpha(theme.palette.primary.main, 0.3)}`,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '200px',
-                          }}
-                        >
-                          {template.epicDetails.name || '(Unnamed Epic)'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary"
-                          sx={{ 
-                            fontSize: '0.75rem',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '200px',
-                            opacity: 0.7,
-                            fontFamily: "'Share Tech Mono', monospace",
-                          }}
-                        >
-                          ID: {template.id.substring(0, 8)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          icon={<CyberIcon icon={CodeIcon} size={14} />}
-                          size="small" 
-                          label={template.storyTemplates.length}
-                          sx={{ 
-                            borderRadius: '4px',
-                            background: alpha(theme.palette.primary.main, 0.1),
-                            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                            minWidth: '30px',
-                            fontFamily: "'Rajdhani', sans-serif",
-                            fontWeight: 500
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <Tooltip title="Apply Epic">
-                            <IconButton 
-                              size="small" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/apply/${template.id}`);
-                              }}
-                              sx={{ 
-                                mr: 0.5,
-                                padding: 0.5,
-                                '&:hover': { 
-                                  backgroundColor: alpha(theme.palette.success.main, 0.1) 
-                                }
-                              }}
-                            >
-                              <CyberIcon icon={PlayArrowIcon} size={18} color={theme.palette.success.main} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit Epic">
-                            <IconButton 
-                              size="small" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/editor/${template.id}`);
-                              }}
-                              sx={{ 
-                                mr: 0.5,
-                                padding: 0.5,
-                                '&:hover': { 
-                                  backgroundColor: alpha(theme.palette.primary.main, 0.1) 
-                                }
-                              }}
-                            >
-                              <CyberIcon icon={EditIcon} size={18} color={theme.palette.primary.main} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Duplicate Epic">
-                            <IconButton 
-                              size="small" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDuplicateTemplate(template.id);
-                              }}
-                              sx={{ 
-                                mr: 0.5,
-                                padding: 0.5,
-                                '&:hover': { 
-                                  backgroundColor: alpha(theme.palette.info.main, 0.1) 
-                                }
-                              }}
-                            >
-                              <CyberIcon icon={ContentCopyIcon} size={18} color={theme.palette.info.main} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Epic">
-                            <IconButton 
-                              size="small" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(template.id);
-                              }}
-                              sx={{ 
-                                padding: 0.5,
-                                '&:hover': { 
-                                  backgroundColor: alpha(theme.palette.error.main, 0.1) 
-                                }
-                              }}
-                            >
-                              <CyberIcon icon={DeleteIcon} size={18} color={theme.palette.error.main} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </MotionTableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </MotionPaper>
-        )}
-      </AnimatePresence>
-
-      {/* Delete confirmation dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        PaperProps={{
-          sx: {
-            background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-            overflow: 'hidden',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '30px',
-              height: '30px',
-              borderTop: `2px solid ${alpha(theme.palette.error.main, 0.7)}`,
-              borderRight: `2px solid ${alpha(theme.palette.error.main, 0.7)}`,
-            },
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              width: '30px',
-              height: '30px',
-              borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.5)}`,
-              borderLeft: `2px solid ${alpha(theme.palette.primary.main, 0.5)}`,
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          '&::before': {
-            content: '""',
-            display: 'block',
-            width: '4px',
-            height: '20px',
-            background: theme.palette.error.main,
-          }
-        }}>
-          Delete Epic
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <DialogContentText sx={{ opacity: 0.8 }}>
-            Are you sure you want to delete this epic? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ 
-          borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, 
-          px: 3, 
-          py: 2 
-        }}>
-          <MotionButton 
-            onClick={() => setDeleteDialogOpen(false)}
-            variants={buttonVariants}
-            initial="rest"
-            whileHover="hover"
-            whileTap="tap"
-          >
-            Cancel
-          </MotionButton>
-          <MotionButton
-            onClick={confirmDelete} 
-            color="error" 
-            variants={buttonVariants}
-            initial="rest"
-            whileHover="hover"
-            whileTap="tap"
-            autoFocus
-            sx={{
-              backgroundColor: alpha(theme.palette.error.main, 0.9),
-            }}
-          >
-            Delete
-          </MotionButton>
-        </DialogActions>
-      </Dialog>
-    </Box>
-  );
-};
-
-export default TemplateList;

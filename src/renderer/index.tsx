@@ -5,6 +5,9 @@ import { AppProviders } from './store/AppProviders';
 import App from './App';
 import './assets/cyberpunkStyles.css';
 
+// Initialize the database connection
+import './services/dexieService';
+
 const container = document.getElementById('root');
 const root = createRoot(container!);
 

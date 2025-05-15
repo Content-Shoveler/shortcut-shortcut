@@ -2,24 +2,11 @@ import React, { ReactNode, createContext, useContext, useState, useEffect } from
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { CacheProvider } from './CacheContext';
+import { SettingsProvider, useSettings } from './SettingsContext';
+import { AppSettings } from '../services/dexieService';
 
 // Define theme mode type
 type ThemeMode = 'system' | 'light' | 'dark';
-
-// Define the settings structure
-interface AppSettings {
-  apiToken: string;
-  startupPage: 'home' | 'last-viewed';
-  confirmDialogs: {
-    deleteTemplate: boolean;
-    applyTemplate: boolean;
-  };
-  appearance: {
-    density: 'comfortable' | 'compact';
-    fontSize: 'small' | 'medium' | 'large';
-    viewMode: 'card' | 'list';
-  };
-}
 
 // Theme Context Type
 interface ThemeContextType {
@@ -28,46 +15,15 @@ interface ThemeContextType {
   setTheme: (mode: ThemeMode) => void;
 }
 
-// Settings Context Type
-interface SettingsContextType {
-  settings: AppSettings;
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
-  updateApiToken: (token: string) => void;
-  validateApiToken: (token: string) => Promise<boolean>;
-}
-
-// Default settings
-const defaultSettings: AppSettings = {
-  apiToken: '',
-  startupPage: 'home',
-  confirmDialogs: {
-    deleteTemplate: true,
-    applyTemplate: true,
-  },
-  appearance: {
-    density: 'comfortable',
-    fontSize: 'medium',
-    viewMode: 'list',
-  },
-};
-
-// Create contexts with default values
+// Create context with default values
 const ThemeContext = createContext<ThemeContextType>({
   mode: 'light',
   themeAppearance: 'light',
   setTheme: () => {},
 });
 
-const SettingsContext = createContext<SettingsContextType>({
-  settings: defaultSettings,
-  updateSettings: () => {},
-  updateApiToken: () => {},
-  validateApiToken: async () => false,
-});
-
-// Export hooks for using the contexts
+// Export hook for using the context
 export const useTheme = () => useContext(ThemeContext);
-export const useSettings = () => useContext(SettingsContext);
 
 // Create theme based on settings
 const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compact', fontSize: 'small' | 'medium' | 'large') => {
@@ -136,85 +92,13 @@ const createAppTheme = (mode: 'light' | 'dark', density: 'comfortable' | 'compac
   });
 };
 
-// Import validation function
-import { validateApiToken as validateToken } from '../utils/shortcutApi';
-
-// Combined provider component
-interface AppProvidersProps {
+// ThemeProvider component
+interface ThemeProviderProps {
   children: ReactNode;
 }
 
-export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
-  // === SETTINGS PROVIDER LOGIC ===
-  
-  // Initialize settings from localStorage or use defaults
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const savedSettings = localStorage.getItem('appSettings');
-    
-    try {
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        
-        // Ensure we have all required fields by merging with defaults
-        return { ...defaultSettings, ...parsedSettings };
-      }
-    } catch (error) {
-      // Error parsing settings
-    }
-    
-    return defaultSettings;
-  });
-
-  // Update settings
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings((prevSettings) => {
-      const updatedSettings = {
-        ...prevSettings,
-        ...newSettings,
-      };
-      return updatedSettings;
-    });
-  };
-
-  // Update API token
-  const updateApiToken = (token: string) => {
-    // First update the context state
-    setSettings((prevSettings) => {
-      const newSettings = {
-        ...prevSettings,
-        apiToken: token,
-      };
-      return newSettings;
-    });
-    
-    // Also directly update localStorage to ensure synchronization
-    try {
-      const savedSettings = localStorage.getItem('appSettings');
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        parsedSettings.apiToken = token;
-        localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
-      }
-    } catch (error) {
-      // Error updating localStorage
-    }
-  };
-
-  // Validate API token
-  const validateApiToken = async (token: string): Promise<boolean> => {
-    try {
-      return await validateToken(token);
-    } catch (error) {
-      return false;
-    }
-  };
-
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-  }, [settings]);
-
-  // === THEME PROVIDER LOGIC ===
+const ThemeContextProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const { settings } = useSettings();
   
   // Check for system preference
   const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -273,24 +157,29 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   // Create the theme based on appearance and settings
   const theme = createAppTheme(themeAppearance, density, fontSize);
 
-  // Combine both providers
   return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        updateSettings,
-        updateApiToken,
-        validateApiToken,
-      }}
-    >
-      <ThemeContext.Provider value={{ mode, themeAppearance, setTheme }}>
-        <MuiThemeProvider theme={theme}>
-          <CssBaseline />
-          <CacheProvider>
-            {children}
-          </CacheProvider>
-        </MuiThemeProvider>
-      </ThemeContext.Provider>
-    </SettingsContext.Provider>
+    <ThemeContext.Provider value={{ mode, themeAppearance, setTheme }}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
+    </ThemeContext.Provider>
+  );
+};
+
+// Combined provider component
+interface AppProvidersProps {
+  children: ReactNode;
+}
+
+export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
+  return (
+    <SettingsProvider>
+      <CacheProvider>
+        <ThemeContextProvider>
+          {children}
+        </ThemeContextProvider>
+      </CacheProvider>
+    </SettingsProvider>
   );
 };
