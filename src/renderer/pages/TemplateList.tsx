@@ -43,7 +43,7 @@ import MemoryIcon from '@mui/icons-material/Memory';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CyberButton, CyberCard, CyberIcon } from '../components/cyberpunk';
 
-import { Template } from '../services/dexieService';
+import { Template } from '../types';
 import * as webUtils from '../utils/webUtils';
 import { 
   containerVariants, 

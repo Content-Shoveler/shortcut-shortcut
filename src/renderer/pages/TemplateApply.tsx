@@ -35,7 +35,7 @@ import {
   CyberIcon 
 } from '../components/cyberpunk';
 
-import { Template } from '../services/dexieService';
+import { Template } from '../types';
 import * as templatesService from '../services/templatesService';
 import { useShortcutApi } from '../hooks/useShortcutApi';
 

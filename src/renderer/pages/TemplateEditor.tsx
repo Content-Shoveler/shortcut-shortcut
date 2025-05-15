@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import * as webUtils from '../utils/webUtils';
 import {
   Box,
   Typography,
@@ -56,8 +57,8 @@ const TemplateEditor: React.FC = () => {
     const loadTemplate = async () => {
       if (id) {
         try {
-          const templates = await window.electronAPI.getTemplates();
-          const foundTemplate = templates.find((t: Template) => t.id === id);
+          const templates = await webUtils.getTemplates();
+          const foundTemplate = templates.find(t => t.id === id);
           
           if (foundTemplate) {
             setTemplate(foundTemplate);
@@ -181,7 +182,7 @@ const TemplateEditor: React.FC = () => {
     if (template.epicDetails.name) {
       const saveTimeout = setTimeout(async () => {
         try {
-          await window.electronAPI.saveTemplate(template);
+          await webUtils.saveTemplate(template);
           
           // Only show success alert when creating a new template for the first time
           if (!id && template.id !== id) {

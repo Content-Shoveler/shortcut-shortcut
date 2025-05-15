@@ -21,7 +21,7 @@ export interface Template {
     estimate?: number;
     labels?: string[];
     owner_ids?: string[];
-    iteration_id?: number;
+    iteration_id?: string;
     tasks?: Array<{
       description: string;
       complete: boolean;
