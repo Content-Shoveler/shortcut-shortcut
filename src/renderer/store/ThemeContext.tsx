@@ -456,8 +456,17 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const defaultAppearance = prefersDarkMode ? 'dark' : 'light';
   
-  // Try to get saved theme mode from localStorage or settingsContext, default to 'dark'
-  const [mode, setMode] = useState<ThemeMode>('dark');
+  // Use both state and ref to track the theme mode
+  // This ensures we can both trigger re-renders (with state) and
+  // access the current value inside closures (with ref)
+  const [mode, setModeState] = useState<ThemeMode>('dark');
+  const modeRef = React.useRef<ThemeMode>('dark');
+  
+  // Function to update both state and ref
+  const setMode = (newMode: ThemeMode) => {
+    modeRef.current = newMode; // Update ref immediately
+    setModeState(newMode);     // Update state to trigger re-render
+  };
   
   // Load theme from settings on mount
   useEffect(() => {
@@ -467,7 +476,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const savedMode = localStorage.getItem('themeMode');
         if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
           console.log('Loaded theme from localStorage:', savedMode);
-          setMode(savedMode as ThemeMode);
+          
+          // Update both ref and state
+          modeRef.current = savedMode as ThemeMode;
+          setModeState(savedMode as ThemeMode);
         }
       } catch (error) {
         console.error('Error loading theme from localStorage:', error);
@@ -479,18 +491,21 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   // Track the actual theme appearance (light/dark)
   const [themeAppearance, setThemeAppearance] = useState<'light' | 'dark'>(
-    mode === 'system' ? defaultAppearance : mode as 'light' | 'dark'
+    modeRef.current === 'system' ? defaultAppearance : modeRef.current as 'light' | 'dark'
   );
 
   // Handler for setting theme
   const setTheme = (newMode: ThemeMode) => {
-    console.log('ThemeContext: Setting theme to:', newMode, '(previous was:', mode, ')');
+    console.log('ThemeContext: Setting theme to:', newMode, '(previous was:', modeRef.current, ')');
     
-    // Update component state directly
-    setMode(prevMode => {
-      console.log('ThemeContext: Updating state from', prevMode, 'to', newMode);
-      return newMode;
-    });
+    // Always use the ref for immediate access to current value
+    const prevMode = modeRef.current;
+    
+    // Update both state and ref
+    modeRef.current = newMode;
+    setModeState(newMode);
+    
+    console.log('ThemeContext: Updated ref value to:', modeRef.current);
     
     // Save to localStorage for immediate feedback and as fallback
     try {
@@ -504,9 +519,17 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       console.error('ThemeContext: Failed to save theme to localStorage:', storageError);
     }
     
-    // Force a UI update if needed
+    // Force an immediate theme appearance update based on the new mode
+    const newAppearance = newMode === 'system' 
+      ? (prefersDarkMode ? 'dark' : 'light') 
+      : newMode as 'light' | 'dark';
+      
+    setThemeAppearance(newAppearance);
+    console.log('ThemeContext: Updated appearance to:', newAppearance);
+    
+    // Force a UI update if needed using the ref (not the state which might be stale in closure)
     setTimeout(() => {
-      console.log('ThemeContext: Current theme mode after update:', mode);
+      console.log('ThemeContext: Checking theme mode after update:', modeRef.current);
     }, 0);
   };
 
@@ -530,7 +553,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   // Update themeAppearance when mode changes
   useEffect(() => {
-    console.log('Theme mode changed to:', mode);
+    console.log('Theme mode changed to:', mode, '(ref value:', modeRef.current, ')');
     
     if (mode === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -538,6 +561,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setThemeAppearance(prefersDark ? 'dark' : 'light');
     } else {
       setThemeAppearance(mode as 'light' | 'dark');
+    }
+    
+    // Ensure mode and ref are in sync (they might get out of sync in rare cases)
+    if (mode !== modeRef.current) {
+      console.log('Synchronizing ref with state:', mode);
+      modeRef.current = mode;
     }
     
     // Save mode to localStorage for immediate feedback

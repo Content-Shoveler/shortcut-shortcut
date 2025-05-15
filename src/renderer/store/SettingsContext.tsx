@@ -70,6 +70,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     loadSettings();
   }, []);
   
+  // Using a ref to track the latest settings to avoid closure issues
+  const settingsRef = React.useRef<AppSettings>(defaultSettings);
+  
   // Update settings
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     // Track the operation
@@ -78,6 +81,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       isProcessing: true,
       error: null
     });
+
+    console.log('SettingsContext: Updating settings with:', newSettings);
 
     // Update local state immediately for responsive UI
     setSettings(prevSettings => {
@@ -100,6 +105,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         }),
       };
       
+      // Update the ref immediately to avoid closure issues
+      settingsRef.current = updatedSettings;
+      console.log('SettingsContext: Updated settings ref to:', settingsRef.current);
+      
       // Update persistent storage with proper feedback
       settingsStorage.updateSettings(updatedSettings)
         .then(() => {
@@ -108,16 +117,25 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
             isProcessing: false, 
             error: null
           });
-          console.log('Settings updated successfully in storage');
+          console.log('SettingsContext: Settings updated successfully in storage');
+          
+          // Verify the settings were actually saved correctly
+          setTimeout(async () => {
+            try {
+              const storedSettings = await settingsStorage.getSettings();
+              console.log('SettingsContext: Verified settings in storage:', storedSettings);
+            } catch (verifyError) {
+              console.error('SettingsContext: Error verifying settings:', verifyError);
+            }
+          }, 0);
         })
         .catch(error => {
-          console.error('Failed to update settings in storage:', error);
+          console.error('SettingsContext: Failed to update settings in storage:', error);
           setOperationState({
             operation: 'updateSettings',
             isProcessing: false,
             error
           });
-          // Could add toast notification here
         });
       
       return updatedSettings;
