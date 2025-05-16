@@ -17,12 +17,11 @@ import {
 } from '../cyberpunk';
 import { EpicDetails } from '../../types';
 import { 
-  EpicStateSelector,
   MemberSelector, 
   ObjectiveSelector,
   GroupSelector
 } from '../ShortcutFields';
-import { ShortcutEpicState } from '../../types/shortcutApi';
+// ShortcutEpicState import removed as it's no longer needed
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 
 // Helper components for the multi-select fields
@@ -236,6 +235,17 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
   useEffect(() => {
     setApiTokenAlert(!shortcutApi.hasApiToken);
   }, [shortcutApi.hasApiToken]);
+
+  // Set state to "todo" on initialization only once
+  useEffect(() => {
+    // Set initial state to "todo"
+    onStateChange({
+      target: {
+        name: 'state',
+        value: 'todo'
+      }
+    });
+  }, []); // Empty dependency array - run only on mount
   
   // Handle multiple owner selection
   const handleOwnersChange = (selectedMembers: MultiSelectOption[]) => {
@@ -286,41 +296,7 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
     });
   };
   
-  // Handle epic state change
-  const handleEpicStateChange = (state: ShortcutEpicState | null) => {
-    if (state) {
-      // Update the display name for backwards compatibility
-      onStateChange({
-        target: {
-          name: 'state',
-          value: state.name
-        }
-      });
-      
-      // Also update the epic_state_id for API use
-      onStateChange({
-        target: {
-          name: 'epic_state_id',
-          value: state.id
-        }
-      });
-    } else {
-      // Reset both values if no state is selected
-      onStateChange({
-        target: {
-          name: 'state',
-          value: ''
-        }
-      });
-      
-      onStateChange({
-        target: {
-          name: 'epic_state_id',
-          value: undefined
-        }
-      });
-    }
-  };
+  // No longer need epic state change handler as state is always "todo"
 
   return (
     <CyberCard sx={{ p: 3, mb: 3 }}>
@@ -351,39 +327,15 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
         cornerClip
       />
       
-      {/* Epic State and Teams Selectors */}
-      {shortcutApi.hasApiToken ? (
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
-          <Box sx={{ flex: 1 }}>
-            <EpicStateSelector
-              value={epicDetails.epic_state_id || null}
-              onChange={handleEpicStateChange}
-              fullWidth
-            />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <GroupMultiSelect
-              value={epicDetails.group_ids || []}
-              onChange={handleGroupsChange}
-              shortcutApi={shortcutApi}
-            />
-          </Box>
+      {/* Teams Selector */}
+      {shortcutApi.hasApiToken && (
+        <Box sx={{ mt: 2 }}>
+          <GroupMultiSelect
+            value={epicDetails.group_ids || []}
+            onChange={handleGroupsChange}
+            shortcutApi={shortcutApi}
+          />
         </Box>
-      ) : (
-        // Fallback to current dropdown when API token isn't available
-        <FormControl fullWidth margin="normal">
-          <CyberSelect
-            label="Default State"
-            name="state"
-            value={epicDetails.state}
-            onChange={onStateChange}
-            cornerClip
-          >
-            <MenuItem value="to do">To Do</MenuItem>
-            <MenuItem value="in progress">In Progress</MenuItem>
-            <MenuItem value="done">Done</MenuItem>
-          </CyberSelect>
-        </FormControl>
       )}
       
       {/* API-based selectors - only show when API token is available */}
