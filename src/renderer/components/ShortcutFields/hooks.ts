@@ -150,28 +150,34 @@ export function useSingleField<T>(
   
   // Fetch options with proper cleanup and cancellation
   const fetchOptions = useCallback(async () => {
-    // Use cached results if available
+    // Always update from cache first if available - this ensures we display data immediately
     if (optionsCacheRef.current.length > 0) {
       if (isMountedRef.current) {
+        console.log(`Using cached data for ${fieldDef.id}:`, optionsCacheRef.current.length, 'items');
         setState(prev => ({
           ...prev,
           options: optionsCacheRef.current,
           loading: false
         }));
       }
-      return;
+      // DO NOT return early here - we want to always fetch fresh data to update cache
     }
     
-    if (!shortcutApi.hasApiToken) {
-      if (isMountedRef.current) {
-        setState(prev => ({
-          ...prev,
-          error: 'API token not set. Configure in Settings.',
-          loading: false
-        }));
-      }
-      return;
+  // Skip setting an error for missing API token, but we still need to check if it exists
+  if (!shortcutApi.hasApiToken) {
+    if (isMountedRef.current) {
+      setState(prev => ({
+        ...prev,
+        options: [], // Return empty options instead of error
+        loading: false
+      }));
     }
+    
+    // Don't return early - if we have cached results, we should still check them
+    if (optionsCacheRef.current.length === 0) {
+      return; // Only return if we have no cached results
+    }
+  }
     
     // Set loading state
     if (isMountedRef.current) {
@@ -373,22 +379,28 @@ export function useDependentField<T, D>(
       return;
     }
     
-    if (!shortcutApi.hasApiToken) {
-      if (isMountedRef.current) {
-        setState(prev => ({
-          ...prev,
-          error: 'API token not set. Configure in Settings.',
-          loading: false
-        }));
-      }
-      return;
+  // Skip setting an error for missing API token, but we still need to check if it exists
+    const cacheKey = createCacheKey(dependency);
+    
+  if (!shortcutApi.hasApiToken) {
+    if (isMountedRef.current) {
+      setState(prev => ({
+        ...prev,
+        options: [], // Return empty options instead of error
+        loading: false
+      }));
     }
     
-    const cacheKey = createCacheKey(dependency);
+    // Don't return early - if we have cached results, we should still check them
+    if (!optionsCacheRef.current.has(cacheKey)) {
+      return; // Only return if we have no cached results for this dependency
+    }
+  }
     
     // Use cached results if available
     if (optionsCacheRef.current.has(cacheKey)) {
       const cachedOptions = optionsCacheRef.current.get(cacheKey) || [];
+      console.log(`Using cached data for ${fieldDef.id} with dependency:`, cachedOptions.length, 'items');
       
       if (isMountedRef.current) {
         setState(prev => {
@@ -415,7 +427,7 @@ export function useDependentField<T, D>(
           return newState;
         });
       }
-      return;
+      // DO NOT return early - continue to fetch fresh data
     }
     
     // Set loading state
