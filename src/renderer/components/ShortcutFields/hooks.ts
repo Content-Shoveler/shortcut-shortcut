@@ -1,10 +1,53 @@
 /**
  * Hooks for Shortcut field selection
+ * Modernized implementation with proper state management and effect cleanup
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useShortcutApi } from '../../hooks/useShortcutApi';
 import { FieldDefinition, FieldHookResult, ShortcutApiInterface } from './types';
 import { fieldRegistry } from './registry';
+
+/**
+ * Creates a stable cache key for any value
+ */
+function createCacheKey(value: any): string {
+  if (value === undefined || value === null) return 'null';
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+/**
+ * Deep compare two values for equality
+ */
+function isEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return a === b;
+  
+  // Handle primitive types
+  if (typeof a !== 'object' || typeof b !== 'object') return a === b;
+  
+  // Compare arrays
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    return a.every((val, idx) => isEqual(val, b[idx]));
+  }
+  
+  // Compare objects
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  
+  if (keysA.length !== keysB.length) return false;
+  
+  return keysA.every(key => 
+    Object.prototype.hasOwnProperty.call(b, key) && isEqual(a[key], b[key])
+  );
+}
 
 /**
  * Hook for managing the state of a single field
@@ -14,107 +57,192 @@ export function useSingleField<T>(
   initialValue: T | null = null,
   onChange?: (value: T | null) => void
 ): FieldHookResult<T> {
+  // Single cohesive state object to reduce state updates
+  const [state, setState] = useState<{
+    value: T | null;
+    options: T[];
+    loading: boolean;
+    error: string | null;
+    pendingId: string | number | null;
+    pending: boolean;
+  }>({
+    value: initialValue,
+    options: [],
+    loading: false,
+    error: null,
+    pendingId: null,
+    pending: false
+  });
+  
   const shortcutApi = useShortcutApi();
-  const [value, setValueInternal] = useState<T | null>(initialValue);
-  const [options, setOptions] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | number | null>(null);
-  const [pending, setPending] = useState(false);
+  const isMountedRef = useRef(true);
   const requestIdRef = useRef(0);
+  const optionsCacheRef = useRef<T[]>([]);
   
-  // Cache of fetched options to reduce API calls
-  const optionsCache = useRef<T[]>([]);
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
-  // Callback to set value and notify parent
+  // Memoized callback to update value
   const setValue = useCallback((newValue: T | null) => {
-    setValueInternal(newValue);
-    setPendingId(null); // Clear any pending ID resolution
-    setPending(false);
+    if (!isMountedRef.current) return;
+    
+    setState(prev => ({
+      ...prev,
+      value: newValue,
+      pendingId: null,
+      pending: false
+    }));
+    
     if (onChange) {
       onChange(newValue);
     }
   }, [onChange]);
-
-  // Set value by ID
+  
+  // Memoized callback to set value by ID
   const setValueById = useCallback((id: string | number) => {
-    // If we already have options loaded, try to find a match immediately
-    if (options.length > 0 && fieldDef.findOptionById) {
-      const option = fieldDef.findOptionById(options, id);
-      if (option) {
-        setValue(option);
-        return;
+    if (!isMountedRef.current) return;
+    
+    setState(prev => {
+      // Try to find in current options first
+      if (prev.options.length > 0 && fieldDef.findOptionById) {
+        const option = fieldDef.findOptionById(prev.options, id);
+        if (option) {
+          if (onChange) {
+            onChange(option);
+          }
+          return {
+            ...prev,
+            value: option,
+            pendingId: null,
+            pending: false
+          };
+        }
       }
-    }
-    
-    // Otherwise, store the ID and mark as pending
-    setPendingId(id);
-    setPending(true);
-    
-    // If no options are loaded yet, this will be resolved when options load
-    // If options are already loaded but no match was found, we'll keep the pending state
-  }, [options, fieldDef, setValue]);
-
-  // Reset the field value
+      
+      // Otherwise mark as pending
+      return {
+        ...prev,
+        pendingId: id,
+        pending: true
+      };
+    });
+  }, [fieldDef, onChange]);
+  
+  // Memoized callback to reset field
   const reset = useCallback(() => {
-    setValue(null);
-    setPendingId(null);
-    setPending(false);
-  }, [setValue]);
-
-  // Fetch options from API with caching
-  const fetchOptions = useCallback(async () => {
-    // Return cached results if available
-    if (optionsCache.current.length > 0) {
-      setOptions(optionsCache.current);
-      return;
-    }
-
-    if (!shortcutApi.hasApiToken) {
-      setError('API token not set. Configure in Settings.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
+    if (!isMountedRef.current) return;
     
-    // Generate a unique request ID to prevent race conditions
+    setState(prev => ({
+      ...prev,
+      value: null,
+      pendingId: null,
+      pending: false
+    }));
+    
+    if (onChange) {
+      onChange(null);
+    }
+  }, [onChange]);
+  
+  // Fetch options with proper cleanup and cancellation
+  const fetchOptions = useCallback(async () => {
+    // Use cached results if available
+    if (optionsCacheRef.current.length > 0) {
+      if (isMountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          options: optionsCacheRef.current,
+          loading: false
+        }));
+      }
+      return;
+    }
+    
+    if (!shortcutApi.hasApiToken) {
+      if (isMountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          error: 'API token not set. Configure in Settings.',
+          loading: false
+        }));
+      }
+      return;
+    }
+    
+    // Set loading state
+    if (isMountedRef.current) {
+      setState(prev => ({
+        ...prev,
+        loading: true,
+        error: null
+      }));
+    }
+    
+    // Create request ID to handle race conditions
     const requestId = ++requestIdRef.current;
     
     try {
       const results = await fieldDef.fetch(shortcutApi);
       
-      // Only update state if this is the most recent request
-      if (requestId === requestIdRef.current) {
-        setOptions(results);
-        optionsCache.current = results;
-        setLoading(false);
+      // Only update if this is still the current request and component is mounted
+      if (requestId === requestIdRef.current && isMountedRef.current) {
+        optionsCacheRef.current = results;
+        
+        setState(prev => {
+          const newState = {
+            ...prev,
+            options: results,
+            loading: false
+          };
+          
+          // Resolve any pending ID if possible
+          if (prev.pendingId && fieldDef.findOptionById) {
+            const option = fieldDef.findOptionById(results, prev.pendingId);
+            if (option) {
+              newState.value = option;
+              newState.pendingId = null;
+              newState.pending = false;
+              
+              if (onChange) {
+                onChange(option);
+              }
+            }
+          }
+          
+          return newState;
+        });
       }
     } catch (err) {
-      // Only update error state if this is the most recent request
-      if (requestId === requestIdRef.current) {
+      // Only update error state if this is still the current request and component is mounted
+      if (requestId === requestIdRef.current && isMountedRef.current) {
         const message = err instanceof Error ? err.message : 'Failed to fetch options';
-        setError(message);
-        setLoading(false);
+        setState(prev => ({
+          ...prev,
+          error: message,
+          loading: false
+        }));
       }
     }
-  }, [shortcutApi, fieldDef]);
-
-  // Fetch options when component mounts or API token changes
+  }, [fieldDef, shortcutApi, onChange]);
+  
+  // Fetch options on mount or when API token changes
+  const apiTokenRef = useRef(shortcutApi.hasApiToken);
   useEffect(() => {
-    fetchOptions();
-  }, [fetchOptions, shortcutApi.hasApiToken]);
-
-  // Resolve pendingId to actual object when options are available
-  useEffect(() => {
-    if (pendingId && options.length > 0 && fieldDef.findOptionById) {
-      const option = fieldDef.findOptionById(options, pendingId);
-      if (option) {
-        setValue(option);
-      }
+    const apiTokenChanged = apiTokenRef.current !== shortcutApi.hasApiToken;
+    apiTokenRef.current = shortcutApi.hasApiToken;
+    
+    if (apiTokenChanged || optionsCacheRef.current.length === 0) {
+      fetchOptions();
     }
-  }, [pendingId, options, fieldDef, setValue]);
-
+  }, [shortcutApi.hasApiToken, fetchOptions]);
+  
+  // Destructure state for return value
+  const { value, options, loading, error, pending } = state;
+  
   return {
     value,
     options,
@@ -137,177 +265,255 @@ export function useDependentField<T, D>(
   dependency?: D | null | string | number,
   onChange?: (value: T | null) => void
 ): FieldHookResult<T> {
+  // Single cohesive state object to reduce state updates
+  const [state, setState] = useState<{
+    value: T | null;
+    options: T[];
+    loading: boolean;
+    error: string | null;
+    pendingId: string | number | null;
+    pending: boolean;
+  }>({
+    value: initialValue,
+    options: [],
+    loading: false,
+    error: null,
+    pendingId: null,
+    pending: false
+  });
+  
   const shortcutApi = useShortcutApi();
-  const [value, setValueInternal] = useState<T | null>(initialValue);
-  const [options, setOptions] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | number | null>(null);
-  const [pending, setPending] = useState(false);
+  const isMountedRef = useRef(true);
   const requestIdRef = useRef(0);
+  const optionsCacheRef = useRef<Map<string, T[]>>(new Map());
   
-  // Store previous dependency to detect changes - using any type to accommodate all possible types
-  const prevDependencyRef = useRef<any>(dependency);
+  // Stable references for tracking dependency changes
+  const dependencyRef = useRef(dependency);
+  const dependencyCacheKeyRef = useRef(createCacheKey(dependency));
   
-  // Cache keyed by dependency value
-  const optionsCache = useRef<Map<string, T[]>>(new Map());
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
-  // Callback to set value and notify parent
+  // Memoized callback to update value
   const setValue = useCallback((newValue: T | null) => {
-    setValueInternal(newValue);
-    setPendingId(null); // Clear any pending ID resolution
-    setPending(false);
+    if (!isMountedRef.current) return;
+    
+    setState(prev => ({
+      ...prev,
+      value: newValue,
+      pendingId: null,
+      pending: false
+    }));
+    
     if (onChange) {
       onChange(newValue);
     }
   }, [onChange]);
-
-  // Set value by ID
+  
+  // Memoized callback to set value by ID
   const setValueById = useCallback((id: string | number) => {
-    // If we already have options loaded, try to find a match immediately
-    if (options.length > 0 && fieldDef.findOptionById) {
-      const option = fieldDef.findOptionById(options, id);
-      if (option) {
-        setValue(option);
-        return;
+    if (!isMountedRef.current) return;
+    
+    setState(prev => {
+      // Try to find in current options first
+      if (prev.options.length > 0 && fieldDef.findOptionById) {
+        const option = fieldDef.findOptionById(prev.options, id);
+        if (option) {
+          if (onChange) {
+            onChange(option);
+          }
+          return {
+            ...prev,
+            value: option,
+            pendingId: null,
+            pending: false
+          };
+        }
       }
-    }
-    
-    // Otherwise, store the ID and mark as pending
-    setPendingId(id);
-    setPending(true);
-    
-    // If no options are loaded yet, this will be resolved when options load
-    // If options are already loaded but no match was found, we'll keep the pending state
-  }, [options, fieldDef, setValue]);
-
-  // Reset field value
+      
+      // Otherwise mark as pending
+      return {
+        ...prev,
+        pendingId: id,
+        pending: true
+      };
+    });
+  }, [fieldDef, onChange]);
+  
+  // Memoized callback to reset field
   const reset = useCallback(() => {
-    setValue(null);
-    setPendingId(null);
-    setPending(false);
-  }, [setValue]);
-
-  // Create a cache key for the dependency value
-  const getDependencyCacheKey = useCallback((dep?: any): string => {
-    if (dep === undefined || dep === null) return 'null';
-    if (typeof dep === 'object') {
-      try {
-        return JSON.stringify(dep);
-      } catch {
-        return String(dep);
-      }
+    if (!isMountedRef.current) return;
+    
+    setState(prev => ({
+      ...prev,
+      value: null,
+      pendingId: null,
+      pending: false
+    }));
+    
+    if (onChange) {
+      onChange(null);
     }
-    return String(dep);
-  }, []);
-
-  // Fetch options based on dependency
+  }, [onChange]);
+  
+  // Fetch options with proper cleanup and cancellation
   const fetchOptions = useCallback(async () => {
-    // Skip if there's no dependency
     if (dependency === undefined || dependency === null) {
-      setOptions([]);
+      if (isMountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          options: [],
+          loading: false
+        }));
+      }
       return;
     }
     
-    // Ensure we have a valid dependency - can be an object, string ID, or number ID
-    const validDependency = dependency;
-
     if (!shortcutApi.hasApiToken) {
-      setError('API token not set. Configure in Settings.');
+      if (isMountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          error: 'API token not set. Configure in Settings.',
+          loading: false
+        }));
+      }
       return;
     }
-
-    const cacheKey = getDependencyCacheKey(dependency);
     
-    // Return cached results if available
-    if (optionsCache.current.has(cacheKey)) {
-      setOptions(optionsCache.current.get(cacheKey) || []);
+    const cacheKey = createCacheKey(dependency);
+    
+    // Use cached results if available
+    if (optionsCacheRef.current.has(cacheKey)) {
+      const cachedOptions = optionsCacheRef.current.get(cacheKey) || [];
+      
+      if (isMountedRef.current) {
+        setState(prev => {
+          const newState = {
+            ...prev,
+            options: cachedOptions,
+            loading: false
+          };
+          
+          // Resolve any pending ID if possible
+          if (prev.pendingId && fieldDef.findOptionById) {
+            const option = fieldDef.findOptionById(cachedOptions, prev.pendingId);
+            if (option) {
+              newState.value = option;
+              newState.pendingId = null;
+              newState.pending = false;
+              
+              if (onChange) {
+                onChange(option);
+              }
+            }
+          }
+          
+          return newState;
+        });
+      }
       return;
     }
-
-    setLoading(true);
-    setError(null);
     
-    // Generate a unique request ID to prevent race conditions
+    // Set loading state
+    if (isMountedRef.current) {
+      setState(prev => ({
+        ...prev,
+        loading: true,
+        error: null
+      }));
+    }
+    
+    // Create request ID to handle race conditions
     const requestId = ++requestIdRef.current;
     
     try {
       const results = await fieldDef.fetch(shortcutApi, dependency);
       
-      // Only update state if this is the most recent request
-      if (requestId === requestIdRef.current) {
-        setOptions(results);
-        optionsCache.current.set(cacheKey, results);
-        setLoading(false);
+      // Only update if this is still the current request and component is mounted
+      if (requestId === requestIdRef.current && isMountedRef.current) {
+        // Update cache with results
+        optionsCacheRef.current.set(cacheKey, results);
+        
+        setState(prev => {
+          const newState = {
+            ...prev,
+            options: results,
+            loading: false
+          };
+          
+          // Resolve any pending ID if possible
+          if (prev.pendingId && fieldDef.findOptionById) {
+            const option = fieldDef.findOptionById(results, prev.pendingId);
+            if (option) {
+              newState.value = option;
+              newState.pendingId = null;
+              newState.pending = false;
+              
+              if (onChange) {
+                onChange(option);
+              }
+            }
+          }
+          
+          return newState;
+        });
       }
     } catch (err) {
-      // Only update error state if this is the most recent request
-      if (requestId === requestIdRef.current) {
+      // Only update error state if this is still the current request and component is mounted
+      if (requestId === requestIdRef.current && isMountedRef.current) {
         const message = err instanceof Error ? err.message : 'Failed to fetch options';
-        setError(message);
-        setLoading(false);
+        setState(prev => ({
+          ...prev,
+          error: message,
+          loading: false
+        }));
       }
     }
-  }, [shortcutApi, fieldDef, dependency, getDependencyCacheKey]);
-
-  // Fetch options when component mounts, API token changes, or dependency changes
-  // Using a dependency ref to avoid infinite loops but still detect changes
-  const dependencyRef = useRef(dependency);
-  useEffect(() => {
-    // Always fetch on initial mount
-    if (dependency !== undefined && dependency !== null) {
-      fetchOptions();
-      dependencyRef.current = dependency;
-    }
-  }, [fetchOptions, shortcutApi.hasApiToken]); // Removed dependency to prevent infinite loop
+  }, [fieldDef, shortcutApi, dependency, onChange]);
   
-  // Extra effect to detect actual dependency changes
+  // Handle dependency changes with debouncing
   useEffect(() => {
     if (dependency === undefined || dependency === null) {
       return;
     }
     
-    // Only refetch if the dependency actually changed in a meaningful way
-    const prevDep = dependencyRef.current;
-    const currDep = dependency;
+    // Check if dependency actually changed
+    const newCacheKey = createCacheKey(dependency);
+    const dependencyChanged = newCacheKey !== dependencyCacheKeyRef.current;
     
-    // Skip initial setup when they're both the same value
-    if (prevDep === currDep) {
-      return;
-    }
-    
-    // Convert to strings for comparison (avoids reference comparison issues)
-    const prevDepStr = prevDep ? (typeof prevDep === 'object' ? JSON.stringify(prevDep) : String(prevDep)) : 'null';
-    const currDepStr = currDep ? (typeof currDep === 'object' ? JSON.stringify(currDep) : String(currDep)) : 'null';
-    
-    if (prevDepStr !== currDepStr) {
+    if (dependencyChanged) {
+      // Update refs
       dependencyRef.current = dependency;
+      dependencyCacheKeyRef.current = newCacheKey;
+      
+      // Reset value if needed
+      if (fieldDef.clearOnDependencyChange) {
+        setValue(null);
+      }
+      
+      // Fetch new options
       fetchOptions();
     }
-  }, [dependency, fetchOptions]);
-
-  // Reset value when dependency changes if specified in field definition
+  }, [dependency, fieldDef.clearOnDependencyChange, setValue, fetchOptions]);
+  
+  // Fetch options when API token changes
+  const apiTokenRef = useRef(shortcutApi.hasApiToken);
   useEffect(() => {
-    const dependencyChanged = prevDependencyRef.current !== dependency;
-    prevDependencyRef.current = dependency;
+    const apiTokenChanged = apiTokenRef.current !== shortcutApi.hasApiToken;
+    apiTokenRef.current = shortcutApi.hasApiToken;
     
-    if (dependencyChanged && fieldDef.clearOnDependencyChange) {
-      setValue(null);
-      setPendingId(null);
-      setPending(false);
+    if (apiTokenChanged && dependency !== undefined && dependency !== null) {
+      fetchOptions();
     }
-  }, [dependency, fieldDef.clearOnDependencyChange, setValue]);
-
-  // Resolve pendingId to actual object when options are available
-  useEffect(() => {
-    if (pendingId && options.length > 0 && fieldDef.findOptionById) {
-      const option = fieldDef.findOptionById(options, pendingId);
-      if (option) {
-        setValue(option);
-      }
-    }
-  }, [pendingId, options, fieldDef, setValue]);
-
+  }, [shortcutApi.hasApiToken, dependency, fetchOptions]);
+  
+  // Destructure state for return value
+  const { value, options, loading, error, pending } = state;
+  
   return {
     value,
     options,

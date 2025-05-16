@@ -1,15 +1,13 @@
 /**
  * UI Components for Shortcut field selection
+ * Modernized implementation with optimized rendering
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import {
   FormControl,
   MenuItem,
   Box,
-  Typography,
-  Alert,
   CircularProgress,
-  alpha,
   useTheme,
   SelectChangeEvent,
 } from '@mui/material';
@@ -43,23 +41,31 @@ export function FieldSelector<T, D = any>({
   error?: boolean;
   errorText?: string;
 }) {
+  // We're passing null as initialValue, we'll handle setting the value in the effect
   const field = useField(fieldDef, null, dependency, onChange);
   
-  // Handle ID-based initialization and updates
+  // Handle ID-based initialization and updates with valueRef to prevent loops
+  const valueRef = React.useRef(value);
+  
   useEffect(() => {
+    // Skip if value hasn't actually changed (reference equality)
+    if (value === valueRef.current) return;
+    valueRef.current = value;
+    
+    // Now handle the value based on its type
     if (value !== null && typeof value === 'string' && fieldDef.findOptionById) {
-      // We have a string ID
       field.setValueById(value);
     } else if (value !== null && typeof value === 'number' && fieldDef.findOptionById) {
-      // We have a numeric ID
       field.setValueById(value);
     } else if (value !== null && typeof value === 'object') {
-      // We have an object
       field.setValue(value as T);
+    } else if (value === null) {
+      field.reset();
     }
-  }, [value, fieldDef]); // Removing field from dependencies to avoid infinite loops
+  }, [value, fieldDef, field]);
 
-  const handleChange = (event: SelectChangeEvent<unknown>) => {
+  // Memoized handler for select changes to prevent unnecessary re-renders
+  const handleChange = useCallback((event: SelectChangeEvent<unknown>) => {
     const selectedValue = event.target.value as string;
     
     if (!selectedValue) {
@@ -74,9 +80,9 @@ export function FieldSelector<T, D = any>({
     if (selectedOption) {
       field.setValue(selectedOption);
     }
-  };
+  }, [field, fieldDef]);
   
-  // Get the value to display in the select box
+  // Memoized value for the select component
   const selectValue = useMemo(() => {
     if (field.value) {
       return fieldDef.getOptionValue(field.value).toString();
@@ -200,9 +206,10 @@ export function DependentFieldSelector<T, P>({
 
 /**
  * HOC that creates a field selector component from a field definition
+ * with proper memoization to prevent unnecessary re-renders
  */
 export function createFieldComponent<T, D = void>(fieldDef: FieldDefinition<T, D>) {
-  const FieldComponent = ({
+  const FieldComponent = React.memo(({
     value,
     onChange,
     dependency,
@@ -227,7 +234,7 @@ export function createFieldComponent<T, D = void>(fieldDef: FieldDefinition<T, D
         errorText={errorText}
       />
     );
-  };
+  });
   
   // Set display name for debugging
   FieldComponent.displayName = `${fieldDef.id}Selector`;
@@ -237,12 +244,13 @@ export function createFieldComponent<T, D = void>(fieldDef: FieldDefinition<T, D
 
 /**
  * HOC that creates a dependent field selector component from parent/child field definitions
+ * with proper memoization to prevent unnecessary re-renders
  */
 export function createDependentFieldComponent<P, C>(
   parentFieldDef: FieldDefinition<P, any>,
   childFieldDef: FieldDefinition<C, P>
 ) {
-  const DependentComponent = ({
+  const DependentComponent = React.memo(({
     parentValue,
     childValue,
     onParentChange,
@@ -287,7 +295,7 @@ export function createDependentFieldComponent<P, C>(
         childErrorText={childErrorText}
       />
     );
-  };
+  });
   
   // Set display name for debugging
   DependentComponent.displayName = `${parentFieldDef.id}${childFieldDef.id}Selector`;
