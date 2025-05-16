@@ -1,0 +1,31 @@
+services:
+  # A static site for the Shortcut Shortcut web app
+  - type: web
+    name: shortcut-shortcut
+    env: static
+    buildCommand: yarn && yarn build
+    staticPublishPath: ./dist
+    # Set up headers for SPA routing and security
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+      - path: /static/*
+        name: Cache-Control
+        value: max-age=31536000, immutable
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      # CORS headers to allow Shortcut API access
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://api.app.shortcut.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    # Auto deploy on changes to the main branch
+    autoDeploy: true
