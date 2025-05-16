@@ -7,6 +7,7 @@
  * - Pagination support for list endpoints
  * - Standardized response format
  * - Token persistence across page refreshes
+ * - In-flight request deduplication to prevent duplicate API calls
  */
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ShortcutApiError } from '../types/shortcutApi';
@@ -14,6 +15,9 @@ import { SHORTCUT_API_URL } from '../constants/api';
 
 // Local storage key for API token - must match key in initializeClient.ts and SettingsContext.tsx
 export const API_TOKEN_STORAGE_KEY = 'shortcut_api_token';
+
+// Global map to track in-flight token validation requests to avoid duplicate API calls
+const inflightValidationMap = new Map<string, Promise<ShortcutApiResponse>>();
 
 // Helper functions for token persistence
 const saveTokenToStorage = (token: string): void => {
@@ -269,25 +273,54 @@ class ShortcutApiClient {
     }
   }
 
-  // Validate API token
+  // Validate API token with in-flight request deduplication
   async validateToken(token: string): Promise<ShortcutApiResponse> {
-    try {
-      // Create a temporary client just for validation
-      const tempClient = createShortcutClient(token);
-      const response = await tempClient.get('/member');
-      
-      return {
-        success: true,
-        data: response.data,
-        status: response.status,
-      };
-    } catch (error: any) {
+    if (!token) {
       return {
         success: false,
-        message: error.message || 'Failed to validate token',
-        status: error.response?.status,
+        message: 'Token is required',
+        status: 400,
       };
     }
+    
+    // Generate a unique key using the first 8 chars of the token
+    const tokenKey = `validate-token-${token.substring(0, 8)}`;
+    
+    // Check if there's already an in-flight request for this token
+    if (inflightValidationMap.has(tokenKey)) {
+      console.log('Joining existing in-flight token validation request');
+      return inflightValidationMap.get(tokenKey)!;
+    }
+    
+    // Create a new promise for the validation request
+    const validationPromise = (async () => {
+      try {
+        // Create a temporary client just for validation
+        const tempClient = createShortcutClient(token);
+        const response = await tempClient.get('/member');
+        
+        return {
+          success: true,
+          data: response.data,
+          status: response.status,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          message: error.message || 'Failed to validate token',
+          status: error.response?.status,
+        };
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightValidationMap.delete(tokenKey);
+      }
+    })();
+    
+    // Store the promise in the map for reuse
+    inflightValidationMap.set(tokenKey, validationPromise);
+    
+    // Return the promise
+    return validationPromise;
   }
 
   // Fetch projects (for backward compatibility)
