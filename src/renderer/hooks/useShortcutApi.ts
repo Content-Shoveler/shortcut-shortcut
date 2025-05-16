@@ -1,5 +1,6 @@
 /**
  * React hook for accessing Shortcut API functions with caching
+ * and request deduplication to prevent multiple identical API calls
  */
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useSettings } from '../store/SettingsContext';
@@ -29,6 +30,10 @@ const createCacheKey = (endpoint: string, apiToken: string, params?: any): strin
   
   return `shortcut-api-${endpoint}${paramsStr}-${tokenPart}`;
 };
+
+// Create a global map to track in-flight requests to avoid duplicate API calls
+// This is shared across all instances of the hook to provide app-wide deduplication
+const inflightRequestsMap = new Map<string, Promise<any>>();
 
 export function useShortcutApi() {
   const { settings, updateApiToken } = useSettings();
@@ -165,7 +170,7 @@ export function useShortcutApi() {
   }, [apiToken]);
 
   /**
-   * Fetch all projects from Shortcut
+   * Fetch all projects from Shortcut with request deduplication
    */
   const fetchProjects = useCallback(async (): Promise<ShortcutProject[]> => {
     if (!apiToken) {
@@ -182,20 +187,41 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchProjects();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch projects');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `projects-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight projects request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchProjects();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch projects');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch all workflows from Shortcut
+   * Fetch all workflows from Shortcut with request deduplication
    */
   const fetchWorkflows = useCallback(async (): Promise<ShortcutWorkflow[]> => {
     if (!apiToken) {
@@ -212,20 +238,41 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchWorkflows();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch workflows');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `workflows-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight workflows request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchWorkflows();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch workflows');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch workflow states for a specific workflow
+   * Fetch workflow states for a specific workflow with request deduplication
    */
   const fetchWorkflowStates = useCallback(
     async (workflowId: string | number): Promise<ShortcutWorkflowState[]> => {
@@ -243,23 +290,43 @@ export function useShortcutApi() {
         return cachedData;
       }
       
-      // If no cache hit, fetch from API
-      const response = await shortcutApi.fetchWorkflowStates(workflowId.toString());
+      // Generate a unique key for this request to check for in-flight requests
+      const requestKey = `workflow-states-${workflowId}-${apiToken.substring(0, 8)}`;
       
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch workflow states');
+      // Check if there's an in-flight request for the same data
+      if (inflightRequestsMap.has(requestKey)) {
+        console.log(`Joining existing in-flight workflow states request for workflow ${workflowId}`);
+        return inflightRequestsMap.get(requestKey);
       }
       
-      // Store successful response in cache
-      setCache(cacheKey, response.data || []);
+      // Create the promise for the API request
+      const requestPromise = (async () => {
+        try {
+          const response = await shortcutApi.fetchWorkflowStates(workflowId.toString());
+          if (!response.success) {
+            throw new Error(response.message || 'Failed to fetch workflow states');
+          }
+          
+          // Store successful response in cache
+          setCache(cacheKey, response.data || []);
+          
+          return response.data || [];
+        } finally {
+          // Always clean up the in-flight request when done, regardless of success/failure
+          inflightRequestsMap.delete(requestKey);
+        }
+      })();
       
-      return response.data || [];
+      // Store the promise in the map so other calls can reuse it
+      inflightRequestsMap.set(requestKey, requestPromise);
+      
+      return requestPromise;
     },
     [apiToken, getCache, setCache]
   );
 
   /**
-   * Fetch epic workflow containing all epic states from Shortcut
+   * Fetch epic workflow containing all epic states from Shortcut with request deduplication
    */
   const fetchEpicWorkflow = useCallback(async (epicId: string) => {
     if (!apiToken) {
@@ -276,16 +343,37 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchEpicWorkflow(epicId);
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch epic workflow');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `epic-workflow-${epicId}-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log(`Joining existing in-flight epic workflow request for epic ${epicId}`);
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || null);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchEpicWorkflow(epicId);
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch epic workflow');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || null);
+        
+        return response.data || null;
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || null;
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
@@ -459,7 +547,7 @@ export function useShortcutApi() {
   const hasApiToken = !!apiToken && tokenValidated === true;
   
   /**
-   * Fetch all members from Shortcut
+   * Fetch all members from Shortcut with request deduplication
    */
   const fetchMembers = useCallback(async () => {
     if (!apiToken) {
@@ -476,20 +564,41 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchMembers();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch members');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `members-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight members request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchMembers();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch members');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch all labels from Shortcut
+   * Fetch all labels from Shortcut with request deduplication
    */
   const fetchLabels = useCallback(async () => {
     if (!apiToken) {
@@ -506,20 +615,41 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchLabels();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch labels');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `labels-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight labels request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchLabels();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch labels');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch all objectives from Shortcut
+   * Fetch all objectives from Shortcut with request deduplication
    */
   const fetchObjectives = useCallback(async () => {
     if (!apiToken) {
@@ -536,20 +666,41 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchObjectives();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch objectives');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `objectives-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight objectives request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchObjectives();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch objectives');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch all groups (teams) from Shortcut
+   * Fetch all groups (teams) from Shortcut with request deduplication
    */
   const fetchGroups = useCallback(async () => {
     if (!apiToken) {
@@ -566,20 +717,41 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchGroups();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch groups');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `groups-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight groups request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchGroups();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch groups');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch all iterations from Shortcut
+   * Fetch all iterations from Shortcut with request deduplication
    * @param params Optional parameters for web app compatibility
    */
   const fetchIterations = useCallback(async (params: any = {}) => {
@@ -597,21 +769,42 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    // Pass empty params object for web app compatibility
-    const response = await shortcutApi.fetchIterations(params);
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch iterations');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `iterations-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight iterations request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || []);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        // Pass empty params object for web app compatibility
+        const response = await shortcutApi.fetchIterations(params);
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch iterations');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || []);
+        
+        return response.data || [];
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || [];
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   /**
-   * Fetch workspace info containing estimate scale from Shortcut
+   * Fetch workspace info containing estimate scale from Shortcut with request deduplication
    */
   const fetchWorkspaceInfo = useCallback(async () => {
     if (!apiToken) {
@@ -628,16 +821,37 @@ export function useShortcutApi() {
       return cachedData;
     }
     
-    // If no cache hit, fetch from API
-    const response = await shortcutApi.fetchWorkspaceInfo();
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch workspace info');
+    // Generate a unique key for this request to check for in-flight requests
+    const requestKey = `workspace-info-${apiToken.substring(0, 8)}`;
+    
+    // Check if there's an in-flight request for the same data
+    if (inflightRequestsMap.has(requestKey)) {
+      console.log('Joining existing in-flight workspace info request');
+      return inflightRequestsMap.get(requestKey);
     }
     
-    // Store successful response in cache
-    setCache(cacheKey, response.data || null);
+    // Create the promise for the API request
+    const requestPromise = (async () => {
+      try {
+        const response = await shortcutApi.fetchWorkspaceInfo();
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to fetch workspace info');
+        }
+        
+        // Store successful response in cache
+        setCache(cacheKey, response.data || null);
+        
+        return response.data || null;
+      } finally {
+        // Always clean up the in-flight request when done, regardless of success/failure
+        inflightRequestsMap.delete(requestKey);
+      }
+    })();
     
-    return response.data || null;
+    // Store the promise in the map so other calls can reuse it
+    inflightRequestsMap.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }, [apiToken, getCache, setCache]);
 
   return {

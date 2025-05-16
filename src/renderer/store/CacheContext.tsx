@@ -19,7 +19,7 @@ interface CacheContextType {
 // Default TTL values (in milliseconds)
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 const STATIC_DATA_TTL = 30 * 60 * 1000; // 30 minutes
-const DYNAMIC_DATA_TTL = 2 * 60 * 1000; // 2 minutes
+const DYNAMIC_DATA_TTL = 15 * 60 * 1000; // 15 minutes (increased from 2 minutes)
 
 // Create the context with default values
 const CacheContext = createContext<CacheContextType>({
