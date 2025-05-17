@@ -20,6 +20,7 @@ import TemplateList from './pages/TemplateList';
 import TemplateEditor from './pages/TemplateEditor';
 import TemplateApply from './pages/TemplateApply';
 import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 // Animations
 import { pageVariants, starFieldVariants, radarScanVariants } from './utils/animations';
@@ -219,6 +220,8 @@ const App: React.FC = () => {
               <Route path="/editor/:id" element={<TemplateEditor />} />
               <Route path="/apply/:id" element={<TemplateApply />} />
               <Route path="/settings" element={<Settings />} />
+              {/* Wildcard route for 404 page */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </MotionPaper>
         </AnimatePresence>
