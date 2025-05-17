@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../store/SettingsContext';
+import { useShortcutApi } from '../hooks/useShortcutApi';
 import {
   Box,
   Typography,
@@ -381,6 +382,7 @@ const MotionTableRow = motion(TableRow);
 const TemplateList: React.FC = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
+  const { hasApiToken, tokenValidated } = useShortcutApi();
   const theme = useTheme();
   const viewMode = settings.appearance.viewMode;
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -388,7 +390,16 @@ const TemplateList: React.FC = () => {
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Fetch templates on component mount
+  // Redirect to settings if token is invalid
+  useEffect(() => {
+    // If token validation has completed (not null) and token is invalid
+    if (tokenValidated !== null && !hasApiToken) {
+      navigate('/settings');
+    }
+  }, [hasApiToken, tokenValidated, navigate]);
+
+  // Fetch templates on component mount - do this immediately
+  // to prevent delays while token validation happens in parallel
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -402,6 +413,7 @@ const TemplateList: React.FC = () => {
       }
     };
 
+    // Always fetch templates immediately without waiting for token validation
     fetchTemplates();
   }, []);
 
@@ -680,7 +692,13 @@ const TemplateList: React.FC = () => {
               >
                 <TemplateCard 
                   template={template}
-                  onApply={() => navigate(`/apply/${template.id}`)}
+                  onApply={() => {
+                    if (tokenValidated === true && hasApiToken) {
+                      navigate(`/apply/${template.id}`);
+                    } else {
+                      navigate('/settings');
+                    }
+                  }}
                   onEdit={() => navigate(`/editor/${template.id}`)}
                   onDelete={() => handleDeleteClick(template.id)}
                   onDuplicate={() => handleDuplicateTemplate(template.id)}
@@ -778,7 +796,13 @@ const TemplateList: React.FC = () => {
                         <ButtonGroup>
                           <MotionIconButton 
                             size="small"
-                            onClick={() => navigate(`/apply/${template.id}`)}
+                            onClick={() => {
+                              if (tokenValidated === true && hasApiToken) {
+                                navigate(`/apply/${template.id}`);
+                              } else {
+                                navigate('/settings');
+                              }
+                            }}
                             variants={buttonVariants}
                             whileHover="hover"
                             title="Apply Template"
