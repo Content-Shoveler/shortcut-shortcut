@@ -24,6 +24,11 @@ services:
         name: Access-Control-Allow-Origin
         value: https://api.app.shortcut.com
     routes:
+      # First handle static assets
+      - type: rewrite
+        source: /static/*
+        destination: /static/*
+      # Then handle all other routes and serve index.html
       - type: rewrite
         source: /*
         destination: /index.html

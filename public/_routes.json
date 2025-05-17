@@ -1,0 +1,15 @@
+{
+  "routes": [
+    {
+      "src": "/static/*",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/*",
+      "dest": "/index.html"
+    }
+  ],
+  "defaultHeaders": {
+    "Cache-Control": "no-cache"
+  }
+}
