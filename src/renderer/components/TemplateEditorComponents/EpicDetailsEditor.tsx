@@ -242,7 +242,7 @@ const EpicDetailsEditor: React.FC<EpicDetailsEditorProps> = ({
     onStateChange({
       target: {
         name: 'state',
-        value: 'todo'
+        value: 'to do'
       }
     });
   }, []); // Empty dependency array - run only on mount
