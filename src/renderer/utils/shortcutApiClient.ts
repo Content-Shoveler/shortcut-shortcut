@@ -418,6 +418,7 @@ class ShortcutApiClient {
 
   // Create epic
   async createEpic(epicData: any): Promise<ShortcutApiResponse> {
+    epicData.state = 'to do';
     return this.request('post', '/epics', epicData);
   }
 
