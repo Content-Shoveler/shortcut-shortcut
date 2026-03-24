@@ -5,5 +5,5 @@
  */
 
 // Shortcut API base URL
-const PROXY_URL = 'https://cors-anywhere-2r61.onrender.com/';
+const PROXY_URL = 'https://via.squarekicker.com/';
 export const SHORTCUT_API_URL = PROXY_URL + 'https://api.app.shortcut.com/api/v3';
